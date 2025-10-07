@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/player_clean_queue_button"
+        style="@style/TitleMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:text="@string/player_queue_clean_all_button" />
+
+    <com.shirou.shibamusic.helper.recyclerview.NestedScrollableHost
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/player_queue_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="40dp"
+            android:paddingTop="8dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+    </com.shirou.shibamusic.helper.recyclerview.NestedScrollableHost>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/player_shuffle_queue_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/content_description_shuffle_button"
+        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
+        app:srcCompat="@drawable/ic_shuffle" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
