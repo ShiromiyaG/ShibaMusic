@@ -13,6 +13,7 @@ import javax.inject.Singleton
 
 /**
  * Módulo Hilt para prover dependências relacionadas ao banco de dados
+ * Inclui suporte para codec Opus em downloads offline
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -28,7 +29,10 @@ object DatabaseModule {
             ShibaMusicDatabase::class.java,
             ShibaMusicDatabase.DATABASE_NAME
         )
-        .addMigrations(ShibaMusicDatabase.MIGRATION_1_2)
+        .addMigrations(
+            ShibaMusicDatabase.MIGRATION_1_2,
+            ShibaMusicDatabase.MIGRATION_2_3 // Nova migração para codec
+        )
         .fallbackToDestructiveMigration() // Para desenvolvimento, remover em produção
         .build()
     }
