@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -24,6 +25,7 @@ import javax.inject.Inject
 
 /**
  * Serviço responsável pelo download e gerenciamento de músicas offline
+ * Suporta transcodificação para Opus em qualidades 128 e 320 kbps
  */
 @AndroidEntryPoint
 class OfflineDownloadService : Service() {
@@ -37,10 +39,16 @@ class OfflineDownloadService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "offline_download_channel"
         
-        fun startDownload(context: Context, trackId: String, url: String) {
+        fun startDownload(
+            context: Context, 
+            trackId: String, 
+            baseUrl: String, 
+            quality: AudioQuality = AudioQuality.MEDIUM
+        ) {
             val intent = Intent(context, OfflineDownloadService::class.java).apply {
                 putExtra("track_id", trackId)
-                putExtra("url", url)
+                putExtra("base_url", baseUrl)
+                putExtra("quality", quality.name)
                 action = "START_DOWNLOAD"
             }
             context.startForegroundService(intent)
@@ -54,11 +62,13 @@ class OfflineDownloadService : Service() {
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val trackId = intent?.getStringExtra("track_id")
-        val url = intent?.getStringExtra("url")
+        val baseUrl = intent?.getStringExtra("base_url")
+        val qualityName = intent?.getStringExtra("quality") ?: AudioQuality.MEDIUM.name
+        val quality = AudioQuality.valueOf(qualityName)
         
-        if (trackId != null && url != null) {
+        if (trackId != null && baseUrl != null) {
             when (intent.action) {
-                "START_DOWNLOAD" -> startDownload(trackId, url)
+                "START_DOWNLOAD" -> startDownload(trackId, baseUrl, quality)
                 "CANCEL_DOWNLOAD" -> cancelDownload(trackId)
             }
         }
@@ -83,7 +93,7 @@ class OfflineDownloadService : Service() {
         }
     }
     
-    private fun startDownload(trackId: String, url: String) {
+    private fun startDownload(trackId: String, baseUrl: String, quality: AudioQuality) {
         serviceScope.launch {
             try {
                 // Cria entrada de progresso
@@ -96,9 +106,11 @@ class OfflineDownloadService : Service() {
                 )
                 offlineDao.insertDownloadProgress(progress)
                 
-                startForeground(NOTIFICATION_ID, createDownloadNotification(trackId, 0f))
+                startForeground(NOTIFICATION_ID, createDownloadNotification(trackId, 0f, quality))
                 
-                downloadTrack(trackId, url) { currentProgress ->
+                val downloadUrl = buildDownloadUrl(baseUrl, trackId, quality)
+                
+                downloadTrack(trackId, downloadUrl, quality) { currentProgress ->
                     // Atualiza progresso no banco
                     serviceScope.launch {
                         val updatedProgress = progress.copy(
@@ -109,7 +121,7 @@ class OfflineDownloadService : Service() {
                     }
                     
                     // Atualiza notificação
-                    val notification = createDownloadNotification(trackId, currentProgress)
+                    val notification = createDownloadNotification(trackId, currentProgress, quality)
                     val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                     notificationManager.notify(NOTIFICATION_ID, notification)
                 }
@@ -122,22 +134,57 @@ class OfflineDownloadService : Service() {
         }
     }
     
-    private suspend fun downloadTrack(trackId: String, url: String, onProgress: (Float) -> Unit) {
+    /**
+     * Constrói a URL de download com parâmetros de transcodificação para Opus
+     */
+    private fun buildDownloadUrl(baseUrl: String, trackId: String, quality: AudioQuality): String {
+        val uri = Uri.parse(baseUrl).buildUpon()
+            .appendPath("rest")
+            .appendPath("stream")
+            .appendQueryParameter("id", trackId)
+            .appendQueryParameter("v", "1.16.1")
+            .appendQueryParameter("c", "ShibaMusic")
+        
+        // Adiciona parâmetros de transcodificação para Opus
+        when (quality) {
+            AudioQuality.LOW, AudioQuality.MEDIUM -> {
+                uri.appendQueryParameter("format", quality.getTranscodeFormat())
+                uri.appendQueryParameter("maxBitRate", quality.getBitrateString())
+            }
+            AudioQuality.HIGH -> {
+                // Para FLAC, usa download direto sem transcodificação
+                uri.appendQueryParameter("format", "raw")
+            }
+        }
+        
+        return uri.build().toString()
+    }
+    
+    private suspend fun downloadTrack(
+        trackId: String, 
+        url: String, 
+        quality: AudioQuality,
+        onProgress: (Float) -> Unit
+    ) {
         val connection = URL(url).openConnection() as HttpURLConnection
         
         try {
+            // Adiciona cabeçalhos de autenticação se necessário
+            connection.setRequestProperty("User-Agent", "ShibaMusic/1.0")
             connection.connect()
+            
             val fileLength = connection.contentLength
             
             // Cria diretório de músicas offline
             val musicDir = File(filesDir, "offline_music")
             if (!musicDir.exists()) musicDir.mkdirs()
             
-            val outputFile = File(musicDir, "$trackId.mp3")
+            // Usa extensão correta baseada na qualidade
+            val outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
             
             connection.inputStream.use { input ->
                 FileOutputStream(outputFile).use { output ->
-                    val buffer = ByteArray(4096)
+                    val buffer = ByteArray(8192) // Buffer maior para melhor performance
                     var total = 0L
                     var count: Int
                     
@@ -191,7 +238,11 @@ class OfflineDownloadService : Service() {
         stopSelf()
     }
     
-    private fun createDownloadNotification(trackId: String, progress: Float): android.app.Notification {
+    private fun createDownloadNotification(
+        trackId: String, 
+        progress: Float, 
+        quality: AudioQuality
+    ): android.app.Notification {
         val cancelIntent = Intent(this, OfflineDownloadService::class.java).apply {
             action = "CANCEL_DOWNLOAD"
             putExtra("track_id", trackId)
@@ -201,9 +252,15 @@ class OfflineDownloadService : Service() {
             this, 0, cancelIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
+        val qualityText = when (quality) {
+            AudioQuality.LOW -> "Opus 128kbps"
+            AudioQuality.MEDIUM -> "Opus 320kbps"
+            AudioQuality.HIGH -> "FLAC Lossless"
+        }
+        
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Baixando música")
-            .setContentText("Progresso: ${(progress * 100).toInt()}%")
+            .setContentText("Progresso: ${(progress * 100).toInt()}% ($qualityText)")
             .setSmallIcon(R.drawable.ic_download)
             .setProgress(100, (progress * 100).toInt(), false)
             .addAction(R.drawable.ic_cancel, "Cancelar", cancelPendingIntent)
