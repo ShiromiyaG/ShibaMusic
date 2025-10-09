@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -84,7 +85,7 @@ import kotlin.math.roundToInt
  * 
  * Principais mudanças:
  * - Integração com MusicProgressBar
- * - Progress bar circular ao redor do botão play (inspirado no Metrolist)
+ * - Progress bar circular ao redor do botão play (inspirado no design moderno)
  * - Mantém compatibilidade com o design existente
  * - Melhor experiência visual e interativa
  */
@@ -196,7 +197,7 @@ fun MiniPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Botão Play/Pause com progresso circular (estilo Metrolist)
+                // Botão Play/Pause com progresso circular (estilo moderno)
                 if (useModernProgressBar) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -204,17 +205,13 @@ fun MiniPlayer(
                     ) {
                         // Barra de progresso circular
                         if (durationMs > 0) {
-                            MusicProgressBar(
-                                progress = progressFraction,
-                                onProgressChange = { newProgress ->
-                                    val newPosition = (durationMs * newProgress).toLong()
-                                    viewModel.seekTo(newPosition)
-                                },
-                                style = MusicProgressBarStyle.CIRCULAR,
-                                isPlaying = playbackState.isPlaying,
+                            CircularProgressIndicator(
+                                progress = { progressFraction.coerceIn(0f, 1f) },
                                 modifier = Modifier.size(48.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                strokeWidth = 3.dp,
                                 trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                progressColor = MaterialTheme.colorScheme.primary
+                                strokeCap = StrokeCap.Round
                             )
                         }
 
@@ -268,7 +265,7 @@ fun MiniPlayer(
                                     
                                     Icon(
                                         imageVector = if (playbackState.playbackState == PlaybackState.ENDED) {
-                                            androidx.compose.material.icons.Icons.Rounded.Replay
+                                            Icons.Rounded.Replay
                                         } else {
                                             Icons.Rounded.PlayArrow
                                         },
@@ -364,7 +361,8 @@ fun MiniPlayer(
                     }
                 }
 
-                // Botão de favorito (se habilitado)
+                // Botão de favorito (inspirado no Metrolist)
+                val isPlaying = playbackState.isPlaying && playbackState.playbackState != PlaybackState.ENDED
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -395,7 +393,7 @@ fun MiniPlayer(
                         } else {
                             Icons.Rounded.FavoriteBorder
                         },
-                        contentDescription = if (playbackState.isFavorite) "Remove from favorites" else "Add to favorites",
+                        contentDescription = "Favorite",
                         tint = if (playbackState.isFavorite) {
                             MaterialTheme.colorScheme.error
                         } else {
