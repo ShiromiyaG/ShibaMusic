@@ -35,11 +35,7 @@ enum class AudioQuality(
 ) {
     LOW(128, AudioCodec.OPUS, "opus"),
     MEDIUM(320, AudioCodec.OPUS, "opus"),
-    HIGH(LOSSLESS, AudioCodec.FLAC, "flac");
-    
-    companion object {
-        const val LOSSLESS = -1 // Indica qualidade lossless
-    }
+    HIGH(-1, AudioCodec.FLAC, "flac"); // -1 indica lossless
     
     /**
      * Retorna a URL de transcodificação para o servidor Subsonic
@@ -56,7 +52,11 @@ enum class AudioQuality(
      * Retorna o bitrate como string para requisições
      */
     fun getBitrateString(): String {
-        return if (bitrate == LOSSLESS) "0" else bitrate.toString()
+        return if (bitrate == -1) "0" else bitrate.toString()
+    }
+    
+    companion object {
+        const val LOSSLESS = -1 // Indica qualidade lossless
     }
 }
 
@@ -96,3 +96,20 @@ data class DownloadProgress(
     val createdAt: Date = Date(),
     val updatedAt: Date = Date()
 )
+
+/**
+ * Informações de armazenamento offline
+ */
+data class OfflineStorageInfo(
+    val totalTracks: Int,
+    val totalSizeBytes: Long,
+    val availableSpaceBytes: Long,
+    val opusTracksCount: Int = 0,
+    val flacTracksCount: Int = 0
+) {
+    val totalSizeMB: Int
+        get() = (totalSizeBytes / (1024 * 1024)).toInt()
+    
+    val availableSpaceMB: Int
+        get() = (availableSpaceBytes / (1024 * 1024)).toInt()
+}
