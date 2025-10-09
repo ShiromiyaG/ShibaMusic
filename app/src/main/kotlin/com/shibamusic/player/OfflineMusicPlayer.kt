@@ -1,6 +1,7 @@
 package com.shibamusic.player
 
 import android.content.Context
+import android.net.Uri
 import androidx.media3.common.*
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -232,10 +233,11 @@ class OfflineMusicPlayer @Inject constructor(
     
     private fun createMediaItemFromOfflineTrack(track: OfflineTrack): MediaItem {
         val file = File(track.localFilePath)
+        val uri = Uri.fromFile(file)
         
         return MediaItem.Builder()
             .setMediaId(track.id)
-            .setUri(file.toURI())
+            .setUri(uri)
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(track.title)
