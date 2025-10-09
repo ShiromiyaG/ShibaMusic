@@ -17,62 +17,6 @@ This may take a moment.</string>
     <string name="home_view_library">View Library</string>
     <string name="home_unknown_artist">Unknown Artist</string>
     
-    <!-- Offline Music Strings -->
-    <string name="offline_title">Música Offline</string>
-    <string name="offline_subtitle">Músicas disponíveis sem internet</string>
-    <string name="offline_empty_title">Nenhuma música offline</string>
-    <string name="offline_empty_subtitle">Baixe suas músicas favoritas para ouvir offline</string>
-    <string name="offline_storage_title">Armazenamento Offline</string>
-    <string name="offline_play_all">Tocar Todas</string>
-    <string name="offline_verify_integrity">Verificar Integridade</string>
-    <string name="offline_clear_all">Limpar Tudo</string>
-    <string name="offline_downloads_in_progress">Downloads em andamento</string>
-    <string name="offline_tracks_count">Músicas Offline (%1$d)</string>
-    <string name="offline_storage_info">Músicas: %1$d</string>
-    <string name="offline_storage_size">Tamanho: %1$d MB</string>
-    <string name="offline_available_space">Espaço disponível: %1$d MB</string>
-    
-    <!-- Download Progress -->
-    <string name="download_status_pending">Pendente</string>
-    <string name="download_status_downloading">Baixando... %1$d%%</string>
-    <string name="download_status_completed">Concluído</string>
-    <string name="download_status_failed">Falhou</string>
-    <string name="download_status_paused">Pausado</string>
-    
-    <!-- Offline Actions -->
-    <string name="action_download">Baixar</string>
-    <string name="action_remove_offline">Remover Offline</string>
-    <string name="action_play_offline">Reproduzir Offline</string>
-    
-    <!-- Notifications -->
-    <string name="notification_downloading_title">Baixando música</string>
-    <string name="notification_downloading_subtitle">Progresso: %1$d%%</string>
-    <string name="notification_download_complete">Download concluído</string>
-    <string name="notification_download_failed">Falha no download</string>
-    <string name="notification_action_cancel">Cancelar</string>
-    
-    <!-- Messages -->
-    <string name="message_download_started">Download iniciado para %1$s</string>
-    <string name="message_track_removed">Música removida do modo offline</string>
-    <string name="message_all_offline_cleared">Todos os dados offline foram removidos</string>
-    <string name="message_integrity_ok">Todos os arquivos offline estão íntegros</string>
-    <string name="message_integrity_issues">%1$d arquivo(s) corrompido(s) foram removidos</string>
-    <string name="message_no_offline_tracks">Nenhuma música offline disponível</string>
-    
-    <!-- Errors -->
-    <string name="error_download_failed">Erro ao iniciar download: %1$s</string>
-    <string name="error_remove_failed">Erro ao remover música: %1$s</string>
-    <string name="error_play_failed">Erro ao reproduzir música: %1$s</string>
-    <string name="error_clear_failed">Erro ao limpar dados: %1$s</string>
-    <string name="error_integrity_failed">Erro ao verificar integridade: %1$s</string>
-    <string name="error_loading_info">Erro ao carregar informações: %1$s</string>
-    
-    <!-- Audio Quality -->
-    <string name="quality_low">Baixa (128 kbps)</string>
-    <string name="quality_medium">Média (320 kbps)</string>
-    <string name="quality_high">Alta (Lossless)</string>
-    
-    <!-- Original strings continue below -->
     <string name="login_setup_title">Server Setup</string>
     <string name="login_setup_welcome">Welcome to ShibaMusic</string>
     <string name="login_setup_subtitle">Connect to your Navidrome or Subsonic server</string>
