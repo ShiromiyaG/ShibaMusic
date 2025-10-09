@@ -43,8 +43,8 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material.icons.rounded.Subscribe
-import androidx.compose.material.icons.rounded.Subscriptions
+import androidx.compose.material.icons.rounded.PersonAdd
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -134,7 +134,7 @@ fun ModernMiniPlayer(
     enableSwipeGestures: Boolean = true,
     swipeSensitivity: Float = 0.73f
 ) {
-    if (state.currentTrack == null) return
+    val currentTrack = state.currentTrack ?: return
 
     if (useNewDesign) {
         NewStyleMiniPlayer(
@@ -166,6 +166,8 @@ private fun NewStyleMiniPlayer(
     enableSwipeGestures: Boolean,
     swipeSensitivity: Float
 ) {
+    val currentTrack = state.currentTrack ?: return
+    
     val coroutineScope = rememberCoroutineScope()
     val layoutDirection = LocalLayoutDirection.current
     val offsetXAnimatable = remember { Animatable(0f) }
@@ -319,8 +321,8 @@ private fun NewStyleMiniPlayer(
                     ) {
                         // Thumbnail de fundo
                         AsyncImage(
-                            model = state.currentTrack.albumArtUrl,
-                            contentDescription = state.currentTrack.title,
+                            model = currentTrack.albumArtUrl,
+                            contentDescription = currentTrack.title,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxSize()
@@ -367,7 +369,7 @@ private fun NewStyleMiniPlayer(
                     verticalArrangement = Arrangement.Center
                 ) {
                     AnimatedContent(
-                        targetState = state.currentTrack.title,
+                        targetState = currentTrack.title,
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "title_animation"
                     ) { title ->
@@ -387,7 +389,7 @@ private fun NewStyleMiniPlayer(
                     }
 
                     AnimatedContent(
-                        targetState = state.currentTrack.artist,
+                        targetState = currentTrack.artist,
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "artist_animation"
                     ) { artist ->
@@ -416,7 +418,7 @@ private fun NewStyleMiniPlayer(
                         .clip(CircleShape)
                         .border(
                             width = 1.dp,
-                            color = if (state.currentTrack.isSubscribed) {
+                            color = if (currentTrack.isSubscribed) {
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             } else {
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
@@ -424,7 +426,7 @@ private fun NewStyleMiniPlayer(
                             shape = CircleShape
                         )
                         .background(
-                            color = if (state.currentTrack.isSubscribed) {
+                            color = if (currentTrack.isSubscribed) {
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                             } else {
                                 Color.Transparent
@@ -434,17 +436,17 @@ private fun NewStyleMiniPlayer(
                         .clickable { actions.onToggleSubscribe() }
                 ) {
                     Icon(
-                        imageVector = if (state.currentTrack.isSubscribed) {
-                            Icons.Rounded.Subscriptions
+                        imageVector = if (currentTrack.isSubscribed) {
+                            Icons.Rounded.Person
                         } else {
-                            Icons.Rounded.Subscribe
+                            Icons.Rounded.PersonAdd
                         },
-                        contentDescription = if (state.currentTrack.isSubscribed) {
+                        contentDescription = if (currentTrack.isSubscribed) {
                             "Unsubscribe"
                         } else {
                             "Subscribe"
                         },
-                        tint = if (state.currentTrack.isSubscribed) {
+                        tint = if (currentTrack.isSubscribed) {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -463,7 +465,7 @@ private fun NewStyleMiniPlayer(
                         .clip(CircleShape)
                         .border(
                             width = 1.dp,
-                            color = if (state.currentTrack.isFavorite) {
+                            color = if (currentTrack.isFavorite) {
                                 MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                             } else {
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
@@ -471,7 +473,7 @@ private fun NewStyleMiniPlayer(
                             shape = CircleShape
                         )
                         .background(
-                            color = if (state.currentTrack.isFavorite) {
+                            color = if (currentTrack.isFavorite) {
                                 MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
                             } else {
                                 Color.Transparent
@@ -481,17 +483,17 @@ private fun NewStyleMiniPlayer(
                         .clickable { actions.onToggleFavorite() }
                 ) {
                     Icon(
-                        imageVector = if (state.currentTrack.isFavorite) {
+                        imageVector = if (currentTrack.isFavorite) {
                             Icons.Rounded.Favorite
                         } else {
                             Icons.Rounded.FavoriteBorder
                         },
-                        contentDescription = if (state.currentTrack.isFavorite) {
+                        contentDescription = if (currentTrack.isFavorite) {
                             "Remove from favorites"
                         } else {
                             "Add to favorites"
                         },
-                        tint = if (state.currentTrack.isFavorite) {
+                        tint = if (currentTrack.isFavorite) {
                             MaterialTheme.colorScheme.error
                         } else {
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
@@ -515,6 +517,8 @@ private fun LegacyStyleMiniPlayer(
     enableSwipeGestures: Boolean,
     swipeSensitivity: Float
 ) {
+    val currentTrack = state.currentTrack ?: return
+    
     val coroutineScope = rememberCoroutineScope()
     val layoutDirection = LocalLayoutDirection.current
     val offsetXAnimatable = remember { Animatable(0f) }
@@ -636,8 +640,8 @@ private fun LegacyStyleMiniPlayer(
                     .clip(RoundedCornerShape(8.dp))
             ) {
                 AsyncImage(
-                    model = state.currentTrack.albumArtUrl,
-                    contentDescription = state.currentTrack.title,
+                    model = currentTrack.albumArtUrl,
+                    contentDescription = currentTrack.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -652,7 +656,7 @@ private fun LegacyStyleMiniPlayer(
                     .clickable { actions.onPlayerClick() }
             ) {
                 Text(
-                    text = state.currentTrack.title,
+                    text = currentTrack.title,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
@@ -661,9 +665,9 @@ private fun LegacyStyleMiniPlayer(
                     modifier = Modifier.basicMarquee()
                 )
                 
-                if (state.currentTrack.artist.isNotBlank()) {
+                if (currentTrack.artist.isNotBlank()) {
                     Text(
-                        text = state.currentTrack.artist,
+                        text = currentTrack.artist,
                         color = MaterialTheme.colorScheme.secondary,
                         fontSize = 12.sp,
                         maxLines = 1,
