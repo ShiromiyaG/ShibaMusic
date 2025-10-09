@@ -9,9 +9,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +27,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -43,20 +39,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.sin
 
 /**
  * Tipos de estilo para a barra de progresso
@@ -74,7 +64,7 @@ enum class MusicProgressBarStyle {
 
 /**
  * Componente principal de barra de progresso para música
- * Inspirado no design do Metrolist com melhorias modernas
+ * Inspirado no design moderno com melhorias para o ShibaMusic
  */
 @Composable
 fun MusicProgressBar(
@@ -177,48 +167,7 @@ private fun LinearMusicProgressBar(
             thumbColor = thumbColor,
             activeTrackColor = progressColor,
             inactiveTrackColor = trackColor
-        ),
-        track = { sliderState ->
-            Box(
-                modifier = Modifier
-                    .height(trackHeight)
-                    .clip(RoundedCornerShape(trackHeight / 2))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(trackHeight)
-                        .background(
-                            color = trackColor,
-                            shape = RoundedCornerShape(trackHeight / 2)
-                        )
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(sliderState.value)
-                        .height(trackHeight)
-                        .background(
-                            color = progressColor,
-                            shape = RoundedCornerShape(trackHeight / 2)
-                        )
-                )
-            }
-        },
-        thumb = {
-            Box(
-                modifier = Modifier
-                    .size(thumbSize)
-                    .background(
-                        color = thumbColor,
-                        shape = CircleShape
-                    )
-                    .border(
-                        width = 2.dp,
-                        color = Color.White,
-                        shape = CircleShape
-                    )
-            )
-        }
+        )
     )
 }
 
@@ -235,14 +184,11 @@ private fun MinimalMusicProgressBar(
     progressColor: Color,
     trackHeight: Dp
 ) {
-    var isDragging by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
-    
     Box(
         modifier = modifier
             .height(trackHeight + 8.dp)
             .clickable {
-                // Implementar click para mudar posição
+                // Implementar click para mudar posição se necessário
             }
     ) {
         LinearProgressIndicator(
@@ -414,10 +360,10 @@ private fun DrawScope.drawCurvedProgress(
 }
 
 /**
- * Componente de demonstração com todos os estilos
+ * Componente de demonstração com estilos básicos
  */
 @Composable
-fun MusicProgressBarShowcase(
+fun MusicProgressBarDemo(
     progress: Float = 0.4f,
     isPlaying: Boolean = true
 ) {
@@ -429,7 +375,7 @@ fun MusicProgressBarShowcase(
             .padding(16.dp)
     ) {
         Text(
-            text = "Estilos de Barra de Progresso",
+            text = "Barras de Progresso",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -437,7 +383,7 @@ fun MusicProgressBarShowcase(
         
         // Linear
         Text(
-            text = "Linear",
+            text = "Linear Tradicional",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -453,7 +399,7 @@ fun MusicProgressBarShowcase(
         
         // Linear Minimal
         Text(
-            text = "Linear Minimal",
+            text = "Linear Minimalista",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
@@ -469,12 +415,13 @@ fun MusicProgressBarShowcase(
         
         // Circular
         Text(
-            text = "Circular",
+            text = "Progresso Circular",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Row(
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CircularMusicProgressBar(
                 progress = currentProgress,
@@ -486,7 +433,6 @@ fun MusicProgressBarShowcase(
                 isPlaying = isPlaying,
                 onPlayPauseClick = { /* implementar */ }
             )
-            Spacer(modifier = Modifier.width(16.dp))
             CircularMusicProgressBar(
                 progress = currentProgress,
                 onProgressChange = { currentProgress = it },
@@ -502,7 +448,7 @@ fun MusicProgressBarShowcase(
         
         // Curved
         Text(
-            text = "Curved",
+            text = "Estilo Curvo",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(bottom = 8.dp)
         )
