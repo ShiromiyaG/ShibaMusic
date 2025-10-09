@@ -13,8 +13,7 @@
 .externalNativeBuild
 .cxx
 /.idea/
+/.vscode
 .env
 .vscode/settings.json
 # release / debug files
-tempus-release-key.jks
-app/tempo/
