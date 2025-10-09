@@ -4,20 +4,23 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.shibamusic.data.dao.OfflineTrackDao
+import com.shibamusic.data.model.AudioCodec
+import com.shibamusic.data.model.AudioQuality
 import com.shibamusic.data.model.DownloadProgress
+import com.shibamusic.data.model.DownloadStatus
 import com.shibamusic.data.model.OfflineTrack
 import java.util.*
 
 /**
  * Banco de dados principal do ShibaMusic
- * Inclui entidades para funcionalidade offline
+ * Inclui entidades para funcionalidade offline com suporte a Opus
  */
 @Database(
     entities = [
         OfflineTrack::class,
         DownloadProgress::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // Definir auto-migrações quando necessário
@@ -92,6 +95,28 @@ abstract class ShibaMusicDatabase : RoomDatabase() {
                 """)
             }
         }
+        
+        /**
+         * Migração da versão 2 para 3 (adicionando campo codec)
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Adiciona campo codec à tabela offline_tracks
+                database.execSQL("""
+                    ALTER TABLE `offline_tracks` 
+                    ADD COLUMN `codec` TEXT NOT NULL DEFAULT 'OPUS'
+                """)
+                
+                // Atualiza registros existentes baseado na qualidade
+                database.execSQL("""
+                    UPDATE `offline_tracks` 
+                    SET `codec` = CASE 
+                        WHEN `quality` = 'HIGH' THEN 'FLAC'
+                        ELSE 'OPUS'
+                    END
+                """)
+            }
+        }
     }
 }
 
@@ -108,5 +133,35 @@ class Converters {
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? {
         return date?.time
+    }
+    
+    @TypeConverter
+    fun fromAudioQuality(quality: AudioQuality): String {
+        return quality.name
+    }
+    
+    @TypeConverter
+    fun toAudioQuality(quality: String): AudioQuality {
+        return AudioQuality.valueOf(quality)
+    }
+    
+    @TypeConverter
+    fun fromAudioCodec(codec: AudioCodec): String {
+        return codec.name
+    }
+    
+    @TypeConverter
+    fun toAudioCodec(codec: String): AudioCodec {
+        return AudioCodec.valueOf(codec)
+    }
+    
+    @TypeConverter
+    fun fromDownloadStatus(status: DownloadStatus): String {
+        return status.name
+    }
+    
+    @TypeConverter
+    fun toDownloadStatus(status: String): DownloadStatus {
+        return DownloadStatus.valueOf(status)
     }
 }
