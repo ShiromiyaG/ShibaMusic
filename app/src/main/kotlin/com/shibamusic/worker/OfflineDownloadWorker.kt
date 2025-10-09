@@ -1,6 +1,7 @@
 package com.shibamusic.worker
 
 import android.content.Context
+import android.net.Uri
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.shibamusic.data.dao.OfflineTrackDao
@@ -18,7 +19,7 @@ import java.util.*
 
 /**
  * Worker para gerenciar downloads de músicas em background
- * Usado como alternativa ao serviço para downloads mais robustos
+ * Suporta transcodificação para Opus nas qualidades 128 e 320 kbps
  */
 @HiltWorker
 class OfflineDownloadWorker @AssistedInject constructor(
@@ -34,7 +35,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
         private const val KEY_ARTIST = "artist"
         private const val KEY_ALBUM = "album"
         private const val KEY_DURATION = "duration"
-        private const val KEY_ORIGINAL_URL = "original_url"
+        private const val KEY_BASE_URL = "base_url"
         private const val KEY_COVER_ART_URL = "cover_art_url"
         private const val KEY_QUALITY = "quality"
         
@@ -47,7 +48,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
             artist: String,
             album: String,
             duration: Long,
-            originalUrl: String,
+            baseUrl: String,
             coverArtUrl: String? = null,
             quality: AudioQuality = AudioQuality.MEDIUM
         ): OneTimeWorkRequest {
@@ -57,7 +58,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 .putString(KEY_ARTIST, artist)
                 .putString(KEY_ALBUM, album)
                 .putLong(KEY_DURATION, duration)
-                .putString(KEY_ORIGINAL_URL, originalUrl)
+                .putString(KEY_BASE_URL, baseUrl)
                 .putString(KEY_COVER_ART_URL, coverArtUrl)
                 .putString(KEY_QUALITY, quality.name)
                 .build()
@@ -83,7 +84,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
             val artist = inputData.getString(KEY_ARTIST) ?: return@withContext Result.failure()
             val album = inputData.getString(KEY_ALBUM) ?: return@withContext Result.failure()
             val duration = inputData.getLong(KEY_DURATION, 0L)
-            val originalUrl = inputData.getString(KEY_ORIGINAL_URL) ?: return@withContext Result.failure()
+            val baseUrl = inputData.getString(KEY_BASE_URL) ?: return@withContext Result.failure()
             val coverArtUrl = inputData.getString(KEY_COVER_ART_URL)
             val qualityName = inputData.getString(KEY_QUALITY) ?: AudioQuality.MEDIUM.name
             val quality = AudioQuality.valueOf(qualityName)
@@ -100,10 +101,14 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 progress = 0f
             )
             
+            // Constrói URL de download com transcodificação
+            val downloadUrl = buildDownloadUrl(baseUrl, trackId, quality)
+            
             // Executa o download
             val downloadResult = downloadTrack(
                 trackId = trackId,
-                originalUrl = originalUrl
+                downloadUrl = downloadUrl,
+                quality = quality
             ) { progress ->
                 // Atualiza progresso durante o download
                 updateDownloadProgress(
@@ -117,6 +122,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     Data.Builder()
                         .putString("track_id", trackId)
                         .putFloat("progress", progress)
+                        .putString("codec", quality.codec.displayName)
                         .build()
                 )
             }
@@ -132,7 +138,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     artist = artist,
                     album = album,
                     duration = duration,
-                    originalUrl = originalUrl,
+                    originalUrl = downloadUrl,
                     localFilePath = downloadResult.absolutePath,
                     fileSize = downloadResult.length(),
                     quality = quality,
@@ -143,6 +149,8 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     Data.Builder()
                         .putString("track_id", trackId)
                         .putString("status", "completed")
+                        .putString("codec", quality.codec.displayName)
+                        .putLong("file_size", downloadResult.length())
                         .build()
                 )
             } else {
@@ -151,13 +159,13 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     trackId = trackId,
                     status = DownloadStatus.FAILED,
                     progress = 0f,
-                    errorMessage = "Falha ao baixar arquivo de áudio"
+                    errorMessage = "Falha ao baixar arquivo de áudio ${quality.codec.displayName}"
                 )
                 
                 Result.failure(
                     Data.Builder()
                         .putString("track_id", trackId)
-                        .putString("error", "Falha ao baixar arquivo de áudio")
+                        .putString("error", "Falha ao baixar arquivo de áudio ${quality.codec.displayName}")
                         .build()
                 )
             }
@@ -184,15 +192,47 @@ class OfflineDownloadWorker @AssistedInject constructor(
     }
     
     /**
-     * Executa o download de uma música
+     * Constrói a URL de download com parâmetros de transcodificação para Opus
+     */
+    private fun buildDownloadUrl(baseUrl: String, trackId: String, quality: AudioQuality): String {
+        val uri = Uri.parse(baseUrl).buildUpon()
+            .appendPath("rest")
+            .appendPath("stream")
+            .appendQueryParameter("id", trackId)
+            .appendQueryParameter("v", "1.16.1")
+            .appendQueryParameter("c", "ShibaMusic")
+        
+        // Adiciona parâmetros de transcodificação
+        when (quality) {
+            AudioQuality.LOW, AudioQuality.MEDIUM -> {
+                // Para Opus 128kbps e 320kbps
+                uri.appendQueryParameter("format", quality.getTranscodeFormat())
+                uri.appendQueryParameter("maxBitRate", quality.getBitrateString())
+            }
+            AudioQuality.HIGH -> {
+                // Para FLAC, usa download direto sem transcodificação
+                uri.appendQueryParameter("format", "raw")
+            }
+        }
+        
+        return uri.build().toString()
+    }
+    
+    /**
+     * Executa o download de uma música com suporte a Opus
      */
     private suspend fun downloadTrack(
         trackId: String,
-        originalUrl: String,
+        downloadUrl: String,
+        quality: AudioQuality,
         onProgress: suspend (Float) -> Unit
     ): File? = withContext(Dispatchers.IO) {
         try {
-            val connection = URL(originalUrl).openConnection() as HttpURLConnection
+            val connection = URL(downloadUrl).openConnection() as HttpURLConnection
+            
+            // Adiciona cabeçalhos
+            connection.setRequestProperty("User-Agent", "ShibaMusic/1.0")
+            connection.setRequestProperty("Accept", quality.codec.mimeType)
             connection.connect()
             
             val fileLength = connection.contentLength
@@ -201,7 +241,8 @@ class OfflineDownloadWorker @AssistedInject constructor(
             val musicDir = File(context.filesDir, "offline_music")
             if (!musicDir.exists()) musicDir.mkdirs()
             
-            val outputFile = File(musicDir, "$trackId.mp3")
+            // Usa extensão correta baseada na qualidade
+            val outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
             
             connection.inputStream.use { input ->
                 FileOutputStream(outputFile).use { output ->
