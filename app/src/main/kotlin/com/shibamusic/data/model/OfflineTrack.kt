@@ -21,20 +21,53 @@ data class OfflineTrack(
     val downloadedAt: Date,
     val fileSize: Long,
     val quality: AudioQuality = AudioQuality.MEDIUM,
+    val codec: AudioCodec = AudioCodec.OPUS,
     val isComplete: Boolean = true
 )
 
 /**
  * Enumeração para definir a qualidade do áudio
  */
-enum class AudioQuality(val bitrate: Int) {
-    LOW(128),
-    MEDIUM(320),
-    HIGH(LOSSLESS)
+enum class AudioQuality(
+    val bitrate: Int,
+    val codec: AudioCodec,
+    val fileExtension: String
+) {
+    LOW(128, AudioCodec.OPUS, "opus"),
+    MEDIUM(320, AudioCodec.OPUS, "opus"),
+    HIGH(LOSSLESS, AudioCodec.FLAC, "flac");
     
     companion object {
         const val LOSSLESS = -1 // Indica qualidade lossless
     }
+    
+    /**
+     * Retorna a URL de transcodificação para o servidor Subsonic
+     */
+    fun getTranscodeFormat(): String {
+        return when (this) {
+            LOW -> "opus"
+            MEDIUM -> "opus" 
+            HIGH -> "flac"
+        }
+    }
+    
+    /**
+     * Retorna o bitrate como string para requisições
+     */
+    fun getBitrateString(): String {
+        return if (bitrate == LOSSLESS) "0" else bitrate.toString()
+    }
+}
+
+/**
+ * Enumeração para codecs de áudio suportados
+ */
+enum class AudioCodec(val mimeType: String, val displayName: String) {
+    OPUS("audio/opus", "Opus"),
+    MP3("audio/mpeg", "MP3"),
+    FLAC("audio/flac", "FLAC"),
+    OGG("audio/ogg", "OGG")
 }
 
 /**
