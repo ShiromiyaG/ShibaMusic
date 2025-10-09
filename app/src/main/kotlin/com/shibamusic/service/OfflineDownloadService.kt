@@ -11,7 +11,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.work.*
-import com.shibamusic.R
+import com.shirou.shibamusic.R
 import com.shibamusic.data.dao.OfflineTrackDao
 import com.shibamusic.data.model.*
 import dagger.hilt.android.AndroidEntryPoint
@@ -261,9 +261,9 @@ class OfflineDownloadService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Baixando música")
             .setContentText("Progresso: ${(progress * 100).toInt()}% ($qualityText)")
-            .setSmallIcon(R.drawable.ic_download)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
             .setProgress(100, (progress * 100).toInt(), false)
-            .addAction(R.drawable.ic_cancel, "Cancelar", cancelPendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancelar", cancelPendingIntent)
             .setOngoing(true)
             .build()
     }

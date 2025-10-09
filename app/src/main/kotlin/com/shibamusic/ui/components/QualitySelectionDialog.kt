@@ -8,11 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.shibamusic.R
 import com.shibamusic.data.model.AudioCodec
 import com.shibamusic.data.model.AudioQuality
 
@@ -39,13 +37,13 @@ fun QualitySelectionDialog(
             ) {
                 // Cabeçalho
                 Text(
-                    text = stringResource(R.string.dialog_select_quality_title),
+                    text = "Selecionar Qualidade",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
-                    text = stringResource(R.string.dialog_select_quality_subtitle),
+                    text = "Escolha a qualidade de download",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -92,7 +90,7 @@ fun QualitySelectionDialog(
                             
                             Column {
                                 Text(
-                                    text = stringResource(R.string.codec_opus_description),
+                                    text = "Opus é um codec de áudio moderno e eficiente, oferecendo melhor qualidade com menor tamanho de arquivo",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -100,7 +98,7 @@ fun QualitySelectionDialog(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 
                                 Text(
-                                    text = stringResource(R.string.info_opus_savings),
+                                    text = "Opus economiza até 40% de espaço comparado ao MP3",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary
