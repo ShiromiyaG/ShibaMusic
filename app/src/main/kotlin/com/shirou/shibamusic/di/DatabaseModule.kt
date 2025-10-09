@@ -2,11 +2,8 @@ package com.shirou.shibamusic.di
 
 import android.content.Context
 import androidx.room.Room
-import com.shirou.shibamusic.data.database.ShibaMusicLocalDatabase
-import com.shirou.shibamusic.data.database.dao.AlbumDao
-import com.shirou.shibamusic.data.database.dao.ArtistDao
-import com.shirou.shibamusic.data.database.dao.PlaylistDao
-import com.shirou.shibamusic.data.database.dao.SongDao
+import com.shirou.shibamusic.data.dao.OfflineTrackDao
+import com.shirou.shibamusic.data.database.ShibaMusicDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,31 +11,36 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Módulo Hilt para prover dependências relacionadas ao banco de dados
+ * Inclui suporte para codec Opus em downloads offline
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
+    
     @Provides
     @Singleton
-    fun provideDatabase(
+    fun provideShibaMusicDatabase(
         @ApplicationContext context: Context
-    ): ShibaMusicLocalDatabase = Room.databaseBuilder(
-        context,
-        ShibaMusicLocalDatabase::class.java,
-        ShibaMusicLocalDatabase.DATABASE_NAME
-    )
-        .fallbackToDestructiveMigration()
+    ): ShibaMusicDatabase {
+        return Room.databaseBuilder(
+            context,
+            ShibaMusicDatabase::class.java,
+            ShibaMusicDatabase.DATABASE_NAME
+        )
+        .addMigrations(
+            ShibaMusicDatabase.MIGRATION_1_2,
+            ShibaMusicDatabase.MIGRATION_2_3 // Nova migração para codec
+        )
+        .fallbackToDestructiveMigration() // Para desenvolvimento, remover em produção
         .build()
-
+    }
+    
     @Provides
-    fun provideSongDao(database: ShibaMusicLocalDatabase): SongDao = database.songDao()
-
-    @Provides
-    fun provideAlbumDao(database: ShibaMusicLocalDatabase): AlbumDao = database.albumDao()
-
-    @Provides
-    fun provideArtistDao(database: ShibaMusicLocalDatabase): ArtistDao = database.artistDao()
-
-    @Provides
-    fun providePlaylistDao(database: ShibaMusicLocalDatabase): PlaylistDao = database.playlistDao()
+    fun provideOfflineTrackDao(
+        database: ShibaMusicDatabase
+    ): OfflineTrackDao {
+        return database.offlineTrackDao()
+    }
 }
