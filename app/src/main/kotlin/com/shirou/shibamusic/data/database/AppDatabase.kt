@@ -20,7 +20,7 @@ import com.shirou.shibamusic.data.database.entity.SongEntity
         PlaylistEntity::class,
         PlaylistSongEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class ShibaMusicLocalDatabase : RoomDatabase() {

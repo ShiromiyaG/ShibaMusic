@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
@@ -231,6 +233,7 @@ fun PlaylistDetailScreen(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddSongsDialog(
@@ -238,9 +241,13 @@ private fun AddSongsDialog(
     onConfirm: () -> Unit
 ) {
     val viewModel: com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-    val uiState by viewModel.uiState.collectAsState()
+    val songs: LazyPagingItems<SongItem> = viewModel.songs.collectAsLazyPagingItems()
     val selectedSongs = remember { mutableStateListOf<SongItem>() }
-    
+
+    val refreshState = songs.loadState.refresh
+    val initialLoading = refreshState is LoadState.Loading && songs.itemCount == 0
+    val initialError = refreshState as? LoadState.Error
+
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxHeight(0.8f)
@@ -259,56 +266,88 @@ private fun AddSongsDialog(
                     },
                     actions = {
                         TextButton(
-                            onClick = {
-                                onConfirm()
-                            },
+                            onClick = onConfirm,
                             enabled = selectedSongs.isNotEmpty()
                         ) {
                             Text("Add (${selectedSongs.size})")
                         }
                     }
                 )
-                
-                if (uiState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
+
+                when {
+                    initialLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
                     }
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(uiState.songs, key = { it.id }) { song ->
-                            val isSelected = selectedSongs.any { it.id == song.id }
-                            Surface(
-                                onClick = {
-                                    if (isSelected) {
-                                        selectedSongs.removeAll { it.id == song.id }
-                                    } else {
-                                        selectedSongs.add(song)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+
+                    initialError != null && songs.itemCount == 0 -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = initialError.error.localizedMessage
+                                    ?: "Failed to load songs.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = songs::retry) {
+                                Text("Retry")
+                            }
+                        }
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(
+                                count = songs.itemCount,
+                                key = { index -> songs[index]?.id ?: index },
+                                contentType = { "song" }
+                            ) { index ->
+                                val song = songs[index] ?: return@items
+                                val isSelected = selectedSongs.any { it.id == song.id }
+
+                                Surface(
+                                    onClick = {
+                                        if (isSelected) {
+                                            selectedSongs.removeAll { it.id == song.id }
+                                        } else {
+                                            selectedSongs.add(song)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Checkbox(
-                                        checked = isSelected,
-                                        onCheckedChange = null
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = song.title,
-                                            style = MaterialTheme.typography.bodyLarge
+                                    Row(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Checkbox(
+                                            checked = isSelected,
+                                            onCheckedChange = null
                                         )
-                                        Text(
-                                            text = song.artistName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = song.title,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                            Text(
+                                                text = song.artistName,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -319,6 +358,7 @@ private fun AddSongsDialog(
         }
     }
 }
+
 
 @Composable
 private fun EditPlaylistDialog(

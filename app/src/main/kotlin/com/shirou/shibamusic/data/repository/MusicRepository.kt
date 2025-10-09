@@ -1,5 +1,6 @@
 package com.shirou.shibamusic.data.repository
 
+import androidx.paging.PagingData
 import com.shirou.shibamusic.ui.model.*
 import kotlinx.coroutines.flow.Flow
 
@@ -14,6 +15,7 @@ interface MusicRepository {
     suspend fun getSongById(id: String): SongItem?
     suspend fun searchSongs(query: String): List<SongItem>
     fun observeSongs(): Flow<List<SongItem>>
+    fun observeSongsPaged(orderClause: String): Flow<PagingData<SongItem>>
     
     // Albums
     suspend fun getAllAlbums(): List<AlbumItem>
@@ -21,6 +23,7 @@ interface MusicRepository {
     suspend fun getAlbumSongs(albumId: String): List<SongItem>
     suspend fun searchAlbums(query: String): List<AlbumItem>
     fun observeAlbums(): Flow<List<AlbumItem>>
+    fun observeAlbumsPaged(orderClause: String): Flow<PagingData<AlbumItem>>
     
     // Artists
     suspend fun getAllArtists(): List<ArtistItem>
@@ -29,6 +32,7 @@ interface MusicRepository {
     suspend fun getArtistAlbums(artistId: String): List<AlbumItem>
     suspend fun searchArtists(query: String): List<ArtistItem>
     fun observeArtists(): Flow<List<ArtistItem>>
+    fun observeArtistsPaged(orderClause: String): Flow<PagingData<ArtistItem>>
     
     // Playlists
     suspend fun getAllPlaylists(): List<PlaylistItem>
@@ -41,6 +45,7 @@ interface MusicRepository {
     suspend fun removeSongFromPlaylist(playlistId: String, songId: String)
     fun observePlaylists(): Flow<List<PlaylistItem>>
     fun observePlaylistSongs(playlistId: String): Flow<List<SongItem>>
+    fun observePlaylistsPaged(orderClause: String): Flow<PagingData<PlaylistItem>>
     
     // Favorites
     suspend fun getFavoriteSongs(): List<SongItem>

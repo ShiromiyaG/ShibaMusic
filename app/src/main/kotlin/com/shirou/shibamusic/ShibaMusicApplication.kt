@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
+import javax.inject.Provider
 
 /**
  * Application class for Shiba Music
@@ -21,7 +22,7 @@ import javax.inject.Inject
 class ShibaMusicApplication : Application(), Configuration.Provider {
     
     @Inject
-    lateinit var syncRepository: SyncRepository
+    lateinit var syncRepositoryProvider: Provider<SyncRepository>
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -50,7 +51,8 @@ class ShibaMusicApplication : Application(), Configuration.Provider {
 
         CoroutineScope(Dispatchers.IO).launch {
             kotlinx.coroutines.delay(2000)
-            syncRepository.performInitialSync()
+            val repository = syncRepositoryProvider.get()
+            repository.performInitialSync()
         }
     }
 

@@ -1,6 +1,11 @@
 package com.shirou.shibamusic.data.repository
 
 import android.util.Log
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.map
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.shirou.shibamusic.App
 import com.shirou.shibamusic.data.database.dao.*
 import com.shirou.shibamusic.data.database.entity.*
@@ -12,6 +17,7 @@ import com.shirou.shibamusic.subsonic.models.Child
 import com.shirou.shibamusic.ui.model.*
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -35,7 +41,18 @@ class MusicRepositoryImpl @Inject constructor(
 
     companion object {
         private const val TAG = "MusicRepository"
+        private const val DEFAULT_PAGE_SIZE = 120
+        private const val DEFAULT_PREFETCH_DISTANCE = 60
+        private const val DEFAULT_JUMP_THRESHOLD = 600
     }
+
+    private fun defaultPagingConfig(): PagingConfig = PagingConfig(
+        pageSize = DEFAULT_PAGE_SIZE,
+        initialLoadSize = DEFAULT_PAGE_SIZE * 2,
+        prefetchDistance = DEFAULT_PREFETCH_DISTANCE,
+        enablePlaceholders = false,
+        jumpThreshold = DEFAULT_JUMP_THRESHOLD
+    )
     
     // ==================== Songs ====================
     
@@ -52,8 +69,21 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override fun observeSongs(): Flow<List<SongItem>> {
-        return songDao.observeAllSongs().map { entities ->
-            entities.toSongItems()
+        return songDao.observeAllSongs()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toSongItems()
+            }
+    }
+
+    override fun observeSongsPaged(orderClause: String): Flow<PagingData<SongItem>> {
+        val query = SimpleSQLiteQuery("SELECT * FROM songs $orderClause")
+        return Pager(
+            config = defaultPagingConfig()
+        ) {
+            songDao.pagingSongs(query)
+        }.flow.map { pagingData ->
+            pagingData.map { it.toSongItem() }
         }
     }
     
@@ -88,8 +118,21 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override fun observeAlbums(): Flow<List<AlbumItem>> {
-        return albumDao.observeAllAlbums().map { entities ->
-            entities.toAlbumItems()
+        return albumDao.observeAllAlbums()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toAlbumItems()
+            }
+    }
+
+    override fun observeAlbumsPaged(orderClause: String): Flow<PagingData<AlbumItem>> {
+        val query = SimpleSQLiteQuery("SELECT * FROM albums $orderClause")
+        return Pager(
+            config = defaultPagingConfig()
+        ) {
+            albumDao.pagingAlbums(query)
+        }.flow.map { pagingData ->
+            pagingData.map { it.toAlbumItem() }
         }
     }
 
@@ -197,8 +240,21 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override fun observeArtists(): Flow<List<ArtistItem>> {
-        return artistDao.observeAllArtists().map { entities ->
-            entities.toArtistItems()
+        return artistDao.observeAllArtists()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toArtistItems()
+            }
+    }
+
+    override fun observeArtistsPaged(orderClause: String): Flow<PagingData<ArtistItem>> {
+        val query = SimpleSQLiteQuery("SELECT * FROM artists $orderClause")
+        return Pager(
+            config = defaultPagingConfig()
+        ) {
+            artistDao.pagingArtists(query)
+        }.flow.map { pagingData ->
+            pagingData.map { it.toArtistItem() }
         }
     }
     
@@ -255,15 +311,30 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override fun observePlaylists(): Flow<List<PlaylistItem>> {
-        return playlistDao.observeAllPlaylists().map { entities ->
-            entities.toPlaylistItems()
+        return playlistDao.observeAllPlaylists()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toPlaylistItems()
+            }
+    }
+
+    override fun observePlaylistsPaged(orderClause: String): Flow<PagingData<PlaylistItem>> {
+        val query = SimpleSQLiteQuery("SELECT * FROM playlists $orderClause")
+        return Pager(
+            config = defaultPagingConfig()
+        ) {
+            playlistDao.pagingPlaylists(query)
+        }.flow.map { pagingData ->
+            pagingData.map { it.toPlaylistItem() }
         }
     }
     
     override fun observePlaylistSongs(playlistId: String): Flow<List<SongItem>> {
-        return playlistDao.observeSongsInPlaylist(playlistId).map { entities ->
-            entities.toSongItems()
-        }
+        return playlistDao.observeSongsInPlaylist(playlistId)
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toSongItems()
+            }
     }
     
     // ==================== Favorites ====================
@@ -304,27 +375,35 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override fun observeFavorites(): Flow<List<SongItem>> {
-        return songDao.observeFavoriteSongs().map { entities ->
-            entities.toSongItems()
-        }
+        return songDao.observeFavoriteSongs()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toSongItems()
+            }
     }
     
     override fun observeFavoriteSongs(): Flow<List<SongItem>> {
-        return songDao.observeFavoriteSongs().map { entities ->
-            entities.toSongItems()
-        }
+        return songDao.observeFavoriteSongs()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toSongItems()
+            }
     }
     
     override fun observeFavoriteAlbums(): Flow<List<AlbumItem>> {
-        return albumDao.observeFavoriteAlbums().map { entities ->
-            entities.toAlbumItems()
-        }
+        return albumDao.observeFavoriteAlbums()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toAlbumItems()
+            }
     }
     
     override fun observeFavoriteArtists(): Flow<List<ArtistItem>> {
-        return artistDao.observeFavoriteArtists().map { entities ->
-            entities.toArtistItems()
-        }
+        return artistDao.observeFavoriteArtists()
+            .distinctUntilChanged()
+            .map { entities ->
+                entities.toArtistItems()
+            }
     }
     
     // ==================== Recently Played ====================

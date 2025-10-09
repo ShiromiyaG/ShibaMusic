@@ -9,8 +9,13 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.ListItemPlaceholder
 import com.shirou.shibamusic.ui.model.SongItem
@@ -30,11 +35,12 @@ fun LibrarySongsScreen(
     modifier: Modifier = Modifier,
     viewModel: LibrarySongsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pagingSongs = viewModel.songs.collectAsLazyPagingItems()
     
     LibrarySongsContent(
-        songs = uiState.songs,
-        isLoading = uiState.isLoading,
+        songs = pagingSongs,
+        isSyncing = uiState.isSyncing,
         currentlyPlayingSongId = currentlyPlayingSongId,
         onSongClick = onSongClick,
         onSongMenuClick = onSongMenuClick,
@@ -48,8 +54,8 @@ fun LibrarySongsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibrarySongsContent(
-    songs: List<SongItem>,
-    isLoading: Boolean,
+    songs: LazyPagingItems<SongItem>,
+    isSyncing: Boolean,
     currentlyPlayingSongId: String?,
     onSongClick: (SongItem) -> Unit,
     onSongMenuClick: (SongItem) -> Unit,
@@ -59,59 +65,153 @@ fun LibrarySongsContent(
     modifier: Modifier = Modifier
 ) {
     Scaffold(
-       contentWindowInsets = WindowInsets(0.dp)
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        when {
-            isLoading -> {
-                // Show loading placeholders
-                LazyColumn(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    items(10) {
-                        ListItemPlaceholder()
-                    }
-                }
-            }
-            songs.isEmpty() -> {
-                EmptyPlaceholder(
-                    icon = Icons.Rounded.MusicNote,
-                    text = "No songs in your library.\nAdd some music to get started!",
+        val refreshState = songs.loadState.refresh
+        val appendState = songs.loadState.append
+        val listState = rememberLazyListState()
+
+        val isInitialLoading = refreshState is LoadState.Loading && songs.itemCount == 0
+        val isRefreshing = refreshState is LoadState.Loading && songs.itemCount > 0
+        val isInitialError = refreshState is LoadState.Error && songs.itemCount == 0
+        val emptyContent = refreshState is LoadState.NotLoading && songs.itemCount == 0
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            val showTopIndicator = isSyncing || isRefreshing
+            if (showTopIndicator) {
+                LinearProgressIndicator(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                 )
             }
-            else -> {
-                val listState = rememberLazyListState()
-                LazyColumn(
-                    state = listState,
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    // Songs list com contentType para melhor performance
-                    items(
-                        count = songs.size,
-                        key = { index -> songs[index].id },
-                        contentType = { "song" }
-                    ) { index ->
-                        val song = songs[index]
-                        SongListItem(
-                            title = song.title,
-                            artist = song.artistName,
-                            album = song.albumName,
-                            thumbnailUrl = song.albumArtUrl,
-                            isPlaying = song.id == currentlyPlayingSongId,
-                            onClick = { onSongClick(song) },
-                            onMoreClick = { onSongMenuClick(song) },
-                            trailingIcon = Icons.Rounded.MoreVert
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    isInitialLoading -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(10) {
+                                ListItemPlaceholder()
+                            }
+                        }
+                    }
+
+                    isInitialError -> {
+                        val message = (refreshState as? LoadState.Error)?.error?.localizedMessage
+                            ?: "Failed to load songs."
+                        ErrorState(
+                            message = message,
+                            onRetry = songs::retry,
+                            modifier = Modifier.fillMaxSize()
                         )
+                    }
+
+                    emptyContent -> {
+                        EmptyPlaceholder(
+                            icon = Icons.Rounded.MusicNote,
+                            text = "No songs in your library.\nAdd some music to get started!",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    else -> {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            items(
+                                count = songs.itemCount,
+                                key = { index -> songs[index]?.id ?: index },
+                                contentType = { "song" }
+                            ) { index ->
+                                val song = songs[index] ?: return@items
+                                SongListItem(
+                                    title = song.title,
+                                    artist = song.artistName,
+                                    album = song.albumName,
+                                    thumbnailUrl = song.albumArtUrl,
+                                    isPlaying = song.id == currentlyPlayingSongId,
+                                    onClick = { onSongClick(song) },
+                                    onMoreClick = { onSongMenuClick(song) },
+                                    trailingIcon = Icons.Rounded.MoreVert
+                                )
+                            }
+
+                            if (appendState is LoadState.Loading) {
+                                item("append_loading") {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                                    }
+                                }
+                            }
+
+                            if (appendState is LoadState.Error) {
+                                item("append_error") {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = appendState.error.localizedMessage
+                                                ?: "Couldn't load more songs.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        OutlinedButton(onClick = songs::retry) {
+                                            Text("Retry")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ErrorState(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onRetry) {
+            Text("Retry")
         }
     }
 }

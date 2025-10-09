@@ -1,11 +1,14 @@
 package com.shirou.shibamusic.data.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.shirou.shibamusic.data.database.entity.PlaylistEntity
 import com.shirou.shibamusic.data.database.entity.PlaylistSongEntity
 import com.shirou.shibamusic.data.database.entity.SongEntity
@@ -90,4 +93,7 @@ interface PlaylistDao {
             updatePlaylistSongRefs(reordered)
         }
     }
+
+    @RawQuery(observedEntities = [PlaylistEntity::class])
+    fun pagingPlaylists(query: SupportSQLiteQuery): PagingSource<Int, PlaylistEntity>
 }

@@ -16,6 +16,7 @@ This may take a moment.</string>
     <string name="home_recently_added">Últimas Adicionadas no Servidor</string>
     <string name="home_view_library">View Library</string>
     <string name="home_unknown_artist">Unknown Artist</string>
+    
     <string name="login_setup_title">Server Setup</string>
     <string name="login_setup_welcome">Welcome to ShibaMusic</string>
     <string name="login_setup_subtitle">Connect to your Navidrome or Subsonic server</string>
@@ -501,4 +502,12 @@ This may take a moment.</string>
     <string name="settings_version_title_item">Version</string>
     <string name="settings_github_title_item">GitHub</string>
     <string name="settings_github_subtitle">View source code</string>
+    
+    <!-- Offline Settings -->
+    <string name="settings_offline_title">Offline</string>
+    <string name="settings_offline_subtitle">Manage offline music</string>
+    <string name="settings_offline_cache_title">Offline Cache</string>
+    <string name="settings_offline_cache_subtitle">Manage offline storage</string>
+    <string name="settings_offline_quality_title">Download Quality</string>
+    <string name="settings_offline_quality_subtitle">Choose download audio quality</string>
 </resources>

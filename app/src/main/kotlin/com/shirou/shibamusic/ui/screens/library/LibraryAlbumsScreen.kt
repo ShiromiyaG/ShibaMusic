@@ -3,14 +3,20 @@ package com.shirou.shibamusic.ui.screens.library
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.GridItemPlaceholder
 import com.shirou.shibamusic.ui.model.AlbumItem
@@ -28,14 +34,14 @@ fun LibraryAlbumsScreen(
     modifier: Modifier = Modifier,
     viewModel: LibraryAlbumsViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pagingAlbums = viewModel.albums.collectAsLazyPagingItems()
+
     LibraryAlbumsContent(
-        albums = uiState.albums,
-        isLoading = uiState.isLoading,
+        albums = pagingAlbums,
+        isSyncing = uiState.isSyncing,
         onAlbumClick = onAlbumClick,
         onAlbumPlay = onAlbumPlay,
-        onSortChange = viewModel::changeSortOption,
         selectedSortOption = uiState.sortOption,
         modifier = modifier
     )
@@ -44,68 +50,163 @@ fun LibraryAlbumsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryAlbumsContent(
-    albums: List<AlbumItem>,
-    isLoading: Boolean,
+    albums: LazyPagingItems<AlbumItem>,
+    isSyncing: Boolean,
     onAlbumClick: (AlbumItem) -> Unit,
     onAlbumPlay: (AlbumItem) -> Unit,
-    onSortChange: (AlbumSortOption) -> Unit,
     selectedSortOption: AlbumSortOption,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        when {
-            isLoading -> {
-                // Show loading placeholders
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(10) {
-                        GridItemPlaceholder(isCircular = false)
-                    }
-                }
-            }
-            albums.isEmpty() -> {
-                EmptyPlaceholder(
-                    icon = Icons.Rounded.Album,
-                    text = "No albums in your library",
+        val refreshState = albums.loadState.refresh
+        val appendState = albums.loadState.append
+        val gridState = rememberLazyGridState()
+
+        val isInitialLoading = refreshState is LoadState.Loading && albums.itemCount == 0
+        val isRefreshing = refreshState is LoadState.Loading && albums.itemCount > 0
+        val isInitialError = refreshState is LoadState.Error && albums.itemCount == 0
+        val emptyContent = refreshState is LoadState.NotLoading && albums.itemCount == 0
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (isSyncing || isRefreshing) {
+                LinearProgressIndicator(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                 )
             }
-            else -> {
-                val gridState = rememberLazyGridState()
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    state = gridState,
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentPadding = PaddingValues(8.dp)
-                ) {
-                    items(
-                        count = albums.size,
-                        key = { index -> albums[index].id },
-                        contentType = { "album" }
-                    ) { index ->
-                        val album = albums[index]
-                        GridItem(
-                            title = album.title,
-                            subtitle = album.artistName,
-                            thumbnailUrl = album.albumArtUrl,
-                            isCircular = false,
-                            onClick = { onAlbumClick(album) },
-                            onPrimaryAction = { onAlbumPlay(album) }
-                        )
+
+            AssistChip(
+                onClick = {},
+                enabled = false,
+                label = { Text("Sorted by ${selectedSortOption.displayName}") },
+                leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+
+            when {
+                isInitialLoading -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(10) {
+                            GridItemPlaceholder(isCircular = false)
+                        }
+                    }
+                }
+
+                isInitialError -> {
+                    val message = (refreshState as? LoadState.Error)?.error?.localizedMessage
+                        ?: "Failed to load albums."
+                    ErrorPlaceholder(
+                        message = message,
+                        onRetry = albums::retry,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                emptyContent -> {
+                    EmptyPlaceholder(
+                        icon = Icons.Rounded.Album,
+                        text = "No albums in your library",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        state = gridState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(8.dp)
+                    ) {
+                        items(albums.itemCount, key = { index -> albums[index]?.id ?: index }) { index ->
+                            val album = albums[index] ?: return@items
+                            GridItem(
+                                title = album.title,
+                                subtitle = album.artistName,
+                                thumbnailUrl = album.albumArtUrl,
+                                isCircular = false,
+                                onClick = { onAlbumClick(album) },
+                                onPrimaryAction = { onAlbumPlay(album) }
+                            )
+                        }
+
+                        if (appendState is LoadState.Loading) {
+                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        }
+
+                        if (appendState is LoadState.Error) {
+                            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = appendState.error.localizedMessage
+                                            ?: "Couldn't load more albums.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedButton(onClick = albums::retry) {
+                                        Text("Retry")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ErrorPlaceholder(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onRetry) {
+            Text("Retry")
         }
     }
 }

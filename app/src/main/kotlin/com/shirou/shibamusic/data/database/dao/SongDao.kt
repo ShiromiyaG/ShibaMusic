@@ -1,11 +1,14 @@
 package com.shirou.shibamusic.data.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Transaction
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.shirou.shibamusic.data.database.entity.SongEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -79,4 +82,7 @@ interface SongDao {
     suspend fun incrementPlayCountWithTimestamp(songId: String) {
         incrementPlayCount(songId, System.currentTimeMillis())
     }
+
+    @RawQuery(observedEntities = [SongEntity::class])
+    fun pagingSongs(query: SupportSQLiteQuery): PagingSource<Int, SongEntity>
 }

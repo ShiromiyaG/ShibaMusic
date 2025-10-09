@@ -2,12 +2,19 @@ package com.shirou.shibamusic.data.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
  * Represents a playlist stored locally in Room.
  */
-@Entity(tableName = "playlists")
+@Entity(
+    tableName = "playlists",
+    indices = [
+        Index(value = ["name"]),
+        Index(value = ["date_modified"])
+    ]
+)
 data class PlaylistEntity(
     @PrimaryKey
     @ColumnInfo(name = "id")

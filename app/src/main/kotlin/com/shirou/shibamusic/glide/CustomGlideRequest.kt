@@ -20,9 +20,11 @@ import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.signature.ObjectKey
 import com.shirou.shibamusic.App
 import com.shirou.shibamusic.R
+import com.shirou.shibamusic.BuildConfig
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.util.Util
 import com.google.android.material.elevation.SurfaceColors
+import java.util.concurrent.ConcurrentHashMap
 
 object CustomGlideRequest {
     private const val TAG = "CustomGlideRequest"
@@ -30,6 +32,15 @@ object CustomGlideRequest {
     val CORNER_RADIUS: Int = if (Preferences.isCornerRoundingEnabled()) Preferences.getRoundedCornerSize() else 1
 
     val DEFAULT_DISK_CACHE_STRATEGY: DiskCacheStrategy = DiskCacheStrategy.ALL
+
+    private data class CacheKey(
+        val baseUrl: String,
+        val paramsSignature: String,
+        val size: Int,
+        val coverArtId: String
+    )
+
+    private val urlCache = ConcurrentHashMap<CacheKey, String>()
 
     enum class ResourceType {
         Unknown,
@@ -72,20 +83,38 @@ object CustomGlideRequest {
     fun createUrl(item: String?, size: Int): String? {
         // Validate cover art ID
         if (item.isNullOrBlank()) {
-            Log.w(TAG, "createUrl() - coverArtId is null or empty, returning null")
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "createUrl() - coverArtId is null or empty, returning null")
+            }
             return null
         }
 
         // Special handling for Navidrome - check if coverArtId is valid
         if (isInvalidNavidromeCoverArtId(item)) {
-            Log.w(TAG, "createUrl() - detected invalid Navidrome coverArtId: $item")
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, "createUrl() - detected invalid Navidrome coverArtId: $item")
+            }
             return null
         }
 
-        val params = App.getSubsonicClientInstance(false).params
+        val subsonicClient = App.getSubsonicClientInstance(false)
+        val params = subsonicClient.params
+        val paramsSignature = params.entries
+            .sortedBy { it.key }
+            .joinToString(separator = "&") { (key, value) -> "$key=$value" }
+        val cacheKey = CacheKey(
+            baseUrl = subsonicClient.url,
+            paramsSignature = paramsSignature,
+            size = size,
+            coverArtId = item
+        )
 
-        return buildString {
-            append(App.getSubsonicClientInstance(false).url)
+        urlCache[cacheKey]?.let { cached ->
+            return cached
+        }
+
+        val generatedUrl = buildString {
+            append(subsonicClient.url)
             append("getCoverArt")
 
             params["u"]?.let {
@@ -111,9 +140,11 @@ object CustomGlideRequest {
             }
 
             append("&id=").append(item)
-        }.also {
-            Log.d(TAG, "createUrl() $it")
         }
+
+        urlCache[cacheKey] = generatedUrl
+
+        return generatedUrl
     }
 
     /**

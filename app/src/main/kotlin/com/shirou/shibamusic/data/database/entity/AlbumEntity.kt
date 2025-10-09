@@ -2,12 +2,20 @@ package com.shirou.shibamusic.data.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
  * Represents an album stored locally in Room.
  */
-@Entity(tableName = "albums")
+@Entity(
+    tableName = "albums",
+    indices = [
+        Index(value = ["title"]),
+        Index(value = ["artist_id"]),
+        Index(value = ["date_added"])
+    ]
+)
 data class AlbumEntity(
     @PrimaryKey
     @ColumnInfo(name = "id")
