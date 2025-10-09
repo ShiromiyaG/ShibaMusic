@@ -38,7 +38,6 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material.icons.rounded.Replay
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -58,7 +57,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -68,11 +66,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.MiniPlayerSeekBar
-import com.shirou.shibamusic.ui.component.MusicProgressBar
-import com.shirou.shibamusic.ui.component.MusicProgressBarStyle
 import com.shirou.shibamusic.ui.model.PlaybackState
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.launch
@@ -81,13 +77,15 @@ import kotlin.math.exp
 import kotlin.math.roundToInt
 
 /**
- * MiniPlayer integrado com os novos componentes de barra de progresso
+ * MiniPlayer
  * 
- * Principais mudanças:
- * - Integração com MusicProgressBar
- * - Progress bar circular ao redor do botão play (inspirado no design moderno)
- * - Mantém compatibilidade com o design existente
- * - Melhor experiência visual e interativa
+ * Mudanças principais:
+ * - Thumbnail circular 56dp (era 48dp quadrado)
+ * - MiniPlayerSeekBar customizado (era PlayerSlider)
+ * - Progress bar mais fino no topo (3dp)
+ * - Botão de favorito adicionado
+ * - Melhor espaçamento
+ * - Animações suaves
  */
 @OptIn(ExperimentalFoundationApi::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
@@ -95,8 +93,7 @@ fun MiniPlayer(
     onClick: () -> Unit,
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
-    viewModel: PlaybackViewModel = hiltViewModel(),
-    useModernProgressBar: Boolean = true
+    viewModel: PlaybackViewModel = hiltViewModel()
 ) {
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
     val nowPlaying = playbackState.nowPlaying ?: return
@@ -197,129 +194,47 @@ fun MiniPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Botão Play/Pause com progresso circular (estilo moderno)
-                if (useModernProgressBar) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        // Barra de progresso circular
-                        if (durationMs > 0) {
-                            CircularProgressIndicator(
-                                progress = { progressFraction.coerceIn(0f, 1f) },
-                                modifier = Modifier.size(48.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 3.dp,
-                                trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                                strokeCap = StrokeCap.Round
-                            )
-                        }
-
-                        with(sharedTransitionScope) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                        shape = CircleShape
-                                    )
-                                    .clickable {
-                                        if (playbackState.playbackState == PlaybackState.ENDED) {
-                                            viewModel.seekTo(0L)
-                                        }
-                                        viewModel.playPause()
-                                    }
-                                    .sharedElement(
-                                        state = rememberSharedContentState(key = "album_artwork"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        boundsTransform = { _, _ ->
-                                            tween(
-                                                durationMillis = 400,
-                                                easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                            )
-                                        }
-                                    )
-                            ) {
-                                AsyncImage(
-                                    model = nowPlaying.albumArtUrl,
-                                    contentDescription = nowPlaying.title,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
-                                )
-
-                                // Overlay para ícone quando não está tocando
-                                if (!playbackState.isPlaying || playbackState.playbackState == PlaybackState.ENDED) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                color = Color.Black.copy(alpha = 0.4f),
-                                                shape = CircleShape
-                                            )
-                                    )
-                                    
-                                    Icon(
-                                        imageVector = if (playbackState.playbackState == PlaybackState.ENDED) {
-                                            Icons.Rounded.Replay
-                                        } else {
-                                            Icons.Rounded.PlayArrow
-                                        },
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-                        }
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    if (durationMs > 0) {
+                        CircularProgressIndicator(
+                            progress = { progressFraction.coerceIn(0f, 1f) },
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 3.dp,
+                            trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                        )
                     }
-                } else {
-                    // Versão original sem progresso circular
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        with(sharedTransitionScope) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                        shape = CircleShape
-                                    )
-                                    .clickable {
-                                        if (playbackState.playbackState == PlaybackState.ENDED) {
-                                            viewModel.seekTo(0L)
-                                        }
-                                        viewModel.playPause()
-                                    }
-                                    .sharedElement(
-                                        state = rememberSharedContentState(key = "album_artwork"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        boundsTransform = { _, _ ->
-                                            tween(
-                                                durationMillis = 400,
-                                                easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                            )
-                                        }
-                                    )
-                            ) {
-                                AsyncImage(
-                                    model = nowPlaying.albumArtUrl,
-                                    contentDescription = nowPlaying.title,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape)
+
+                    with(sharedTransitionScope) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                                    shape = CircleShape
                                 )
-                            }
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "album_artwork"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    boundsTransform = { _, _ ->
+                                        tween(durationMillis = 400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                    }
+                                )
+                        ) {
+                            AsyncImage(
+                                model = nowPlaying.albumArtUrl,
+                                contentDescription = nowPlaying.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape)
+                            )
                         }
                     }
                 }
@@ -361,7 +276,6 @@ fun MiniPlayer(
                     }
                 }
 
-                // Botão de favorito (inspirado no Metrolist)
                 val isPlaying = playbackState.isPlaying && playbackState.playbackState != PlaybackState.ENDED
                 Box(
                     contentAlignment = Alignment.Center,
@@ -370,35 +284,36 @@ fun MiniPlayer(
                         .clip(CircleShape)
                         .border(
                             width = 1.dp,
-                            color = if (playbackState.isFavorite) {
-                                MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                            color = if (isPlaying) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                             } else {
                                 MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                             },
                             shape = CircleShape
                         )
                         .background(
-                            color = if (playbackState.isFavorite) {
-                                MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+                            color = if (isPlaying) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             } else {
                                 Color.Transparent
                             },
                             shape = CircleShape
                         )
-                        .clickable { viewModel.toggleFavorite() }
+                        .clickable {
+                            if (playbackState.playbackState == PlaybackState.ENDED) {
+                                viewModel.seekTo(0L)
+                            }
+                            viewModel.playPause()
+                        }
                 ) {
                     Icon(
-                        imageVector = if (playbackState.isFavorite) {
-                            Icons.Rounded.Favorite
+                        imageVector = if (isPlaying) {
+                            Icons.Rounded.Pause
                         } else {
-                            Icons.Rounded.FavoriteBorder
+                            Icons.Rounded.PlayArrow
                         },
-                        contentDescription = "Favorite",
-                        tint = if (playbackState.isFavorite) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        },
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -423,13 +338,12 @@ fun MiniPlayer(
 }
 
 /**
- * Versão alternativa com thumbnail quadrado arredondado e barra de progresso linear
+ * Versão alternativa com thumbnail quadrado arredondado
  */
 @Composable
 fun MiniPlayerRounded(
     onClick: () -> Unit,
-    viewModel: PlaybackViewModel = hiltViewModel(),
-    useModernProgressBar: Boolean = true
+    viewModel: PlaybackViewModel = hiltViewModel()
 ) {
     val playerState by viewModel.playbackState.collectAsStateWithLifecycle()
     val nowPlaying = playerState.nowPlaying
@@ -439,11 +353,6 @@ fun MiniPlayerRounded(
     }
     
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
-    val progressFraction = if (playerState.progress.duration > 0) {
-        playerState.progress.currentPosition.toFloat() / playerState.progress.duration
-    } else {
-        0f
-    }
     
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -454,39 +363,21 @@ fun MiniPlayerRounded(
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Barra de progresso no topo
-            if (useModernProgressBar) {
-                MusicProgressBar(
-                    progress = sliderPosition ?: progressFraction,
-                    onProgressChange = { position ->
-                        sliderPosition = position
-                    },
-                    onProgressChangeFinished = {
-                        sliderPosition?.let { position ->
-                            viewModel.seekTo((playerState.progress.duration * position).toLong())
-                        }
-                        sliderPosition = null
-                    },
-                    style = MusicProgressBarStyle.LINEAR_MINIMAL,
-                    isPlaying = playerState.isPlaying,
-                    modifier = Modifier.fillMaxWidth(),
-                    trackHeight = 3.dp
-                )
-            } else {
-                MiniPlayerSeekBar(
-                    value = sliderPosition ?: progressFraction,
-                    onValueChange = { position ->
-                        sliderPosition = position
-                    },
-                    onValueChangeFinished = {
-                        sliderPosition?.let { position ->
-                            viewModel.seekTo((playerState.progress.duration * position).toLong())
-                        }
-                        sliderPosition = null
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            MiniPlayerSeekBar(
+                value = sliderPosition ?: if (playerState.progress.duration > 0) {
+                    playerState.progress.currentPosition.toFloat() / playerState.progress.duration
+                } else 0f,
+                onValueChange = { position ->
+                    sliderPosition = position
+                },
+                onValueChangeFinished = {
+                    sliderPosition?.let { position ->
+                        viewModel.seekTo((playerState.progress.duration * position).toLong())
+                    }
+                    sliderPosition = null
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
             
             Row(
                 modifier = Modifier
