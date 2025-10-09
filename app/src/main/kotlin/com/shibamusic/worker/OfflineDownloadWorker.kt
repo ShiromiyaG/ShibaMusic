@@ -327,6 +327,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 bytesDownloaded = 0L, // Será atualizado pelo repositório
                 totalBytes = 0L,
                 errorMessage = errorMessage,
+                createdAt = Date(),
                 updatedAt = Date()
             )
             

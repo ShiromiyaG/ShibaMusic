@@ -102,7 +102,10 @@ class OfflineDownloadService : Service() {
                     status = DownloadStatus.DOWNLOADING,
                     progress = 0f,
                     bytesDownloaded = 0L,
-                    totalBytes = 0L
+                    totalBytes = 0L,
+                    errorMessage = null,
+                    createdAt = Date(),
+                    updatedAt = Date()
                 )
                 offlineDao.insertDownloadProgress(progress)
                 
@@ -209,6 +212,8 @@ class OfflineDownloadService : Service() {
                 progress = 1f,
                 bytesDownloaded = outputFile.length(),
                 totalBytes = fileLength.toLong(),
+                errorMessage = null,
+                createdAt = Date(),
                 updatedAt = Date()
             )
             offlineDao.updateDownloadProgress(completedProgress)
@@ -226,6 +231,7 @@ class OfflineDownloadService : Service() {
             bytesDownloaded = 0L,
             totalBytes = 0L,
             errorMessage = error.message,
+            createdAt = Date(),
             updatedAt = Date()
         )
         offlineDao.updateDownloadProgress(errorProgress)

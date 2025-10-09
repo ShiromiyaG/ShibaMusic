@@ -1,14 +1,22 @@
 package com.shibamusic.repository
 
 import android.content.Context
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 import com.shibamusic.data.dao.OfflineTrackDao
-import com.shibamusic.data.model.*
-import com.shibamusic.service.OfflineDownloadService
+import com.shibamusic.data.model.AudioQuality
+import com.shibamusic.data.model.DownloadProgress
+import com.shibamusic.data.model.DownloadStatus
+import com.shibamusic.data.model.OfflineTrack
+import com.shibamusic.worker.OfflineDownloadWorker
+import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import java.io.File
-import java.util.*
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,27 +73,56 @@ class OfflineRepository @Inject constructor(
         artist: String,
         album: String,
         duration: Long,
-        originalUrl: String,
         coverArtUrl: String? = null,
         quality: AudioQuality = AudioQuality.MEDIUM
     ) {
-        // Verifica se já não está baixado
-        if (isTrackAvailableOffline(trackId)) {
+        if (offlineDao.isTrackDownloaded(trackId)) {
             return
         }
-        
-        // Inicia o serviço de download
-        OfflineDownloadService.startDownload(context, trackId, originalUrl)
-        
-        // Cria entrada de progresso inicial
+
+    val baseUrl = Preferences.getInUseServerAddress() ?: return
+
+    val workManager = WorkManager.getInstance(context)
+    val workRequest = OfflineDownloadWorker.createDownloadRequest(
+                trackId = trackId,
+                title = title,
+                artist = artist,
+                album = album,
+                duration = duration,
+        baseUrl = baseUrl,
+                coverArtUrl = coverArtUrl,
+                quality = quality
+            )
+
+        enqueueWork(
+            workManager = workManager,
+            workRequest = workRequest,
+            uniqueWorkName = "offline_download_$trackId"
+        )
+
         val progress = DownloadProgress(
             trackId = trackId,
             status = DownloadStatus.PENDING,
             progress = 0f,
             bytesDownloaded = 0L,
-            totalBytes = 0L
+            totalBytes = 0L,
+            errorMessage = null,
+            createdAt = Date(),
+            updatedAt = Date()
         )
         offlineDao.insertDownloadProgress(progress)
+    }
+
+    private fun enqueueWork(
+        workManager: WorkManager,
+        workRequest: OneTimeWorkRequest,
+        uniqueWorkName: String
+    ) {
+        workManager.enqueueUniqueWork(
+            uniqueWorkName,
+            ExistingWorkPolicy.KEEP,
+            workRequest
+        )
     }
     
     /**
@@ -167,16 +204,12 @@ class OfflineRepository @Inject constructor(
      */
     suspend fun verifyOfflineIntegrity(): List<String> {
         val corruptedTracks = mutableListOf<String>()
-        val offlineTracks = offlineDao.getAllOfflineTracks()
-        
-        offlineTracks.collect { tracks ->
-            tracks.forEach { track ->
-                val file = File(track.localFilePath)
-                if (!file.exists() || file.length() == 0L) {
-                    corruptedTracks.add(track.id)
-                    // Remove entrada corrompida
-                    offlineDao.deleteOfflineTrack(track)
-                }
+        val tracks = offlineDao.getAllOfflineTracks().first()
+        tracks.forEach { track ->
+            val file = File(track.localFilePath)
+            if (!file.exists() || file.length() == 0L) {
+                corruptedTracks.add(track.id)
+                offlineDao.deleteOfflineTrack(track)
             }
         }
         
@@ -216,7 +249,8 @@ class OfflineRepository @Inject constructor(
             coverArtPath = coverArtPath,
             downloadedAt = Date(),
             fileSize = fileSize,
-            quality = quality
+            quality = quality,
+            codec = quality.codec
         )
         
         offlineDao.insertOfflineTrack(offlineTrack)
@@ -228,6 +262,8 @@ class OfflineRepository @Inject constructor(
             progress = 1f,
             bytesDownloaded = fileSize,
             totalBytes = fileSize,
+            errorMessage = null,
+            createdAt = Date(),
             updatedAt = Date()
         )
         offlineDao.updateDownloadProgress(completedProgress)

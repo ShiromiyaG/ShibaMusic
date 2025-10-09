@@ -1,27 +1,29 @@
 package com.shirou.shibamusic.ui.viewmodel
 
 import android.util.Log
-import androidx.work.WorkInfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.work.WorkInfo
 import com.shirou.shibamusic.data.repository.MusicRepository
-import com.shirou.shibamusic.worker.AlbumSyncScheduler
 import com.shirou.shibamusic.ui.model.AlbumItem
+import com.shirou.shibamusic.worker.AlbumSyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class LibraryAlbumsUiState(
-    val albums: List<AlbumItem> = emptyList(),
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val sortOption: AlbumSortOption = AlbumSortOption.TITLE_ASC
+    val sortOption: AlbumSortOption = AlbumSortOption.TITLE_ASC,
+    val isSyncing: Boolean = false,
+    val error: String? = null
 )
 
 enum class AlbumSortOption(val displayName: String) {
@@ -47,66 +49,32 @@ class LibraryAlbumsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LibraryAlbumsUiState())
     val uiState: StateFlow<LibraryAlbumsUiState> = _uiState.asStateFlow()
 
+    private val sortOptionFlow = MutableStateFlow(AlbumSortOption.TITLE_ASC)
+
+    val albums: Flow<PagingData<AlbumItem>> = sortOptionFlow
+        .flatMapLatest { option ->
+            val orderClause = buildOrderClause(option)
+            musicRepository.observeAlbumsPaged(orderClause)
+        }
+        .cachedIn(viewModelScope)
+
     private var hasRequestedSync = false
     private var syncInProgress = false
-    
+
     init {
         Log.d(TAG, "LibraryAlbumsViewModel initialized")
-        observeAlbums()
         observeSyncStatus()
         requestAlbumSync(force = false)
     }
-    
+
     fun loadAlbums(force: Boolean = false) {
         requestAlbumSync(force)
     }
 
-    private fun observeAlbums() {
-        viewModelScope.launch {
-            musicRepository
-                .observeAlbums()
-                .onEach { albums ->
-                    Log.d(TAG, "Album flow emitted ${albums.size} items")
-
-                    val sortedAlbums = sortAlbums(albums, _uiState.value.sortOption)
-
-                    if (albums.isEmpty()) {
-                        if (!hasRequestedSync) {
-                            requestAlbumSync(force = false)
-                        }
-
-                        _uiState.value = _uiState.value.copy(
-                            albums = emptyList(),
-                            isLoading = syncInProgress,
-                            error = null
-                        )
-                    } else {
-                        syncInProgress = false
-                        _uiState.value = _uiState.value.copy(
-                            albums = sortedAlbums,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                }
-                .catch { throwable ->
-                    Log.e(TAG, "Error observing albums", throwable)
-                    syncInProgress = false
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = throwable.message ?: "Failed to load albums"
-                    )
-                }
-                .collect()
-        }
-    }
-    
     fun changeSortOption(option: AlbumSortOption) {
-        val sortedAlbums = sortAlbums(_uiState.value.albums, option)
-        _uiState.value = _uiState.value.copy(
-            albums = sortedAlbums,
-            sortOption = option
-        )
+        if (option == _uiState.value.sortOption) return
+        sortOptionFlow.value = option
+        _uiState.value = _uiState.value.copy(sortOption = option)
     }
 
     private fun requestAlbumSync(force: Boolean) {
@@ -123,42 +91,37 @@ class LibraryAlbumsViewModel @Inject constructor(
         )
 
         _uiState.value = _uiState.value.copy(
-            isLoading = true,
+            isSyncing = true,
             error = null
         )
     }
 
     private fun observeSyncStatus() {
-        viewModelScope.launch {
-            albumSyncScheduler
-                .observeStatus()
-                .onEach { infos ->
-                    val isRunning = infos.any { info ->
-                        info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING
-                    }
-                    syncInProgress = isRunning
-
-                    if (!isRunning && _uiState.value.albums.isEmpty()) {
-                        _uiState.value = _uiState.value.copy(isLoading = false)
-                    }
+        albumSyncScheduler
+            .observeStatus()
+            .onEach { infos ->
+                val isRunning = infos.any { info ->
+                    info.state == WorkInfo.State.ENQUEUED || info.state == WorkInfo.State.RUNNING
                 }
-                .catch { throwable ->
-                    Log.e(TAG, "Error observing sync status", throwable)
-                }
-                .collect()
-        }
+                syncInProgress = isRunning
+                _uiState.value = _uiState.value.copy(isSyncing = isRunning)
+            }
+            .catch { throwable ->
+                Log.e(TAG, "Error observing sync status", throwable)
+                _uiState.value = _uiState.value.copy(error = throwable.message)
+            }
+            .launchIn(viewModelScope)
     }
-    
-    private fun sortAlbums(albums: List<AlbumItem>, option: AlbumSortOption): List<AlbumItem> {
-        if (albums.isEmpty()) return albums
+
+    private fun buildOrderClause(option: AlbumSortOption): String {
         return when (option) {
-            AlbumSortOption.TITLE_ASC -> albums.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.title })
-            AlbumSortOption.TITLE_DESC -> albums.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.title })
-            AlbumSortOption.ARTIST_ASC -> albums.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.artistName })
-            AlbumSortOption.ARTIST_DESC -> albums.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.artistName })
-            AlbumSortOption.YEAR_DESC -> albums.sortedByDescending { it.year ?: 0 }
-            AlbumSortOption.YEAR_ASC -> albums.sortedBy { it.year ?: 0 }
-            AlbumSortOption.RECENTLY_ADDED -> albums.asReversed()
+            AlbumSortOption.TITLE_ASC -> "ORDER BY title COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
+            AlbumSortOption.TITLE_DESC -> "ORDER BY title COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
+            AlbumSortOption.ARTIST_ASC -> "ORDER BY artist_name COLLATE NOCASE ASC, title COLLATE NOCASE ASC"
+            AlbumSortOption.ARTIST_DESC -> "ORDER BY artist_name COLLATE NOCASE DESC, title COLLATE NOCASE ASC"
+            AlbumSortOption.YEAR_DESC -> "ORDER BY COALESCE(year, 0) DESC, title COLLATE NOCASE ASC"
+            AlbumSortOption.YEAR_ASC -> "ORDER BY COALESCE(year, 0) ASC, title COLLATE NOCASE ASC"
+            AlbumSortOption.RECENTLY_ADDED -> "ORDER BY date_added DESC, title COLLATE NOCASE ASC"
         }
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shirou.shibamusic.ui.component.NavigationTitle
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
@@ -28,7 +29,7 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     playbackViewModel: PlaybackViewModel = hiltViewModel()
 ) {
-    val playbackState by playbackViewModel.playbackState.collectAsState()
+    val playbackState by playbackViewModel.playbackState.collectAsStateWithLifecycle()
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
     var showSortMenu by remember { mutableStateOf(false) }
     
@@ -63,7 +64,7 @@ fun LibraryScreen(
                     ) {
                         when (selectedTab) {
                             LibraryTab.SONGS -> songsViewModel?.let { vm ->
-                                val songsState by vm.uiState.collectAsState()
+                                val songsState by vm.uiState.collectAsStateWithLifecycle()
                                 com.shirou.shibamusic.ui.viewmodel.SongSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
@@ -78,7 +79,7 @@ fun LibraryScreen(
                                 }
                             }
                             LibraryTab.ALBUMS -> albumsViewModel?.let { vm ->
-                                val albumsState by vm.uiState.collectAsState()
+                                val albumsState by vm.uiState.collectAsStateWithLifecycle()
                                 com.shirou.shibamusic.ui.viewmodel.AlbumSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
@@ -93,7 +94,7 @@ fun LibraryScreen(
                                 }
                             }
                             LibraryTab.ARTISTS -> artistsViewModel?.let { vm ->
-                                val artistsState by vm.uiState.collectAsState()
+                                val artistsState by vm.uiState.collectAsStateWithLifecycle()
                                 com.shirou.shibamusic.ui.viewmodel.ArtistSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
@@ -108,7 +109,7 @@ fun LibraryScreen(
                                 }
                             }
                             LibraryTab.PLAYLISTS -> playlistsViewModel?.let { vm ->
-                                val playlistsState by vm.uiState.collectAsState()
+                                val playlistsState by vm.uiState.collectAsStateWithLifecycle()
                                 com.shirou.shibamusic.ui.viewmodel.PlaylistSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },

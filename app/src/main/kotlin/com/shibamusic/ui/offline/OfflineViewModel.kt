@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.shibamusic.data.model.*
 import com.shibamusic.player.OfflineMusicPlayer
 import com.shibamusic.repository.OfflineRepository
+import com.shibamusic.repository.OfflineStorageInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -58,7 +59,6 @@ class OfflineViewModel @Inject constructor(
         artist: String,
         album: String,
         duration: Long,
-        originalUrl: String,
         coverArtUrl: String? = null,
         quality: AudioQuality = AudioQuality.MEDIUM
     ) {
@@ -72,7 +72,6 @@ class OfflineViewModel @Inject constructor(
                     artist = artist,
                     album = album,
                     duration = duration,
-                    originalUrl = originalUrl,
                     coverArtUrl = coverArtUrl,
                     quality = quality
                 )
