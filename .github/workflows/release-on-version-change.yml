@@ -63,11 +63,11 @@ jobs:
       - name: Prepare Gradle
         run: chmod +x gradlew
 
-      # Decodificar e preparar keystore
+      # 🔧 FIX: Setup keystore with absolute path
       - name: Setup keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
-          echo "KEYSTORE_FILE=../keystore.jks" >> $GITHUB_ENV
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+          echo "KEYSTORE_FILE=$(pwd)/keystore.jks" >> $GITHUB_ENV
           echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
           echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
           echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
@@ -81,7 +81,7 @@ jobs:
           version_code="$(sed -n "s/^[[:space:]]*versionCode[[:space:]]*\\([0-9]*\\).*/\\1/p" app/build.gradle | head -n 1)"
 
           if [[ -z "$version_name" ]]; then
-            echo "Não foi possível extrair versionName de app/build.gradle" >&2
+            echo "Could not extract versionName from app/build.gradle" >&2
             exit 1
           fi
 
@@ -90,7 +90,7 @@ jobs:
           echo "VERSION_NAME=$version_name" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
 
-      # Build APK assinado
+      # 🔧 FIX: Build with direct environment variables
       - name: Build signed release APK
         run: |
           ./gradlew --stacktrace assembleRelease \
@@ -104,14 +104,14 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts
           
-          # APK principal
+          # Main APK
           cp app/build/outputs/apk/release/app-release.apk "artifacts/ShibaMusic-${VERSION_NAME}.apk"
           
-          # Gerar checksums
+          # Generate checksums
           cd artifacts
           sha256sum "ShibaMusic-${VERSION_NAME}.apk" > "ShibaMusic-${VERSION_NAME}.apk.sha256"
           
-          # Info do build
+          # Build info
           echo "Build Info:" > build-info.txt
           echo "Version: ${VERSION_NAME}" >> build-info.txt
           echo "Version Code: ${VERSION_CODE}" >> build-info.txt
@@ -156,59 +156,59 @@ jobs:
           {
             echo "## 🎵 ShibaMusic ${VERSION_NAME}"
             echo
-            echo "**Baixe o APK abaixo e instale no seu dispositivo Android.**"
+            echo "**Download the APK below and install it on your Android device.**"
             echo
-            echo "### 📋 Informações da Versão"
-            echo "- **Versão**: \`${VERSION_NAME}\`"
+            echo "### 📋 Version Information"
+            echo "- **Version**: \`${VERSION_NAME}\`"
             if [[ -n "${VERSION_CODE}" ]]; then
-              echo "- **Código da Versão**: \`${VERSION_CODE}\`"
+              echo "- **Version Code**: \`${VERSION_CODE}\`"
             fi
-            echo "- **Data**: $(date -u '+%d/%m/%Y %H:%M UTC')"
+            echo "- **Date**: $(date -u '+%Y-%m-%d %H:%M UTC')"
             if [[ -n "$compare_url" ]]; then
-              echo "- **Diff completo**: [$compare_url]($compare_url)"
+              echo "- **Full diff**: [$compare_url]($compare_url)"
             fi
             echo
 
             if [[ -n "$features" ]]; then
-              echo "### ✨ Novidades"
+              echo "### ✨ New Features"
               printf "%b" "$features"
               echo
             fi
 
             if [[ -n "$fixes" ]]; then
-              echo "### 🐛 Correções"
+              echo "### 🐛 Fixes"
               printf "%b" "$fixes"
               echo
             fi
 
             if [[ -n "$chores" ]]; then
-              echo "### 🛠️ Melhorias e Manutenção"
+              echo "### 🛠️ Improvements and Maintenance"
               printf "%b" "$chores"
               echo
             fi
 
             if [[ -n "$others" ]]; then
-              echo "### 📦 Outras Alterações"
+              echo "### 📦 Other Changes"
               printf "%b" "$others"
               echo
             fi
 
             if [[ -z "$features$fixes$chores$others" ]]; then
-              echo "### 📝 Alterações"
-              echo "Nenhuma alteração de commit registrada desde a última versão."
+              echo "### 📝 Changes"
+              echo "No commit changes recorded since the last release."
               echo
             fi
 
-            echo "### 🔐 Verificação"
-            echo "Verifique a integridade do arquivo usando o checksum SHA256 fornecido."
+            echo "### 🔐 Verification"
+            echo "Check the integrity of the file using the provided SHA256 checksum."
             echo
-            echo "### 📱 Instalação"
-            echo "1. Baixe o arquivo \`ShibaMusic-${VERSION_NAME}.apk\`"
-            echo "2. Habilite \"Origens desconhecidas\" nas configurações do Android"
-            echo "3. Instale o APK"
+            echo "### 📱 Installation"
+            echo "1. Download the file \`ShibaMusic-${VERSION_NAME}.apk\`"
+            echo "2. Enable 'Unknown sources' in your Android settings"
+            echo "3. Install the APK"
             echo
             echo "---"
-            echo "🤖 *Release gerado automaticamente*"
+            echo "🤖 *Release generated automatically*"
           } > release_notes.md
 
           echo "body_path=release_notes.md" >> "$GITHUB_OUTPUT"
@@ -228,8 +228,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Limpar keystore por segurança
       - name: Cleanup keystore
         if: always()
         run: |
-          rm -f app/keystore.jks
+          rm -f keystore.jks
