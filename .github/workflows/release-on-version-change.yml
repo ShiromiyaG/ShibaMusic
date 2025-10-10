@@ -105,24 +105,88 @@ jobs:
             -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 
+      - name: Find and verify APK
+        run: |
+          echo "🔍 Looking for APK files..."
+          
+          # Look for all APKs
+          echo "📁 All found APKs:"
+          find . -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+          
+          # Check output directory
+          echo "📂 Contents of build/outputs directory:"
+          find app/build/outputs -type f 2>/dev/null || echo "build/outputs directory does not exist"
+          
+          # Check complete structure
+          echo "🏗️ Build directory structure:"
+          ls -la app/build/ 2>/dev/null || echo "Build directory does not exist"
+
       - name: Rename and prepare artifacts
         run: |
           set -euo pipefail
           mkdir -p artifacts
           
-          # Main APK
-          cp app/build/outputs/apk/release/app-release.apk "artifacts/ShibaMusic-${VERSION_NAME}.apk"
+          # Find the generated APK (may be in different location)
+          APK_FILE=""
+          
+          # Possible APK locations
+          POSSIBLE_LOCATIONS=(
+            "app/build/outputs/apk/release/app-release.apk"
+            "app/build/outputs/apk/shibamusicRelease/app-shibamusicRelease.apk"
+            "app/build/outputs/apk/shibamusicRelease/app-shibamusicRelease-release.apk"
+            "app/build/outputs/apk/shibamusic/release/app-shibamusic-release.apk"
+          )
+          
+          # Search APK in known locations
+          for location in "${POSSIBLE_LOCATIONS[@]}"; do
+            if [ -f "$location" ]; then
+              APK_FILE="$location"
+              echo "✅ APK found at: $APK_FILE"
+              break
+            fi
+          done
+          
+          # If not found, look for any release APK
+          if [ -z "$APK_FILE" ]; then
+            echo "🔍 Looking for any release APK..."
+            APK_FILE=$(find app/build -name "*release*.apk" -type f | head -1)
+          fi
+          
+          # If still not found, look for any APK
+          if [ -z "$APK_FILE" ]; then
+            echo "🔍 Looking for any APK..."
+            APK_FILE=$(find app/build -name "*.apk" -type f | head -1)
+          fi
+          
+          if [ -z "$APK_FILE" ] || [ ! -f "$APK_FILE" ]; then
+            echo "❌ No APK was found!"
+            echo "📋 Listing all contents of app/build:"
+            find app/build -type f -name "*.apk" 2>/dev/null || echo "No APK files exist"
+            exit 1
+          fi
+          
+          echo "📱 Copying APK: $APK_FILE"
+          cp "$APK_FILE" "artifacts/ShibaMusic-${VERSION_NAME}.apk"
           
           # Generate checksums
           cd artifacts
           sha256sum "ShibaMusic-${VERSION_NAME}.apk" > "ShibaMusic-${VERSION_NAME}.apk.sha256"
           
           # Build info
-          echo "Build Info:" > build-info.txt
-          echo "Version: ${VERSION_NAME}" >> build-info.txt
-          echo "Version Code: ${VERSION_CODE}" >> build-info.txt
-          echo "Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> build-info.txt
-          echo "Commit: ${{ github.sha }}" >> build-info.txt
+          APK_SIZE=$(stat -c%s "ShibaMusic-${VERSION_NAME}.apk" 2>/dev/null | numfmt --to=iec 2>/dev/null || echo "Unknown")
+          
+          cat > build-info.txt << EOF
+          Build Info:
+          Version: ${VERSION_NAME}
+          Version Code: ${VERSION_CODE}
+          Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Commit: ${{ github.sha }}
+          APK Size: ${APK_SIZE}
+          APK Source: ${APK_FILE}
+          EOF
+
+          echo "✅ Artifacts prepared:"
+          ls -la
 
       - name: Generate changelog
         id: changelog
