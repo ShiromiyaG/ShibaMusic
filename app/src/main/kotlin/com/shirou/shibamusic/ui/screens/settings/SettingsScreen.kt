@@ -16,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.foundation.layout.WindowInsets
 import com.shibamusic.data.model.AudioQuality
 import com.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.helper.ThemeHelper
@@ -39,6 +41,7 @@ fun SettingsScreen(
     var selectedDownloadQuality by remember { mutableStateOf(Preferences.getOfflineDownloadQuality()) }
     var showDownloadQualityDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     
     Scaffold(
         topBar = {
@@ -51,7 +54,8 @@ fun SettingsScreen(
                             contentDescription = "Back"
                         )
                     }
-                }
+                },
+                windowInsets = WindowInsets(0.dp)
             )
         }
     ) { paddingValues ->
@@ -257,15 +261,6 @@ fun SettingsScreen(
             // Cache Section
             SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_storage_title)) {
                 SettingsItem(
-                    icon = Icons.Rounded.Storage,
-                    title = stringResource(com.shirou.shibamusic.R.string.settings_cache_size_title),
-                    subtitle = stringResource(com.shirou.shibamusic.R.string.settings_cache_size_subtitle),
-                    onClick = { /* TODO: Show cache management */ }
-                )
-                
-                HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
-
-                SettingsItem(
                     icon = Icons.Rounded.LibraryMusic,
                     title = "Qualidade dos downloads offline",
                     subtitle = selectedDownloadQuality.toDownloadLabel(),
@@ -361,7 +356,7 @@ fun SettingsScreen(
                     icon = Icons.Rounded.Code,
                     title = stringResource(com.shirou.shibamusic.R.string.settings_github_title_item),
                     subtitle = stringResource(com.shirou.shibamusic.R.string.settings_github_subtitle),
-                    onClick = { /* TODO: Open GitHub */ }
+                    onClick = { uriHandler.openUri("https://github.com/ShiromiyaG/ShibaMusic") }
                 )
             }
             

@@ -48,9 +48,6 @@
             android:id="@+id/action_homeFragment_to_albumListPageFragment"
             app:destination="@id/albumListPageFragment" />
         <action
-            android:id="@+id/action_homeFragment_to_settingsFragment"
-            app:destination="@id/settingsFragment" />
-        <action
             android:id="@+id/action_homeFragment_to_albumPageFragment"
             app:destination="@id/albumPageFragment" />
         <action
@@ -99,9 +96,6 @@
             android:id="@+id/action_libraryFragment_to_playlistPageFragment"
             app:destination="@id/playlistPageFragment" />
         <action
-            android:id="@+id/action_libraryFragment_to_settingsFragment"
-            app:destination="@id/settingsFragment" />
-        <action
             android:id="@+id/action_libraryFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
         <action
@@ -129,9 +123,6 @@
             android:id="@+id/action_downloadFragment_to_artistListPageFragment"
             app:destination="@id/artistListPageFragment" />
         <action
-            android:id="@+id/action_downloadFragment_to_settingsFragment"
-            app:destination="@id/settingsFragment" />
-        <action
             android:id="@+id/action_downloadFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
         <action
@@ -140,17 +131,6 @@
         <action
             android:id="@+id/action_downloadFragment_to_playlistCatalogueFragment"
             app:destination="@id/playlistCatalogueFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.shirou.shibamusic.ui.fragment.SettingsFragment"
-        android:label="SettingsFragment"
-        tools:layout="@layout/fragment_settings">
-        <action
-            android:id="@+id/action_settingsFragment_to_loginFragment"
-            app:destination="@id/loginFragment"
-            app:popUpTo="@id/homeFragment"
-            app:popUpToInclusive="true" />
     </fragment>
     <fragment
         android:id="@+id/searchFragment"

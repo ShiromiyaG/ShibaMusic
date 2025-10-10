@@ -29,16 +29,6 @@ android {
             dimension = "default"
             applicationId 'com.shirou.shibamusic'
         }
-
-        notquitemy {
-            dimension = "default"
-            applicationId "com.shirou.notquitemy.shibamusic"
-        }
-
-        play {
-            dimension = "default"
-            applicationId "com.shirou.play.shibamusic"
-        }
     }
 
     buildTypes {
@@ -171,7 +161,7 @@ dependencies {
     implementation 'androidx.media3:media3-exoplayer-hls:1.5.1'
     implementation 'androidx.media3:media3-cast:1.5.1'
     implementation 'androidx.media3:media3-datasource:1.5.1'
-    playImplementation 'androidx.media3:media3-cast:1.5.1'
+    implementation 'androidx.media3:media3-cast:1.5.1'
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'

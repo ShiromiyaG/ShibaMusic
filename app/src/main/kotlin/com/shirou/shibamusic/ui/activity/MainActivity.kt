@@ -342,7 +342,6 @@ class MainActivity : BaseActivity() {
 
             when (currentDestinationId) {
                 R.id.landingFragment -> controller.navigate(R.id.action_landingFragment_to_loginFragment)
-                R.id.settingsFragment -> controller.navigate(R.id.action_settingsFragment_to_loginFragment)
                 R.id.homeFragment -> controller.navigate(R.id.action_homeFragment_to_loginFragment)
             }
         } catch (e: Exception) {
