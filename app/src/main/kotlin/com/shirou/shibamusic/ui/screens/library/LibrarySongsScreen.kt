@@ -78,11 +78,30 @@ fun LibrarySongsContent(
         val refreshState = songs.loadState.refresh
         val appendState = songs.loadState.append
         val listState = rememberLazyListState()
+        var restoreTopAfterRefresh by remember { mutableStateOf(false) }
 
         val isInitialLoading = refreshState is LoadState.Loading && songs.itemCount == 0
         val isRefreshing = refreshState is LoadState.Loading && songs.itemCount > 0
         val isInitialError = refreshState is LoadState.Error && songs.itemCount == 0
         val emptyContent = refreshState is LoadState.NotLoading && songs.itemCount == 0
+
+        LaunchedEffect(refreshState) {
+            when (refreshState) {
+                is LoadState.Loading -> {
+                    restoreTopAfterRefresh =
+                        listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
+                }
+                is LoadState.NotLoading -> {
+                    if (restoreTopAfterRefresh &&
+                        (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0)
+                    ) {
+                        listState.scrollToItem(0)
+                    }
+                    restoreTopAfterRefresh = false
+                }
+                is LoadState.Error -> restoreTopAfterRefresh = false
+            }
+        }
 
         Column(
             modifier = modifier

@@ -67,11 +67,30 @@ fun LibraryAlbumsContent(
         val refreshState = albums.loadState.refresh
         val appendState = albums.loadState.append
         val gridState = rememberLazyGridState()
+        var restoreTopAfterRefresh by remember { mutableStateOf(false) }
 
         val isInitialLoading = refreshState is LoadState.Loading && albums.itemCount == 0
         val isRefreshing = refreshState is LoadState.Loading && albums.itemCount > 0
         val isInitialError = refreshState is LoadState.Error && albums.itemCount == 0
         val emptyContent = refreshState is LoadState.NotLoading && albums.itemCount == 0
+
+        LaunchedEffect(refreshState) {
+            when (refreshState) {
+                is LoadState.Loading -> {
+                    restoreTopAfterRefresh =
+                        gridState.firstVisibleItemIndex == 0 && gridState.firstVisibleItemScrollOffset == 0
+                }
+                is LoadState.NotLoading -> {
+                    if (restoreTopAfterRefresh &&
+                        (gridState.firstVisibleItemIndex != 0 || gridState.firstVisibleItemScrollOffset != 0)
+                    ) {
+                        gridState.scrollToItem(0)
+                    }
+                    restoreTopAfterRefresh = false
+                }
+                is LoadState.Error -> restoreTopAfterRefresh = false
+            }
+        }
 
         Column(
             modifier = modifier
