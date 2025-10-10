@@ -10,10 +10,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -442,53 +440,45 @@ private fun PlayerScreenContent(
                     .padding(vertical = 24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                with(sharedTransitionScope) {
-                    val cornerProgress = rememberSharedAlbumCornerProgress(
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        visibleProgress = 0f,
-                        hiddenProgress = 1f
-                    )
-                    val sharedShape = rememberSharedAlbumShape(cornerProgress = cornerProgress)
+                val cornerProgress = rememberSharedAlbumCornerProgress(
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    visibleProgress = 0f,
+                    hiddenProgress = 1f
+                )
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .aspectRatio(1f)
-                            .skipToLookaheadSize()
-                                .sharedElement(
-                                state = rememberSharedContentState(key = sharedElementKey),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                boundsTransform = { _, _ ->
-                                    tween(durationMillis = 400, easing = FastOutSlowInEasing)
-                                }
+                val sharedContentState = with(sharedTransitionScope) {
+                    rememberSharedContentState(key = sharedElementKey)
+                }
+
+                SharedAlbumArtwork(
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    sharedContentState = sharedContentState,
+                    cornerProgress = cornerProgress,
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .aspectRatio(1f),
+                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    tonalElevation = 8.dp
+                ) {
+                    if (thumbnailUrl != null) {
+                        AsyncImage(
+                            model = thumbnailUrl,
+                            contentDescription = title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.MusicNote,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
-                            .renderInSharedTransitionScopeOverlay(
-                                renderInOverlay = { isTransitionActive },
-                                zIndexInOverlay = 1f
-                            ),
-                        shape = sharedShape,
-                        tonalElevation = 8.dp,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ) {
-                        if (thumbnailUrl != null) {
-                            AsyncImage(
-                                model = thumbnailUrl,
-                                contentDescription = title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.MusicNote,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
-                            }
                         }
                     }
                 }

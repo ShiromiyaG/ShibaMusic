@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -211,46 +210,31 @@ fun MiniPlayer(
                         )
                     }
 
-                    with(sharedTransitionScope) {
-                        val cornerProgress = rememberSharedAlbumCornerProgress(
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            visibleProgress = 1f,
-                            hiddenProgress = 0f
-                        )
-                        val sharedShape = rememberSharedAlbumShape(cornerProgress = cornerProgress)
+                    val cornerProgress = rememberSharedAlbumCornerProgress(
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        visibleProgress = 1f,
+                        hiddenProgress = 0f
+                    )
 
-                        Surface(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = sharedElementKey),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    boundsTransform = { _, _ ->
-                                        tween(
-                                            durationMillis = 400,
-                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                        )
-                                    }
-                                )
-                                .renderInSharedTransitionScopeOverlay(
-                                    renderInOverlay = { isTransitionActive },
-                                    zIndexInOverlay = 1f
-                                ),
-                            shape = sharedShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                            border = BorderStroke(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-                            ),
-                            tonalElevation = 0.dp
-                        ) {
-                            AsyncImage(
-                                model = nowPlaying.getThumbnailUrl(),
-                                contentDescription = nowPlaying.title,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                    val sharedContentState = with(sharedTransitionScope) {
+                        rememberSharedContentState(key = sharedElementKey)
+                    }
+
+                    SharedAlbumArtwork(
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedContentState = sharedContentState,
+                        cornerProgress = cornerProgress,
+                        modifier = Modifier.size(40.dp),
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                    ) {
+                        AsyncImage(
+                            model = nowPlaying.getThumbnailUrl(),
+                            contentDescription = nowPlaying.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
 
                     Box(

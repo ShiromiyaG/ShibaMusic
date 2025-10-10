@@ -2,19 +2,25 @@ package com.shirou.shibamusic.ui.player
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -96,5 +102,40 @@ private class SharedAlbumShape(
                 radiusY = cornerRadius.y
             )
         )
+    }
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+internal fun SharedAlbumArtwork(
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedContentState: SharedTransitionScope.SharedContentState,
+    cornerProgress: Float,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color,
+    borderColor: Color? = null,
+    tonalElevation: Dp = 0.dp,
+    content: @Composable () -> Unit
+) {
+    val shape = rememberSharedAlbumShape(cornerProgress = cornerProgress)
+
+    with(sharedTransitionScope) {
+        Surface(
+            modifier = modifier
+                .sharedElement(
+                    state = sharedContentState,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    boundsTransform = { _, _ ->
+                        tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                    }
+                ),
+            shape = shape,
+            color = backgroundColor,
+            tonalElevation = tonalElevation,
+            border = borderColor?.let { BorderStroke(1.dp, it) }
+        ) {
+            content()
+        }
     }
 }
