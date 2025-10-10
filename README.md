@@ -52,4 +52,4 @@ based on the `Tempo` music client by `CappielloAntonio`.
 ---
 
 This app is based on [Tempo](https://github.com/eddyizm/tempo) 
-by CappielloAntonio, licensed under GPL-3.0.
+by eddyizm, licensed under GPL-3.0.
