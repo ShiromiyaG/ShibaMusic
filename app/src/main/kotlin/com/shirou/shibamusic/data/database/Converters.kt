@@ -1,9 +1,9 @@
-package com.shibamusic.data.database
+package com.shirou.shibamusic.data.database
 
 import androidx.room.TypeConverter
-import com.shibamusic.data.model.AudioCodec
-import com.shibamusic.data.model.AudioQuality
-import com.shibamusic.data.model.DownloadStatus
+import com.shirou.shibamusic.data.model.AudioCodec
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.DownloadStatus
 import java.util.Date
 
 /**

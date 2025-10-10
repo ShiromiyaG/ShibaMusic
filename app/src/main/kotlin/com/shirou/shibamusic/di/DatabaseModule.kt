@@ -5,8 +5,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
-import com.shibamusic.data.dao.OfflineTrackDao
-import com.shibamusic.data.database.ShibaMusicDatabase
+import com.shirou.shibamusic.data.dao.OfflineTrackDao
+import com.shirou.shibamusic.data.database.ShibaMusicDatabase
 import com.shirou.shibamusic.data.database.ShibaMusicLocalDatabase
 import com.shirou.shibamusic.data.database.dao.AlbumDao
 import com.shirou.shibamusic.data.database.dao.ArtistDao

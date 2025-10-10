@@ -1,17 +1,16 @@
-package com.shibamusic.repository
+package com.shirou.shibamusic.repository
 
 import android.content.Context
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
-import com.shibamusic.data.dao.OfflineTrackDao
-import com.shibamusic.data.model.AudioCodec
-import com.shibamusic.data.model.AudioQuality
-import com.shibamusic.data.model.DownloadProgress
-import com.shibamusic.data.model.DownloadStatus
-import com.shibamusic.data.model.OfflineTrack
-import com.shibamusic.worker.OfflineDownloadWorker
-import com.shirou.shibamusic.repository.DownloadRepository
+import com.shirou.shibamusic.data.dao.OfflineTrackDao
+import com.shirou.shibamusic.data.model.AudioCodec
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.DownloadProgress
+import com.shirou.shibamusic.data.model.DownloadStatus
+import com.shirou.shibamusic.data.model.OfflineTrack
+import com.shirou.shibamusic.worker.OfflineDownloadWorker
 import com.shirou.shibamusic.service.DownloaderManager
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.util.DownloadUtil

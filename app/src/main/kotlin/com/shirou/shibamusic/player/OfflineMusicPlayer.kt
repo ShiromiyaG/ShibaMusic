@@ -1,14 +1,11 @@
-package com.shibamusic.player
+package com.shirou.shibamusic.player
 
 import android.content.Context
 import android.net.Uri
 import androidx.media3.common.*
-import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.MediaSource
-import androidx.media3.exoplayer.source.ProgressiveMediaSource
-import com.shibamusic.data.model.OfflineTrack
-import com.shibamusic.repository.OfflineRepository
+import com.shirou.shibamusic.data.model.OfflineTrack
+import com.shirou.shibamusic.repository.OfflineRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.Dispatchers

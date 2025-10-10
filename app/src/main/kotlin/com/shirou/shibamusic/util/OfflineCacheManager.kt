@@ -1,8 +1,8 @@
-package com.shibamusic.utils
+package com.shirou.shibamusic.util
 
 import android.content.Context
-import com.shibamusic.data.dao.OfflineTrackDao
-import com.shibamusic.data.model.OfflineTrack
+import com.shirou.shibamusic.data.dao.OfflineTrackDao
+import com.shirou.shibamusic.data.model.OfflineTrack
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

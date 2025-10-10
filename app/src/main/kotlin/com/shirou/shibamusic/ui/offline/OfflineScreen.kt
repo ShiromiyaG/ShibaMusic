@@ -1,4 +1,4 @@
-package com.shibamusic.ui.offline
+package com.shirou.shibamusic.ui.offline
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,15 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.shibamusic.data.model.DownloadProgress
-import com.shibamusic.data.model.DownloadStatus
-import com.shibamusic.data.model.OfflineTrack
+import com.shirou.shibamusic.data.model.DownloadProgress
+import com.shirou.shibamusic.data.model.DownloadStatus
+import com.shirou.shibamusic.data.model.OfflineTrack
+import com.shirou.shibamusic.repository.OfflineStorageInfo
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +37,7 @@ fun OfflineScreen(
     LaunchedEffect(uiState.error, uiState.message) {
         // Limpa mensagens após 3 segundos
         if (uiState.error != null || uiState.message != null) {
-            kotlinx.coroutines.delay(3000)
+            delay(3000)
             viewModel.clearMessages()
         }
     }
@@ -129,7 +131,7 @@ fun OfflineScreen(
 
 @Composable
 fun OfflineStorageCard(
-    storageInfo: com.shibamusic.repository.OfflineStorageInfo?,
+    storageInfo: OfflineStorageInfo?,
     onClearAll: () -> Unit,
     onVerifyIntegrity: () -> Unit,
     onPlayAll: () -> Unit,
@@ -350,7 +352,7 @@ fun EmptyOfflineState(
             text = "Baixe suas músicas favoritas para ouvir offline",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
     }
 }

@@ -1,14 +1,22 @@
-package com.shibamusic.worker
+package com.shirou.shibamusic.worker
 
 import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
 import androidx.hilt.work.HiltWorker
-import androidx.work.*
-import com.shibamusic.data.dao.OfflineTrackDao
-import com.shibamusic.data.model.*
-import com.shibamusic.repository.OfflineRepository
+import androidx.work.Constraints
+import androidx.work.CoroutineWorker
+import androidx.work.Data
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkerParameters
 import com.shirou.shibamusic.App
+import com.shirou.shibamusic.data.dao.OfflineTrackDao
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.DownloadProgress
+import com.shirou.shibamusic.data.model.DownloadStatus
+import com.shirou.shibamusic.repository.OfflineRepository
 import com.shirou.shibamusic.util.Util
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -18,7 +26,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.*
+import java.util.Date
 import java.util.zip.GZIPInputStream
 
 /**
@@ -32,7 +40,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
     private val offlineDao: OfflineTrackDao,
     private val offlineRepository: OfflineRepository
 ) : CoroutineWorker(context, workerParams) {
-    
+
     companion object {
         private const val KEY_TRACK_ID = "track_id"
         private const val KEY_TITLE = "title"
@@ -42,7 +50,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
         private const val KEY_BASE_URL = "base_url"
         private const val KEY_COVER_ART_URL = "cover_art_url"
         private const val KEY_QUALITY = "quality"
-        
+
         /**
          * Cria uma requisição de download para ser executada pelo WorkManager
          */
@@ -66,7 +74,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 .putString(KEY_COVER_ART_URL, coverArtUrl)
                 .putString(KEY_QUALITY, quality.name)
                 .build()
-            
+
             return OneTimeWorkRequestBuilder<OfflineDownloadWorker>()
                 .setInputData(inputData)
                 .setConstraints(
@@ -80,7 +88,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 .build()
         }
     }
-    
+
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             val trackId = inputData.getString(KEY_TRACK_ID) ?: return@withContext Result.failure()
@@ -92,12 +100,12 @@ class OfflineDownloadWorker @AssistedInject constructor(
             val coverArtUrl = inputData.getString(KEY_COVER_ART_URL)
             val qualityName = inputData.getString(KEY_QUALITY) ?: AudioQuality.MEDIUM.name
             val quality = AudioQuality.valueOf(qualityName)
-            
+
             // Verifica se já está baixado
             if (offlineRepository.isTrackAvailableOffline(trackId)) {
                 return@withContext Result.success()
             }
-            
+
             // Atualiza status para downloading
             updateDownloadProgress(
                 trackId = trackId,
@@ -106,10 +114,10 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 bytesDownloaded = 0L,
                 totalBytes = 0L
             )
-            
+
             // Constrói URL de download com transcodificação
             val downloadUrl = buildDownloadUrl(baseUrl, trackId, quality)
-            
+
             // Executa o download
             val downloadResult = downloadTrack(
                 trackId = trackId,
@@ -123,7 +131,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     bytesDownloaded = bytesDownloaded,
                     totalBytes = totalBytes
                 )
-                
+
                 setProgressAsync(
                     Data.Builder()
                         .putString("track_id", trackId)
@@ -134,11 +142,11 @@ class OfflineDownloadWorker @AssistedInject constructor(
                         .build()
                 )
             }
-            
+
             if (downloadResult != null) {
                 // Download de capa se disponível
                 val coverArtPath = coverArtUrl?.let { downloadCoverArt(trackId, it) }
-                
+
                 // Completa o download
                 offlineRepository.completeDownload(
                     trackId = trackId,
@@ -162,7 +170,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                         .putString("codec", quality.codec.displayName)
                         .build()
                 )
-                
+
                 Result.success(
                     Data.Builder()
                         .putString("track_id", trackId)
@@ -181,18 +189,21 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     totalBytes = 0L,
                     errorMessage = "Falha ao baixar arquivo de áudio ${quality.codec.displayName}"
                 )
-                
+
                 Result.failure(
                     Data.Builder()
                         .putString("track_id", trackId)
-                        .putString("error", "Falha ao baixar arquivo de áudio ${quality.codec.displayName}")
+                        .putString(
+                            "error",
+                            "Falha ao baixar arquivo de áudio ${quality.codec.displayName}"
+                        )
                         .build()
                 )
             }
-            
+
         } catch (e: Exception) {
             val trackId = inputData.getString(KEY_TRACK_ID)
-            
+
             trackId?.let {
                 updateDownloadProgress(
                     trackId = it,
@@ -203,7 +214,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     errorMessage = e.message
                 )
             }
-            
+
             Result.failure(
                 Data.Builder()
                     .putString("track_id", trackId)
@@ -212,12 +223,12 @@ class OfflineDownloadWorker @AssistedInject constructor(
             )
         }
     }
-    
+
     /**
      * Constrói a URL de download com parâmetros de transcodificação para Opus
      */
     private fun buildDownloadUrl(baseUrl: String, trackId: String, quality: AudioQuality): String {
-        val subsonicClient = App.getSubsonicClientInstance(false)
+        val subsonicClient = App.Companion.getSubsonicClientInstance(false)
         val params = subsonicClient.params
 
         val uriBuilder = if (baseUrl.isNotBlank()) {
@@ -270,19 +281,19 @@ class OfflineDownloadWorker @AssistedInject constructor(
             connection.setRequestProperty("Accept", quality.codec.downloadMimeType)
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.connect()
-            
+
             val totalBytes = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
-            
+
             val musicDir = File(context.filesDir, "offline_music")
             if (!musicDir.exists()) musicDir.mkdirs()
-            
+
             outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
-            
+
             var totalDownloaded = 0L
             var lastProgress = 0f
             var lastUpdateAt = SystemClock.elapsedRealtime()
             onProgress(0L, totalBytes, 0f)
-            
+
             val rawInputStream = connection.inputStream
             val inputStream = if (connection.contentEncoding.equals("gzip", true)) {
                 GZIPInputStream(rawInputStream)
@@ -294,23 +305,24 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 FileOutputStream(outputFile).use { output ->
                     val buffer = ByteArray(64 * 1024)
                     var count: Int
-                    
+
                     while (input.read(buffer).also { count = it } != -1) {
                         if (isStopped) {
                             outputFile?.delete()
                             connection?.disconnect()
                             return@withContext null
                         }
-                        
+
                         output.write(buffer, 0, count)
                         totalDownloaded += count
-                        
+
                         val progress = if (totalBytes > 0) {
                             (totalDownloaded.toDouble() / totalBytes.toDouble()).toFloat()
                         } else 0f
-                        
+
                         val now = SystemClock.elapsedRealtime()
-                        val shouldEmit = (progress - lastProgress) >= 0.02f || (now - lastUpdateAt) >= 500L
+                        val shouldEmit =
+                            (progress - lastProgress) >= 0.02f || (now - lastUpdateAt) >= 500L
                         if (shouldEmit) {
                             onProgress(totalDownloaded, totalBytes, progress.coerceIn(0f, 1f))
                             lastProgress = progress
@@ -319,7 +331,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     }
                 }
             }
-            
+
             onProgress(totalDownloaded, totalBytes, 1f)
             connection?.disconnect()
             outputFile
@@ -330,7 +342,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
             null
         }
     }
-    
+
     /**
      * Faz download da capa do álbum
      */
@@ -341,28 +353,28 @@ class OfflineDownloadWorker @AssistedInject constructor(
         try {
             val connection = URL(coverArtUrl).openConnection() as HttpURLConnection
             connection.connect()
-            
+
             // Cria diretório para capas
             val coversDir = File(context.filesDir, "offline_covers")
             if (!coversDir.exists()) coversDir.mkdirs()
-            
+
             val outputFile = File(coversDir, "$trackId.jpg")
-            
+
             connection.inputStream.use { input ->
                 FileOutputStream(outputFile).use { output ->
                     input.copyTo(output)
                 }
             }
-            
+
             connection.disconnect()
             outputFile.absolutePath
-            
+
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
     }
-    
+
     /**
      * Atualiza o progresso do download no banco de dados
      */
@@ -385,7 +397,7 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 errorMessage = errorMessage,
                 updatedAt = now
             )
-            
+
             if (updatedRows == 0) {
                 offlineDao.insertDownloadProgress(
                     DownloadProgress(

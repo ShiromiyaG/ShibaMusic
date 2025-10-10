@@ -2,7 +2,7 @@ package com.shirou.shibamusic.util
 
 import androidx.media3.common.Player
 import com.google.gson.Gson
-import com.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.AudioQuality
 import com.shirou.shibamusic.App
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.model.HomeSector

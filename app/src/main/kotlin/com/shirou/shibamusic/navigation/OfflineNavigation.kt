@@ -1,9 +1,8 @@
-package com.shibamusic.navigation
+package com.shirou.shibamusic.navigation
 
-import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.shibamusic.ui.offline.OfflineScreen
+import com.shirou.shibamusic.ui.offline.OfflineScreen
 
 /**
  * Rota para a tela offline

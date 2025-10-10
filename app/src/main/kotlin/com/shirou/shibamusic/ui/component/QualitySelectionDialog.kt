@@ -1,5 +1,6 @@
-package com.shibamusic.ui.components
+package com.shirou.shibamusic.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
@@ -11,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.shibamusic.data.model.AudioCodec
-import com.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.AudioCodec
+import com.shirou.shibamusic.data.model.AudioQuality
 
 /**
  * Diálogo para seleção de qualidade de download
@@ -155,7 +156,7 @@ fun QualityOption(
         ),
         border = if (isSelected) {
             CardDefaults.outlinedCardBorder().copy(
-                brush = androidx.compose.foundation.BorderStroke(
+                brush = BorderStroke(
                     2.dp,
                     MaterialTheme.colorScheme.primary
                 ).brush

@@ -2,7 +2,6 @@ package com.shirou.shibamusic.ui.screens.library
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -22,7 +21,7 @@ import com.shirou.shibamusic.ui.model.SongItem
 import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel
 import com.shirou.shibamusic.ui.viewmodel.SongSortOption
-import com.shibamusic.data.model.DownloadProgress
+import com.shirou.shibamusic.data.model.DownloadProgress
 
 /**
  * Library Songs Screen

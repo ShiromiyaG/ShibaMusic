@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.shibamusic.ui.offline.OfflineViewModel
+import com.shirou.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.ui.component.NavigationTitle
 import com.shirou.shibamusic.ui.component.SongBottomSheet
 import com.shirou.shibamusic.ui.component.AlbumBottomSheet
@@ -21,7 +21,7 @@ import com.shirou.shibamusic.ui.component.PlaylistBottomSheet
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import com.shirou.shibamusic.util.Preferences
-import com.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.AudioQuality
 
 /**
  * Library Screen with Tabs (Songs, Albums, Artists, Playlists)

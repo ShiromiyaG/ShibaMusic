@@ -10,8 +10,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
-import com.shibamusic.data.model.AudioCodec
-import com.shibamusic.repository.OfflineRepository
+import com.shirou.shibamusic.repository.OfflineRepository
 import com.shirou.shibamusic.glide.CustomGlideRequest
 import com.shirou.shibamusic.repository.QueueRepository
 import com.shirou.shibamusic.service.MediaService

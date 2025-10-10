@@ -1,11 +1,12 @@
-package com.shibamusic.ui.offline
+package com.shirou.shibamusic.ui.offline
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shibamusic.data.model.*
-import com.shibamusic.player.OfflineMusicPlayer
-import com.shibamusic.repository.OfflineRepository
-import com.shibamusic.repository.OfflineStorageInfo
+import com.shirou.shibamusic.player.OfflineMusicPlayer
+import com.shirou.shibamusic.repository.OfflineRepository
+import com.shirou.shibamusic.repository.OfflineStorageInfo
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.data.model.DownloadProgress
 import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*

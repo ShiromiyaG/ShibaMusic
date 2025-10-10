@@ -18,8 +18,8 @@ import android.widget.Toast
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.WindowInsets
-import com.shibamusic.data.model.AudioQuality
-import com.shibamusic.ui.offline.OfflineViewModel
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.util.Preferences
 

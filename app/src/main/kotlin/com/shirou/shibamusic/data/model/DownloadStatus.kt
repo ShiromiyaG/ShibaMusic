@@ -1,4 +1,4 @@
-package com.shibamusic.data.model
+package com.shirou.shibamusic.data.model
 
 enum class DownloadStatus {
     PENDING,

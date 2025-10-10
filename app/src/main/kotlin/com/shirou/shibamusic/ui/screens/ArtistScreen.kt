@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -23,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.shibamusic.data.model.AudioQuality
-import com.shibamusic.ui.offline.OfflineViewModel
+import com.shirou.shibamusic.data.model.AudioQuality
+import com.shirou.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
