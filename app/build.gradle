@@ -53,8 +53,10 @@ android {
                 debugSymbolLevel 'SYMBOL_TABLE'
             }
             
-            if (signingConfigs.release.storeFile) {
+            if (project.hasProperty("android.injected.signing.store.file")) {
                 signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
             }
         }
         debug {

@@ -276,9 +276,6 @@ jobs:
             echo "1. Download the file \`ShibaMusic-${VERSION_NAME}.apk\`"
             echo "2. Enable 'Unknown sources' in your Android settings"
             echo "3. Install the APK"
-            echo
-            echo "---"
-            echo "🤖 *Release generated automatically*"
           } > release_notes.md
 
           echo "body_path=release_notes.md" >> "$GITHUB_OUTPUT"
