@@ -60,10 +60,17 @@ jobs:
           java-version: 17
           cache: gradle
 
-      - name: Prepare Gradle
-        run: chmod +x gradlew
+      - name: Setup Gradle Wrapper
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Gradle wrapper not found, regenerating..."
+            gradle wrapper --gradle-version 8.10.2
+          fi
+          
+          chmod +x gradlew
+          
+          ./gradlew --version
 
-      # 🔧 FIX: Setup keystore with absolute path
       - name: Setup keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
@@ -90,7 +97,6 @@ jobs:
           echo "VERSION_NAME=$version_name" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
 
-      # 🔧 FIX: Build with direct environment variables
       - name: Build signed release APK
         run: |
           ./gradlew --stacktrace assembleRelease \
