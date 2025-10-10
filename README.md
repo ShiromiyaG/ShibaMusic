@@ -1,4 +1,4 @@
-# ShibaMusic
+<h1 align="center">ShibaMusic</h1>
 
 <p align="center">
   <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="ShibaMusic Icon" width="160" />
