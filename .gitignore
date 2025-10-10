@@ -16,4 +16,19 @@
 /.vscode
 .env
 .vscode/settings.json
+app/build/
+app/bin/
+*.apk
+*.aar
+*.ap_
+*.dex
+gen/
+proguard/
+*.log
+.navigation/
+captures/
+*.jks
+*.keystore
+!gradle-wrapper.jar
+!gradle-wrapper.properties
 # release / debug files
