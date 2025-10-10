@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.shirou.shibamusic.R
-import com.shirou.shibamusic.ui.activity.MainActivity
+import com.shirou.shibamusic.ui.ComposeMainActivity
 import com.shirou.shibamusic.repository.QueueRepository
 import com.shirou.shibamusic.util.Constants
 import com.shirou.shibamusic.util.DownloadUtil
@@ -275,7 +275,7 @@ class MediaService : MediaLibraryService() {
     private fun initializeMediaLibrarySession() {
         val sessionActivityPendingIntent =
             TaskStackBuilder.create(this).run {
-                addNextIntent(Intent(this@MediaService, MainActivity::class.java))
+                addNextIntent(Intent(this@MediaService, ComposeMainActivity::class.java))
                 getPendingIntent(0, FLAG_IMMUTABLE or FLAG_UPDATE_CURRENT)
             }
 
