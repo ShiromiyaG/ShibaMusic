@@ -63,13 +63,22 @@ jobs:
       - name: Prepare Gradle
         run: chmod +x gradlew
 
+      # Decodificar e preparar keystore
+      - name: Setup keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+          echo "KEYSTORE_FILE=../keystore.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
+
       - name: Extract version metadata
         id: version
         shell: bash
         run: |
           set -euo pipefail
-          version_name="$(sed -n "s/^[[:space:]]*versionName[[:space:]]*'\\(.*\\)'/\\1/p" app/build.gradle | head -n 1)"
-          version_code="$(sed -n "s/^[[:space:]]*versionCode[[:space:]]*\\([0-9]*\\)/\\1/p" app/build.gradle | head -n 1)"
+          version_name="$(sed -n "s/^[[:space:]]*versionName[[:space:]]*['\"]\\([^'\"]*\\)['\"].*/\\1/p" app/build.gradle | head -n 1)"
+          version_code="$(sed -n "s/^[[:space:]]*versionCode[[:space:]]*\\([0-9]*\\).*/\\1/p" app/build.gradle | head -n 1)"
 
           if [[ -z "$version_name" ]]; then
             echo "Não foi possível extrair versionName de app/build.gradle" >&2
@@ -81,14 +90,33 @@ jobs:
           echo "VERSION_NAME=$version_name" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
 
-      - name: Build release APK
-        run: ./gradlew --stacktrace assembleRelease
+      # Build APK assinado
+      - name: Build signed release APK
+        run: |
+          ./gradlew --stacktrace assembleRelease \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_FILE \
+            -Pandroid.injected.signing.store.password=$KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$KEY_PASSWORD
 
-      - name: Rename artifact
+      - name: Rename and prepare artifacts
         run: |
           set -euo pipefail
           mkdir -p artifacts
+          
+          # APK principal
           cp app/build/outputs/apk/release/app-release.apk "artifacts/ShibaMusic-${VERSION_NAME}.apk"
+          
+          # Gerar checksums
+          cd artifacts
+          sha256sum "ShibaMusic-${VERSION_NAME}.apk" > "ShibaMusic-${VERSION_NAME}.apk.sha256"
+          
+          # Info do build
+          echo "Build Info:" > build-info.txt
+          echo "Version: ${VERSION_NAME}" >> build-info.txt
+          echo "Version Code: ${VERSION_CODE}" >> build-info.txt
+          echo "Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> build-info.txt
+          echo "Commit: ${{ github.sha }}" >> build-info.txt
 
       - name: Generate changelog
         id: changelog
@@ -126,12 +154,16 @@ jobs:
           done < <(git log --no-merges --pretty=format:'%s' "$range")
 
           {
-            echo "## 🚀 ShibaMusic ${VERSION_NAME}"
+            echo "## 🎵 ShibaMusic ${VERSION_NAME}"
             echo
+            echo "**Baixe o APK abaixo e instale no seu dispositivo Android.**"
+            echo
+            echo "### 📋 Informações da Versão"
             echo "- **Versão**: \`${VERSION_NAME}\`"
             if [[ -n "${VERSION_CODE}" ]]; then
-              echo "- **VersionCode**: \`${VERSION_CODE}\`"
+              echo "- **Código da Versão**: \`${VERSION_CODE}\`"
             fi
+            echo "- **Data**: $(date -u '+%d/%m/%Y %H:%M UTC')"
             if [[ -n "$compare_url" ]]; then
               echo "- **Diff completo**: [$compare_url]($compare_url)"
             fi
@@ -150,23 +182,33 @@ jobs:
             fi
 
             if [[ -n "$chores" ]]; then
-              echo "### 🛠️ Manutenção"
+              echo "### 🛠️ Melhorias e Manutenção"
               printf "%b" "$chores"
               echo
             fi
 
             if [[ -n "$others" ]]; then
-              echo "### 📦 Outros"
+              echo "### 📦 Outras Alterações"
               printf "%b" "$others"
               echo
             fi
 
             if [[ -z "$features$fixes$chores$others" ]]; then
-              echo "Nenhuma alteração registrada desde a última versão. 🎉"
+              echo "### 📝 Alterações"
+              echo "Nenhuma alteração de commit registrada desde a última versão."
               echo
             fi
 
-            echo "Gerado automaticamente pelo pipeline de release."
+            echo "### 🔐 Verificação"
+            echo "Verifique a integridade do arquivo usando o checksum SHA256 fornecido."
+            echo
+            echo "### 📱 Instalação"
+            echo "1. Baixe o arquivo \`ShibaMusic-${VERSION_NAME}.apk\`"
+            echo "2. Habilite \"Origens desconhecidas\" nas configurações do Android"
+            echo "3. Instale o APK"
+            echo
+            echo "---"
+            echo "🤖 *Release gerado automaticamente*"
           } > release_notes.md
 
           echo "body_path=release_notes.md" >> "$GITHUB_OUTPUT"
@@ -175,8 +217,19 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version_name }}
-          name: ShibaMusic v${{ steps.version.outputs.version_name }}
+          name: 🎵 ShibaMusic v${{ steps.version.outputs.version_name }}
           body_path: ${{ steps.changelog.outputs.body_path }}
-          files: artifacts/ShibaMusic-${{ steps.version.outputs.version_name }}.apk
+          files: |
+            artifacts/ShibaMusic-${{ steps.version.outputs.version_name }}.apk
+            artifacts/ShibaMusic-${{ steps.version.outputs.version_name }}.apk.sha256
+            artifacts/build-info.txt
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Limpar keystore por segurança
+      - name: Cleanup keystore
+        if: always()
+        run: |
+          rm -f app/keystore.jks

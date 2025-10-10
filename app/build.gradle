@@ -15,7 +15,7 @@ android {
         targetSdk 35
 
         versionCode 31
-        versionName '1.0.0'
+        versionName '1.0.1'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
 
@@ -31,6 +31,17 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            if (project.hasProperty("android.injected.signing.store.file")) {
+                storeFile file(project.property("android.injected.signing.store.file"))
+                storePassword project.property("android.injected.signing.store.password")
+                keyAlias project.property("android.injected.signing.key.alias")
+                keyPassword project.property("android.injected.signing.key.password")
+            }
+        }
+    }
+
     buildTypes {
         release {
             shrinkResources true
@@ -40,7 +51,10 @@ android {
             ndk {
                 debugSymbolLevel 'SYMBOL_TABLE'
             }
-            signingConfig signingConfigs.debug
+            
+            if (signingConfigs.release.storeFile) {
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             minifyEnabled false

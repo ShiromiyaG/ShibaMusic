@@ -60,7 +60,7 @@ This may take a moment.</string>
     <string name="album_page_shuffle_button">Shuffle</string>
     <string name="album_page_tracks_count_and_duration">%1$d songs  •  %2$d minutes</string>
     <string name="app_name">Shiba Music</string>
-    <string name="artist_adapter_radio_station_starting">Searching…</string>
+    <string name="artist_adapter_radio_station_starting">Searching...</string>
     <string name="artist_bottom_sheet_instant_mix">Instant mix</string>
     <string name="artist_bottom_sheet_shuffle">Shuffle</string>
     <string name="artist_catalogue_title">Artists</string>
@@ -499,6 +499,18 @@ This may take a moment.</string>
     <string name="settings_clear_cache_title">Clear Cache</string>
     <string name="settings_clear_cache_subtitle">Free up storage space</string>
     <string name="settings_about_title_section">About</string>
+    <string name="settings_update_title_item">Updates</string>
+    <string name="settings_update_loading">Checking for updates...</string>
+    <string name="settings_update_not_available">You are on the latest version</string>
+    <string name="settings_update_available">New version %1$s available</string>
+    <string name="settings_update_dialog_title">Update %1$s available</string>
+    <string name="settings_update_dialog_size">Download size: %1$s</string>
+    <string name="settings_update_dialog_no_notes">No release notes provided.</string>
+    <string name="settings_update_dialog_download">Download</string>
+    <string name="settings_update_dialog_later">Maybe later</string>
+    <string name="settings_update_download_started">Downloading %1$s...</string>
+    <string name="settings_update_download_error">Could not start the download. Please try again later.</string>
+    <string name="settings_update_download_description">Downloading the latest ShibaMusic release</string>
     <string name="settings_version_title_item">Version</string>
     <string name="settings_github_title_item">GitHub</string>
     <string name="settings_github_subtitle">View source code</string>

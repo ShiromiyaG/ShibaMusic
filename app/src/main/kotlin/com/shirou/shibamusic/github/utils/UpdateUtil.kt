@@ -6,31 +6,39 @@ import com.shirou.shibamusic.github.models.LatestRelease
 object UpdateUtil {
 
     fun showUpdateDialog(release: LatestRelease): Boolean {
-        val remoteTagName = release.tagName ?: return false
-
-        return try {
-            val local = BuildConfig.VERSION_NAME.split(Regex("\\."))
-            val remote = remoteTagName.split(Regex("\\."))
-
-            for (i in local.indices) {
-                val localPart = local[i].toInt()
-                val remotePart = remote[i].toInt()
-
-                when {
-                    localPart > remotePart -> return false
-                    localPart < remotePart -> return true
-                }
-            }
-            // If the loop completes without returning, it means all compared parts were equal.
-            // This implies no update, or local version is longer (e.g., 1.0.0 vs 1.0)
-            // and the first 'local.indices' parts matched.
-            // The original Java code returns false here.
-            false
-        } catch (e: Exception) {
-            // Catches NumberFormatException if a version part is not an integer.
-            // Catches IndexOutOfBoundsException if remote version has fewer parts than local
-            // and the loop tries to access a non-existent part.
-            false
+        if (release.draft == true || release.prerelease == true) {
+            return false
         }
+
+        val localVersion = parseVersion(BuildConfig.VERSION_NAME)
+        val remoteVersion = parseVersion(release.tagName) ?: parseVersion(release.name)
+
+        if (localVersion.isEmpty() || remoteVersion.isEmpty()) {
+            return false
+        }
+
+        val maxSize = maxOf(localVersion.size, remoteVersion.size)
+        for (index in 0 until maxSize) {
+            val localPart = localVersion.getOrElse(index) { 0 }
+            val remotePart = remoteVersion.getOrElse(index) { 0 }
+
+            when {
+                remotePart > localPart -> return true
+                remotePart < localPart -> return false
+            }
+        }
+
+        return false
+    }
+
+    private fun parseVersion(raw: String?): List<Int> {
+        if (raw.isNullOrBlank()) return emptyList()
+
+        return Regex("\\d+")
+            .findAll(raw.trim().removePrefix("v").removePrefix("V"))
+            .mapNotNull { match ->
+                match.value.toIntOrNull()
+            }
+            .toList()
     }
 }
