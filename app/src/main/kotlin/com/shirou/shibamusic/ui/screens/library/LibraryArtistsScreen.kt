@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,6 +66,7 @@ fun LibraryArtistsContent(
         val appendState = artists.loadState.append
         val gridState = rememberLazyGridState()
         var restoreTopAfterRefresh by remember { mutableStateOf(false) }
+        val layoutDirection = LocalLayoutDirection.current
 
         val isInitialLoading = refreshState is LoadState.Loading && artists.itemCount == 0
         val isRefreshing = refreshState is LoadState.Loading && artists.itemCount > 0
@@ -92,7 +94,10 @@ fun LibraryArtistsContent(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    start = paddingValues.calculateStartPadding(layoutDirection),
+                    end = paddingValues.calculateEndPadding(layoutDirection)
+                )
         ) {
             if (isSyncing || isRefreshing) {
                 LinearProgressIndicator(
@@ -115,7 +120,10 @@ fun LibraryArtistsContent(
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp)
+                        contentPadding = PaddingValues(
+                            start = 8.dp,
+                            end = 8.dp
+                        )
                     ) {
                         items(10) {
                             GridItemPlaceholder(isCircular = true)
@@ -145,7 +153,10 @@ fun LibraryArtistsContent(
                         columns = GridCells.Fixed(2),
                         state = gridState,
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp)
+                        contentPadding = PaddingValues(
+                            start = 8.dp,
+                            end = 8.dp
+                        )
                     ) {
                         items(artists.itemCount, key = { index -> artists[index]?.id ?: index }) { index ->
                             val artist = artists[index] ?: return@items

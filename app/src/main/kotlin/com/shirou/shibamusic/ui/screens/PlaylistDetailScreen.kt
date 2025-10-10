@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -69,88 +70,102 @@ fun PlaylistDetailScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                shadowElevation = 0.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "More"
-                        )
-                    }
-                    
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Edit playlist") },
-                            onClick = {
-                                showMenu = false
-                                showEditDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.Edit, contentDescription = null)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Add songs") },
-                            onClick = {
-                                showMenu = false
-                                showAddSongsDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Rounded.Add, contentDescription = null)
-                            }
-                        )
-                        Divider()
-                        DropdownMenuItem(
-                            text = { Text("Delete playlist") },
-                            onClick = {
-                                showMenu = false
-                                showDeleteDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Rounded.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            },
-                            colors = MenuDefaults.itemColors(
-                                textColor = MaterialTheme.colorScheme.error
+                    Spacer(modifier = Modifier.weight(1f))
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "More"
                             )
-                        )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Edit playlist") },
+                                onClick = {
+                                    showMenu = false
+                                    showEditDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Edit, contentDescription = null)
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Add songs") },
+                                onClick = {
+                                    showMenu = false
+                                    showAddSongsDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Rounded.Add, contentDescription = null)
+                                }
+                            )
+                            Divider()
+                            DropdownMenuItem(
+                                text = { Text("Delete playlist") },
+                                onClick = {
+                                    showMenu = false
+                                    showDeleteDialog = true
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Rounded.Delete,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                colors = MenuDefaults.itemColors(
+                                    textColor = MaterialTheme.colorScheme.error
+                                )
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
+                }
+            }
         },
-        modifier = modifier
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
+        val layoutDirection = LocalLayoutDirection.current
+        val horizontalPadding = PaddingValues(
+            start = paddingValues.calculateStartPadding(layoutDirection),
+            end = paddingValues.calculateEndPadding(layoutDirection)
+        )
+        val topPadding = paddingValues.calculateTopPadding()
         if (songs.isEmpty()) {
             EmptyPlaylistContent(
                 playlist = playlist,
                 onAddSongs = onAddSongs,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(horizontalPadding)
+                    .padding(top = topPadding)
             )
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = paddingValues.calculateTopPadding())
+                    .padding(horizontalPadding)
+                    .padding(top = topPadding)
             ) {
                 // Playlist Header
                 item {

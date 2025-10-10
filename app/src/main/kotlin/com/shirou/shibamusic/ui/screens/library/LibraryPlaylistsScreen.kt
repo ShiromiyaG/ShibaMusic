@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,6 +87,7 @@ fun LibraryPlaylistsContent(
         val appendState = playlists.loadState.append
         val listState = rememberLazyListState()
         var restoreTopAfterRefresh by remember { mutableStateOf(false) }
+        val layoutDirection = LocalLayoutDirection.current
 
         val isInitialLoading = refreshState is LoadState.Loading && playlists.itemCount == 0
         val isRefreshing = refreshState is LoadState.Loading && playlists.itemCount > 0
@@ -113,7 +115,11 @@ fun LibraryPlaylistsContent(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    start = paddingValues.calculateStartPadding(layoutDirection),
+                    end = paddingValues.calculateEndPadding(layoutDirection),
+                    bottom = paddingValues.calculateBottomPadding()
+                )
         ) {
             if (isRefreshing) {
                 LinearProgressIndicator(

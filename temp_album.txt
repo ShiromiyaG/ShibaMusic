@@ -8,7 +8,6 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,24 +37,20 @@ fun AlbumScreen(
     val songs = albumDetail?.songs ?: emptyList()
     Scaffold(
         topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                shadowElevation = 0.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            TopAppBar(
+                title = { },
+                navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
-                }
-            }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                )
+            )
         },
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
@@ -64,13 +59,11 @@ fun AlbumScreen(
             start = paddingValues.calculateStartPadding(layoutDirection),
             end = paddingValues.calculateEndPadding(layoutDirection)
         )
-        val topPadding = paddingValues.calculateTopPadding()
         if (album == null || isLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontalPadding)
-                    .padding(top = topPadding)
             ) {
                 CircularProgressIndicator()
             }
@@ -79,7 +72,6 @@ fun AlbumScreen(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(horizontalPadding)
-                    .padding(top = topPadding)
             ) {
                 // Album header with artwork
                 item {
@@ -126,74 +118,3 @@ fun AlbumScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         
                         // Album info
-                        Text(
-                            text = buildString {
-                                album.year?.let { append("$it • ") }
-                                append("${songs.size} songs")
-                                if (album.duration > 0) {
-                                    append(" • ${album.duration.formatDuration()}")
-                                }
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Action buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = onPlayClick,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Play")
-                            }
-                            
-                            OutlinedButton(
-                                onClick = onShuffleClick,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Shuffle,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Shuffle")
-                            }
-                        }
-                    }
-                }
-                
-                item {
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                }
-                
-                // Songs list
-                items(songs, key = { it.id }) { song ->
-                    SongListItem(
-                        title = song.title,
-                        artist = song.artistName,
-                        album = null, // Don't show album since we're on album screen
-                        thumbnailUrl = song.getThumbnailUrl() ?: album?.getThumbnailUrl(),
-                        isPlaying = song.id == currentlyPlayingSongId,
-                        onClick = { onSongClick(song) },
-                        onMoreClick = { onSongMenuClick(song) },
-                        trailingIcon = Icons.Rounded.MoreVert
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-
-
