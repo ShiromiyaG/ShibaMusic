@@ -235,7 +235,7 @@ private fun QueueItem(
                 modifier = Modifier.size(48.dp)
             ) {
                 AsyncImage(
-                    model = song.albumArtUrl,
+                    model = song.getThumbnailUrl(),
                     contentDescription = song.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

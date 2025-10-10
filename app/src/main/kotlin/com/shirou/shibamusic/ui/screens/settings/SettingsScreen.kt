@@ -11,8 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.shibamusic.data.model.AudioQuality
+import com.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.util.Preferences
 
@@ -25,10 +30,15 @@ import com.shirou.shibamusic.util.Preferences
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    onSyncFromServer: () -> Unit = {}
+    onSyncFromServer: () -> Unit = {},
+    offlineViewModel: OfflineViewModel = hiltViewModel()
 ) {
     val serverUrl = remember { Preferences.getServer() ?: "Not configured" }
     val username = remember { Preferences.getUser() ?: "Not logged in" }
+    var showClearOfflineDialog by remember { mutableStateOf(false) }
+    var selectedDownloadQuality by remember { mutableStateOf(Preferences.getOfflineDownloadQuality()) }
+    var showDownloadQualityDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     
     Scaffold(
         topBar = {
@@ -254,12 +264,85 @@ fun SettingsScreen(
                 )
                 
                 HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+
+                SettingsItem(
+                    icon = Icons.Rounded.LibraryMusic,
+                    title = "Qualidade dos downloads offline",
+                    subtitle = selectedDownloadQuality.toDownloadLabel(),
+                    onClick = { showDownloadQualityDialog = true }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
                 
                 SettingsItem(
-                    icon = Icons.Rounded.Delete,
-                    title = stringResource(com.shirou.shibamusic.R.string.settings_clear_cache_title),
-                    subtitle = stringResource(com.shirou.shibamusic.R.string.settings_clear_cache_subtitle),
-                    onClick = { /* TODO: Clear cache */ }
+                    icon = Icons.Rounded.DeleteForever,
+                    title = "Limpar músicas offline",
+                    subtitle = "Remove todos os arquivos baixados para uso offline",
+                    onClick = { showClearOfflineDialog = true }
+                )
+            }
+
+            if (showDownloadQualityDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDownloadQualityDialog = false },
+                    title = { Text("Qualidade dos downloads offline") },
+                    text = {
+                        Column {
+                            AudioQuality.values().forEach { quality ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedDownloadQuality = quality
+                                            Preferences.setOfflineDownloadQuality(quality)
+                                            showDownloadQualityDialog = false
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(
+                                        selected = selectedDownloadQuality == quality,
+                                        onClick = {
+                                            selectedDownloadQuality = quality
+                                            Preferences.setOfflineDownloadQuality(quality)
+                                            showDownloadQualityDialog = false
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(quality.toDownloadLabel())
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showDownloadQualityDialog = false }) {
+                            Text("Fechar")
+                        }
+                    }
+                )
+            }
+            
+            if (showClearOfflineDialog) {
+                AlertDialog(
+                    onDismissRequest = { showClearOfflineDialog = false },
+                    title = { Text("Limpar músicas offline?") },
+                    text = { Text("Todos os arquivos baixados serão removidos, incluindo versões antigas e novas do cache.") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showClearOfflineDialog = false
+                                offlineViewModel.clearAllOfflineData()
+                                Toast.makeText(context, "Limpando músicas offline…", Toast.LENGTH_SHORT).show()
+                            }
+                        ) {
+                            Text("Limpar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showClearOfflineDialog = false }) {
+                            Text("Cancelar")
+                        }
+                    }
                 )
             }
             
@@ -302,6 +385,12 @@ fun SettingsSection(
         content()
         Spacer(modifier = Modifier.height(16.dp))
     }
+}
+
+private fun AudioQuality.toDownloadLabel(): String = when (this) {
+    AudioQuality.LOW -> "128 kbps (Opus)"
+    AudioQuality.MEDIUM -> "320 kbps (Opus)"
+    AudioQuality.HIGH -> "Lossless (FLAC)"
 }
 
 @Composable

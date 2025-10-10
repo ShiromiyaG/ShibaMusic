@@ -1,11 +1,12 @@
 package com.shirou.shibamusic.util
 
 import androidx.media3.common.Player
+import com.google.gson.Gson
+import com.shibamusic.data.model.AudioQuality
 import com.shirou.shibamusic.App
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.model.HomeSector
 import com.shirou.shibamusic.subsonic.models.OpenSubsonicExtension
-import com.google.gson.Gson
 
 
 object Preferences {
@@ -56,6 +57,7 @@ object Preferences {
     private const val AUDIO_TRANSCODE_DOWNLOAD_PRIORITY = "audio_transcode_download_priority"
     private const val MAX_BITRATE_DOWNLOAD = "max_bitrate_download"
     private const val AUDIO_TRANSCODE_FORMAT_DOWNLOAD = "audio_transcode_format_download"
+    private const val OFFLINE_DOWNLOAD_QUALITY = "offline_download_quality"
     private const val SHARE = "share"
     private const val SCROBBLING = "scrobbling"
     private const val ESTIMATE_CONTENT_LENGTH = "estimate_content_length"
@@ -484,6 +486,18 @@ object Preferences {
     @JvmStatic
     fun getAudioTranscodeFormatTranscodedDownload(): String {
         return App.getInstance().preferences.getString(AUDIO_TRANSCODE_FORMAT_DOWNLOAD, "raw")!!
+    }
+
+    @JvmStatic
+    fun getOfflineDownloadQuality(): AudioQuality {
+        val stored = App.getInstance().preferences.getString(OFFLINE_DOWNLOAD_QUALITY, AudioQuality.MEDIUM.name)
+        return runCatching { AudioQuality.valueOf(stored ?: AudioQuality.MEDIUM.name) }
+            .getOrDefault(AudioQuality.MEDIUM)
+    }
+
+    @JvmStatic
+    fun setOfflineDownloadQuality(quality: AudioQuality) {
+        App.getInstance().preferences.edit().putString(OFFLINE_DOWNLOAD_QUALITY, quality.name).apply()
     }
 
     @JvmStatic

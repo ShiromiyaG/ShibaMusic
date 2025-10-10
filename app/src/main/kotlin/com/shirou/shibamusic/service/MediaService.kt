@@ -10,7 +10,6 @@ import android.os.Bundle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
@@ -220,11 +219,15 @@ class MediaService : MediaLibraryService() {
                     )
                     .build()
 
-                mediaItem.buildUpon()
+                val builder = mediaItem.buildUpon()
                     .setUri(mediaItem.requestMetadata.mediaUri)
                     .setMediaMetadata(newMetadata)
-                    .setMimeType(MimeTypes.BASE_TYPE_AUDIO)
-                    .build()
+
+                mediaItem.localConfiguration?.mimeType?.let { mimeType ->
+                    builder.setMimeType(mimeType)
+                }
+
+                builder.build()
             }
             return Futures.immediateFuture(updatedMediaItems)
         }

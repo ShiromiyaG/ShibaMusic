@@ -6,6 +6,7 @@ import com.shibamusic.data.model.*
 import com.shibamusic.player.OfflineMusicPlayer
 import com.shibamusic.repository.OfflineRepository
 import com.shibamusic.repository.OfflineStorageInfo
+import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -60,11 +61,13 @@ class OfflineViewModel @Inject constructor(
         album: String,
         duration: Long,
         coverArtUrl: String? = null,
-        quality: AudioQuality = AudioQuality.MEDIUM
+        quality: AudioQuality? = null
     ) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true) }
+
+                val resolvedQuality = quality ?: Preferences.getOfflineDownloadQuality()
                 
                 offlineRepository.downloadTrack(
                     trackId = trackId,
@@ -73,7 +76,7 @@ class OfflineViewModel @Inject constructor(
                     album = album,
                     duration = duration,
                     coverArtUrl = coverArtUrl,
-                    quality = quality
+                    quality = resolvedQuality
                 )
                 
                 _uiState.update { 
@@ -115,6 +118,33 @@ class OfflineViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         error = "Erro ao remover música: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Cancela um download em andamento
+     */
+    fun cancelDownload(trackId: String) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+
+                offlineRepository.cancelDownload(trackId)
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "Download cancelado"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erro ao cancelar download: ${e.message}"
                     )
                 }
             }

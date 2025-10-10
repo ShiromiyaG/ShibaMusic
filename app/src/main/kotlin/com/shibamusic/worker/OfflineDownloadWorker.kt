@@ -2,11 +2,14 @@ package com.shibamusic.worker
 
 import android.content.Context
 import android.net.Uri
+import android.os.SystemClock
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.shibamusic.data.dao.OfflineTrackDao
 import com.shibamusic.data.model.*
 import com.shibamusic.repository.OfflineRepository
+import com.shirou.shibamusic.App
+import com.shirou.shibamusic.util.Util
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +19,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import java.util.zip.GZIPInputStream
 
 /**
  * Worker para gerenciar downloads de músicas em background
@@ -98,7 +102,9 @@ class OfflineDownloadWorker @AssistedInject constructor(
             updateDownloadProgress(
                 trackId = trackId,
                 status = DownloadStatus.DOWNLOADING,
-                progress = 0f
+                progress = 0f,
+                bytesDownloaded = 0L,
+                totalBytes = 0L
             )
             
             // Constrói URL de download com transcodificação
@@ -109,19 +115,21 @@ class OfflineDownloadWorker @AssistedInject constructor(
                 trackId = trackId,
                 downloadUrl = downloadUrl,
                 quality = quality
-            ) { progress ->
-                // Atualiza progresso durante o download
+            ) { bytesDownloaded, totalBytes, progress ->
                 updateDownloadProgress(
                     trackId = trackId,
                     status = DownloadStatus.DOWNLOADING,
-                    progress = progress
+                    progress = progress,
+                    bytesDownloaded = bytesDownloaded,
+                    totalBytes = totalBytes
                 )
                 
-                // Atualiza progresso no WorkManager
                 setProgressAsync(
                     Data.Builder()
                         .putString("track_id", trackId)
                         .putFloat("progress", progress)
+                        .putLong("bytes_downloaded", bytesDownloaded)
+                        .putLong("total_bytes", totalBytes)
                         .putString("codec", quality.codec.displayName)
                         .build()
                 )
@@ -144,6 +152,16 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     quality = quality,
                     coverArtPath = coverArtPath
                 )
+
+                setProgressAsync(
+                    Data.Builder()
+                        .putString("track_id", trackId)
+                        .putFloat("progress", 1f)
+                        .putLong("bytes_downloaded", downloadResult.length())
+                        .putLong("total_bytes", downloadResult.length())
+                        .putString("codec", quality.codec.displayName)
+                        .build()
+                )
                 
                 Result.success(
                     Data.Builder()
@@ -159,6 +177,8 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     trackId = trackId,
                     status = DownloadStatus.FAILED,
                     progress = 0f,
+                    bytesDownloaded = 0L,
+                    totalBytes = 0L,
                     errorMessage = "Falha ao baixar arquivo de áudio ${quality.codec.displayName}"
                 )
                 
@@ -178,6 +198,8 @@ class OfflineDownloadWorker @AssistedInject constructor(
                     trackId = it,
                     status = DownloadStatus.FAILED,
                     progress = 0f,
+                    bytesDownloaded = 0L,
+                    totalBytes = 0L,
                     errorMessage = e.message
                 )
             }
@@ -195,29 +217,40 @@ class OfflineDownloadWorker @AssistedInject constructor(
      * Constrói a URL de download com parâmetros de transcodificação para Opus
      */
     private fun buildDownloadUrl(baseUrl: String, trackId: String, quality: AudioQuality): String {
-        val uri = Uri.parse(baseUrl).buildUpon()
-            .appendPath("rest")
-            .appendPath("stream")
-            .appendQueryParameter("id", trackId)
-            .appendQueryParameter("v", "1.16.1")
-            .appendQueryParameter("c", "ShibaMusic")
-        
-        // Adiciona parâmetros de transcodificação
-        when (quality) {
-            AudioQuality.LOW, AudioQuality.MEDIUM -> {
-                // Para Opus 128kbps e 320kbps
-                uri.appendQueryParameter("format", quality.getTranscodeFormat())
-                uri.appendQueryParameter("maxBitRate", quality.getBitrateString())
-            }
-            AudioQuality.HIGH -> {
-                // Para FLAC, usa download direto sem transcodificação
-                uri.appendQueryParameter("format", "raw")
+        val subsonicClient = App.getSubsonicClientInstance(false)
+        val params = subsonicClient.params
+
+        val uriBuilder = if (baseUrl.isNotBlank()) {
+            Uri.parse(baseUrl).buildUpon()
+                .appendPath("rest")
+                .appendPath("stream")
+        } else {
+            Uri.parse(subsonicClient.url).buildUpon()
+                .appendPath("stream")
+        }
+
+        val authKeys = listOf("u", "p", "s", "t", "v", "c")
+        authKeys.forEach { key ->
+            params[key]?.let { value ->
+                val paramValue = if (key == "u") Util.encode(value) else value
+                uriBuilder.appendQueryParameter(key, paramValue)
             }
         }
-        
-        return uri.build().toString()
+
+        when (quality) {
+            AudioQuality.LOW, AudioQuality.MEDIUM -> {
+                uriBuilder.appendQueryParameter("format", quality.getTranscodeFormat())
+                uriBuilder.appendQueryParameter("maxBitRate", quality.getBitrateString())
+            }
+            AudioQuality.HIGH -> {
+                uriBuilder.appendQueryParameter("format", quality.getTranscodeFormat())
+            }
+        }
+
+        uriBuilder.appendQueryParameter("id", trackId)
+
+        return uriBuilder.build().toString()
     }
-    
     /**
      * Executa o download de uma música com suporte a Opus
      */
@@ -225,54 +258,74 @@ class OfflineDownloadWorker @AssistedInject constructor(
         trackId: String,
         downloadUrl: String,
         quality: AudioQuality,
-        onProgress: suspend (Float) -> Unit
+        onProgress: suspend (bytesDownloaded: Long, totalBytes: Long, progress: Float) -> Unit
     ): File? = withContext(Dispatchers.IO) {
-        try {
-            val connection = URL(downloadUrl).openConnection() as HttpURLConnection
-            
-            // Adiciona cabeçalhos
+        var connection: HttpURLConnection? = null
+        var outputFile: File? = null
+        return@withContext try {
+            connection = URL(downloadUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 30_000
             connection.setRequestProperty("User-Agent", "ShibaMusic/1.0")
-            connection.setRequestProperty("Accept", quality.codec.mimeType)
+            connection.setRequestProperty("Accept", quality.codec.downloadMimeType)
+            connection.setRequestProperty("Accept-Encoding", "identity")
             connection.connect()
             
-            val fileLength = connection.contentLength
+            val totalBytes = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
             
-            // Cria diretório de músicas offline
             val musicDir = File(context.filesDir, "offline_music")
             if (!musicDir.exists()) musicDir.mkdirs()
             
-            // Usa extensão correta baseada na qualidade
-            val outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
+            outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
             
-            connection.inputStream.use { input ->
+            var totalDownloaded = 0L
+            var lastProgress = 0f
+            var lastUpdateAt = SystemClock.elapsedRealtime()
+            onProgress(0L, totalBytes, 0f)
+            
+            val rawInputStream = connection.inputStream
+            val inputStream = if (connection.contentEncoding.equals("gzip", true)) {
+                GZIPInputStream(rawInputStream)
+            } else {
+                rawInputStream
+            }
+
+            inputStream.use { input ->
                 FileOutputStream(outputFile).use { output ->
-                    val buffer = ByteArray(8192) // Buffer maior para melhor performance
-                    var total = 0L
+                    val buffer = ByteArray(64 * 1024)
                     var count: Int
                     
                     while (input.read(buffer).also { count = it } != -1) {
                         if (isStopped) {
-                            // Worker foi cancelado
+                            outputFile?.delete()
+                            connection?.disconnect()
                             return@withContext null
                         }
                         
-                        total += count
                         output.write(buffer, 0, count)
+                        totalDownloaded += count
                         
-                        // Calcula e reporta progresso
-                        val progress = if (fileLength > 0) {
-                            (total.toFloat() / fileLength.toFloat())
+                        val progress = if (totalBytes > 0) {
+                            (totalDownloaded.toDouble() / totalBytes.toDouble()).toFloat()
                         } else 0f
                         
-                        onProgress(progress)
+                        val now = SystemClock.elapsedRealtime()
+                        val shouldEmit = (progress - lastProgress) >= 0.02f || (now - lastUpdateAt) >= 500L
+                        if (shouldEmit) {
+                            onProgress(totalDownloaded, totalBytes, progress.coerceIn(0f, 1f))
+                            lastProgress = progress
+                            lastUpdateAt = now
+                        }
                     }
                 }
             }
             
-            connection.disconnect()
+            onProgress(totalDownloaded, totalBytes, 1f)
+            connection?.disconnect()
             outputFile
-            
         } catch (e: Exception) {
+            outputFile?.delete()
+            connection?.disconnect()
             e.printStackTrace()
             null
         }
@@ -317,21 +370,36 @@ class OfflineDownloadWorker @AssistedInject constructor(
         trackId: String,
         status: DownloadStatus,
         progress: Float,
+        bytesDownloaded: Long,
+        totalBytes: Long,
         errorMessage: String? = null
     ) {
         try {
-            val downloadProgress = DownloadProgress(
+            val now = Date()
+            val updatedRows = offlineDao.updateDownloadProgressFields(
                 trackId = trackId,
                 status = status,
                 progress = progress,
-                bytesDownloaded = 0L, // Será atualizado pelo repositório
-                totalBytes = 0L,
+                bytesDownloaded = bytesDownloaded,
+                totalBytes = totalBytes,
                 errorMessage = errorMessage,
-                createdAt = Date(),
-                updatedAt = Date()
+                updatedAt = now
             )
             
-            offlineDao.insertDownloadProgress(downloadProgress)
+            if (updatedRows == 0) {
+                offlineDao.insertDownloadProgress(
+                    DownloadProgress(
+                        trackId = trackId,
+                        status = status,
+                        progress = progress,
+                        bytesDownloaded = bytesDownloaded,
+                        totalBytes = totalBytes,
+                        errorMessage = errorMessage,
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

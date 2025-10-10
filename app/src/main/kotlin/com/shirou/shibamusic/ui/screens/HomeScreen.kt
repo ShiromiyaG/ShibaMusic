@@ -44,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale as UiContentScale
 import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.SongItem
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.HomeViewModel
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.delay
@@ -387,7 +388,7 @@ fun ZoomingCard(
         }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val imageRequest = rememberImageRequest(song.albumArtUrl)
+            val imageRequest = rememberImageRequest(song.getThumbnailUrl())
             AsyncImage(
                 model = imageRequest,
                 contentDescription = null,
@@ -433,7 +434,7 @@ fun AlbumCard(
     album: AlbumItem,
     onClick: () -> Unit = {}
 ) {
-    val imageRequest = rememberImageRequest(album.albumArtUrl, widthDp = 150.dp, heightDp = 150.dp)
+    val imageRequest = rememberImageRequest(album.getThumbnailUrl(), widthDp = 150.dp, heightDp = 150.dp)
     Card(
         modifier = Modifier
             .width(150.dp)
@@ -472,7 +473,7 @@ fun SongListItem(
     isPlaying: Boolean = false,
     onClick: () -> Unit = {}
 ) {
-    val imageRequest = rememberImageRequest(song.albumArtUrl, widthDp = 48.dp, heightDp = 48.dp)
+    val imageRequest = rememberImageRequest(song.getThumbnailUrl(), widthDp = 48.dp, heightDp = 48.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()

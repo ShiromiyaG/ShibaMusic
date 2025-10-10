@@ -19,8 +19,10 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.ListItemPlaceholder
 import com.shirou.shibamusic.ui.model.SongItem
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel
 import com.shirou.shibamusic.ui.viewmodel.SongSortOption
+import com.shibamusic.data.model.DownloadProgress
 
 /**
  * Library Songs Screen
@@ -33,7 +35,9 @@ fun LibrarySongsScreen(
     onSongMenuClick: (SongItem) -> Unit,
     onShuffleAllClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibrarySongsViewModel = hiltViewModel()
+    viewModel: LibrarySongsViewModel = hiltViewModel(),
+    downloadedSongIds: Set<String>,
+    activeDownloads: Map<String, DownloadProgress>
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagingSongs = viewModel.songs.collectAsLazyPagingItems()
@@ -47,6 +51,8 @@ fun LibrarySongsScreen(
         onShuffleAllClick = onShuffleAllClick,
         onSortChange = viewModel::changeSortOption,
         selectedSortOption = uiState.sortOption,
+        downloadedSongIds = downloadedSongIds,
+        activeDownloads = activeDownloads,
         modifier = modifier
     )
 }
@@ -62,6 +68,8 @@ fun LibrarySongsContent(
     onShuffleAllClick: () -> Unit,
     onSortChange: (SongSortOption) -> Unit,
     selectedSortOption: SongSortOption,
+    downloadedSongIds: Set<String>,
+    activeDownloads: Map<String, DownloadProgress>,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -132,15 +140,63 @@ fun LibrarySongsContent(
                                 contentType = { "song" }
                             ) { index ->
                                 val song = songs[index] ?: return@items
+                                val isDownloaded = downloadedSongIds.contains(song.id)
+                                val downloadInfo = activeDownloads[song.id]
+
                                 SongListItem(
                                     title = song.title,
                                     artist = song.artistName,
                                     album = song.albumName,
-                                    thumbnailUrl = song.albumArtUrl,
+                                    thumbnailUrl = song.getThumbnailUrl(),
                                     isPlaying = song.id == currentlyPlayingSongId,
                                     onClick = { onSongClick(song) },
-                                    onMoreClick = { onSongMenuClick(song) },
-                                    trailingIcon = Icons.Rounded.MoreVert
+                                    trailingContent = {
+                                        when {
+                                            downloadInfo != null -> {
+                                                val progressValue = downloadInfo.progress.coerceIn(0f, 1f)
+                                                Box(
+                                                    modifier = Modifier.size(40.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (progressValue > 0f) {
+                                                        CircularProgressIndicator(
+                                                            progress = progressValue,
+                                                            strokeWidth = 2.dp,
+                                                            modifier = Modifier.size(22.dp)
+                                                        )
+                                                    } else {
+                                                        CircularProgressIndicator(
+                                                            strokeWidth = 2.dp,
+                                                            modifier = Modifier.size(22.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            isDownloaded -> {
+                                                Box(
+                                                    modifier = Modifier.size(40.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Rounded.DownloadDone,
+                                                        contentDescription = "Disponível offline",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+                                            else -> {
+                                                Box(modifier = Modifier.size(40.dp))
+                                            }
+                                        }
+
+                                        IconButton(onClick = { onSongMenuClick(song) }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.MoreVert,
+                                                contentDescription = "Mais opções",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
                                 )
                             }
 

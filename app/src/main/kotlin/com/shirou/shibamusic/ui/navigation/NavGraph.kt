@@ -214,6 +214,9 @@ fun ShibaMusicNavGraph(
                         onAlbumClick = { album ->
                             navController.navigate(Screen.Album.createRoute(album.id))
                         },
+                        onSongGoToAlbum = { albumId ->
+                            navController.navigate(Screen.Album.createRoute(albumId))
+                        },
                         onMenuClick = { /* TODO: Show artist menu */ }
                     )
                 }
@@ -286,7 +289,13 @@ fun ShibaMusicNavGraph(
                                     playlistViewModel.deletePlaylist()
                                 }
                             },
-                            onAddSongs = { /* TODO: Navigate to add songs */ }
+                            onAddSongs = { /* TODO: Navigate to add songs */ },
+                            onSongGoToAlbum = { albumId ->
+                                navController.navigate(Screen.Album.createRoute(albumId))
+                            },
+                            onSongGoToArtist = { artistId ->
+                                navController.navigate(Screen.Artist.createRoute(artistId))
+                            }
                         )
 
                         if (uiState.isProcessing) {

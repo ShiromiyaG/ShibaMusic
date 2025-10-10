@@ -63,6 +63,9 @@ object DatabaseModule {
         .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
         .setQueryExecutor(ioExecutor)
         .setTransactionExecutor(ioExecutor)
+        .addMigrations(
+            ShibaMusicLocalDatabase.MIGRATION_2_3
+        )
         .fallbackToDestructiveMigration()
         .build()
     }

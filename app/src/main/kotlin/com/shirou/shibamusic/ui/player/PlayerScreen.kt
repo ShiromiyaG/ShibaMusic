@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-
+import com.shirou.shibamusic.ui.model.getPlayerArtworkUrl
 import com.shirou.shibamusic.ui.theme.rememberPlayerColors
 import com.shirou.shibamusic.ui.utils.TimeUtils
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
@@ -136,8 +136,11 @@ fun PlayerScreen(
     
     BackHandler { onNavigateBack() }
 
+    val playerArtworkUrl = nowPlaying.getPlayerArtworkUrl()
+    val sharedElementKey = "album_artwork_${nowPlaying.id}"
+
     val playerColors by rememberPlayerColors(
-        imageUrl = nowPlaying.albumArtUrl,
+        imageUrl = playerArtworkUrl,
         defaultColor = MaterialTheme.colorScheme.background
     )
 
@@ -147,7 +150,7 @@ fun PlayerScreen(
                 artistId = nowPlaying.artistId,
                 album = nowPlaying.albumName,
                 albumId = nowPlaying.albumId,
-                thumbnailUrl = nowPlaying.albumArtUrl,
+                thumbnailUrl = playerArtworkUrl,
                 isPlaying = playerState.isPlaying,
                 position = playerState.progress.currentPosition,
                 duration = playerState.progress.duration,
@@ -176,7 +179,8 @@ fun PlayerScreen(
                 onNavigateToAlbum = onNavigateToAlbum,
                 onNavigateToArtist = onNavigateToArtist,
                 sharedTransitionScope = sharedTransitionScope,
-                animatedVisibilityScope = animatedVisibilityScope
+                animatedVisibilityScope = animatedVisibilityScope,
+                sharedElementKey = sharedElementKey
             )
 }
 
@@ -348,7 +352,8 @@ private fun PlayerScreenContent(
     onNavigateToArtist: (String) -> Unit,
     modifier: Modifier = Modifier,
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
+    sharedElementKey: String
 ) {
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
     var isDragging by remember { mutableStateOf(false) }
@@ -438,13 +443,20 @@ private fun PlayerScreenContent(
                 contentAlignment = Alignment.Center
             ) {
                 with(sharedTransitionScope) {
+                    val cornerProgress = rememberSharedAlbumCornerProgress(
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        visibleProgress = 0f,
+                        hiddenProgress = 1f
+                    )
+                    val sharedShape = rememberSharedAlbumShape(cornerProgress = cornerProgress)
+
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth(0.85f)
                             .aspectRatio(1f)
                             .skipToLookaheadSize()
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "album_artwork"),
+                                .sharedElement(
+                                state = rememberSharedContentState(key = sharedElementKey),
                                 animatedVisibilityScope = animatedVisibilityScope,
                                 boundsTransform = { _, _ ->
                                     tween(durationMillis = 400, easing = FastOutSlowInEasing)
@@ -454,7 +466,7 @@ private fun PlayerScreenContent(
                                 renderInOverlay = { isTransitionActive },
                                 zIndexInOverlay = 1f
                             ),
-                        shape = RoundedCornerShape(28.dp),
+                        shape = sharedShape,
                         tonalElevation = 8.dp,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                     ) {

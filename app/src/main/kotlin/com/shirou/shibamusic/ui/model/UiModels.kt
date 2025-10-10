@@ -108,14 +108,18 @@ fun Long.formatDuration(): String {
 /**
  * Helper to get thumbnail URL with fallback
  */
-fun SongItem.getThumbnailUrl(): String? = albumArtUrl
+fun SongItem.getThumbnailUrl(): String? = com.shirou.shibamusic.util.ArtworkUrlHelper.forList(albumArtUrl)
+
+fun SongItem.getPlayerArtworkUrl(): String? = com.shirou.shibamusic.util.ArtworkUrlHelper.forPlayer(albumArtUrl)
 
 /**
  * Helper to get album art URL with fallback
  */
-fun AlbumItem.getThumbnailUrl(): String? = albumArtUrl
+fun AlbumItem.getThumbnailUrl(): String? = com.shirou.shibamusic.util.ArtworkUrlHelper.forList(albumArtUrl)
+
+fun AlbumItem.getPlayerArtworkUrl(): String? = com.shirou.shibamusic.util.ArtworkUrlHelper.forPlayer(albumArtUrl)
 
 /**
  * Helper to get artist image URL with fallback
  */
-fun ArtistItem.getThumbnailUrl(): String? = imageUrl
+fun ArtistItem.getThumbnailUrl(): String? = com.shirou.shibamusic.util.ArtworkUrlHelper.forList(imageUrl)

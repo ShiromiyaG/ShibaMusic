@@ -21,6 +21,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import java.util.zip.GZIPInputStream
 import javax.inject.Inject
 
 /**
@@ -174,6 +175,8 @@ class OfflineDownloadService : Service() {
         try {
             // Adiciona cabeçalhos de autenticação se necessário
             connection.setRequestProperty("User-Agent", "ShibaMusic/1.0")
+            connection.setRequestProperty("Accept", quality.codec.downloadMimeType)
+            connection.setRequestProperty("Accept-Encoding", "identity")
             connection.connect()
             
             val fileLength = connection.contentLength
@@ -185,7 +188,14 @@ class OfflineDownloadService : Service() {
             // Usa extensão correta baseada na qualidade
             val outputFile = File(musicDir, "$trackId.${quality.fileExtension}")
             
-            connection.inputStream.use { input ->
+            val rawInputStream = connection.inputStream
+            val inputStream = if (connection.contentEncoding.equals("gzip", true)) {
+                GZIPInputStream(rawInputStream)
+            } else {
+                rawInputStream
+            }
+
+            inputStream.use { input ->
                 FileOutputStream(outputFile).use { output ->
                     val buffer = ByteArray(8192) // Buffer maior para melhor performance
                     var total = 0L

@@ -171,6 +171,74 @@ class PlaybackViewModel @Inject constructor(
             }
         }
     }
+
+    /**
+     * Queue album to play next
+     */
+    fun playAlbumNext(albumId: String) {
+        viewModelScope.launch {
+            try {
+                val songs = musicRepository.getAlbumSongs(albumId)
+                Log.d(TAG, "Queueing album next with ${songs.size} songs")
+                if (songs.isNotEmpty() && mediaController.ensureConnected()) {
+                    mediaController.playNext(songs)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error queueing album next", e)
+            }
+        }
+    }
+
+    /**
+     * Add album songs to the end of the queue
+     */
+    fun addAlbumToQueue(albumId: String) {
+        viewModelScope.launch {
+            try {
+                val songs = musicRepository.getAlbumSongs(albumId)
+                Log.d(TAG, "Adding album to queue with ${songs.size} songs")
+                if (songs.isNotEmpty() && mediaController.ensureConnected()) {
+                    mediaController.addToQueue(songs)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding album to queue", e)
+            }
+        }
+    }
+
+    /**
+     * Queue playlist to play next
+     */
+    fun playPlaylistNext(playlistId: String) {
+        viewModelScope.launch {
+            try {
+                val songs = musicRepository.getPlaylistSongs(playlistId)
+                Log.d(TAG, "Queueing playlist next with ${songs.size} songs")
+                if (songs.isNotEmpty() && mediaController.ensureConnected()) {
+                    mediaController.playNext(songs)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error queueing playlist next", e)
+            }
+        }
+    }
+
+    /**
+     * Add playlist songs to the end of the queue
+     */
+    fun addPlaylistToQueue(playlistId: String) {
+        viewModelScope.launch {
+            try {
+                val songs = musicRepository.getPlaylistSongs(playlistId)
+                Log.d(TAG, "Adding playlist to queue with ${songs.size} songs")
+                if (songs.isNotEmpty() && mediaController.ensureConnected()) {
+                    mediaController.addToQueue(songs)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error adding playlist to queue", e)
+            }
+        }
+    }
     
     /**
      * Play or pause current song

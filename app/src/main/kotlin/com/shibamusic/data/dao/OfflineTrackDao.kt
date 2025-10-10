@@ -5,6 +5,7 @@ import com.shibamusic.data.model.DownloadProgress
 import com.shibamusic.data.model.DownloadStatus
 import com.shibamusic.data.model.OfflineTrack
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 /**
  * DAO para gerenciar o acesso aos dados de músicas offline
@@ -14,6 +15,9 @@ interface OfflineTrackDao {
     
     @Query("SELECT * FROM offline_tracks ORDER BY downloadedAt DESC")
     fun getAllOfflineTracks(): Flow<List<OfflineTrack>>
+
+    @Query("SELECT * FROM offline_tracks ORDER BY downloadedAt DESC")
+    suspend fun getOfflineTracksSnapshot(): List<OfflineTrack>
     
     @Query("SELECT * FROM offline_tracks WHERE id = :trackId")
     suspend fun getOfflineTrack(trackId: String): OfflineTrack?
@@ -66,6 +70,26 @@ interface OfflineTrackDao {
     
     @Update
     suspend fun updateDownloadProgress(progress: DownloadProgress)
+
+    @Query(
+        "UPDATE download_progress SET " +
+            "status = :status, " +
+            "progress = :progress, " +
+            "bytesDownloaded = :bytesDownloaded, " +
+            "totalBytes = :totalBytes, " +
+            "errorMessage = :errorMessage, " +
+            "updatedAt = :updatedAt " +
+            "WHERE trackId = :trackId"
+    )
+    suspend fun updateDownloadProgressFields(
+        trackId: String,
+        status: DownloadStatus,
+        progress: Float,
+        bytesDownloaded: Long,
+        totalBytes: Long,
+        errorMessage: String?,
+        updatedAt: Date
+    ): Int
     
     @Query("DELETE FROM download_progress WHERE trackId = :trackId")
     suspend fun deleteDownloadProgress(trackId: String)

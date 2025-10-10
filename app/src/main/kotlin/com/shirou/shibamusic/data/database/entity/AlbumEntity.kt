@@ -13,7 +13,11 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["title"]),
         Index(value = ["artist_id"]),
-        Index(value = ["date_added"])
+        Index(value = ["artist_name"]),
+        Index(value = ["date_added"]),
+        Index(value = ["artist_name", "title"]),
+        Index(value = ["year"]),
+        Index(value = ["play_count"])
     ]
 )
 data class AlbumEntity(

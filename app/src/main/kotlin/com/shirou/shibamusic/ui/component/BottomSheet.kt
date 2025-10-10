@@ -104,8 +104,10 @@ fun SongBottomSheet(
     onAddToQueue: () -> Unit,
     onGoToAlbum: () -> Unit,
     onGoToArtist: () -> Unit,
-    onShare: () -> Unit,
-    onDownload: (() -> Unit)? = null,
+    onDownloadClick: (() -> Unit)? = null,
+    downloadLabel: String = "Salvar offline",
+    onCancelDownload: (() -> Unit)? = null,
+    onRemoveDownload: (() -> Unit)? = null,
     showRemoveFromPlaylist: Boolean = false,
     onRemoveFromPlaylist: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -168,17 +170,41 @@ fun SongBottomSheet(
                 }
             )
             
-            if (onDownload != null) {
+            if (onDownloadClick != null || onCancelDownload != null || onRemoveDownload != null) {
                 Divider(modifier = Modifier.padding(vertical = 8.dp))
-                
-                BottomSheetMenuItem(
-                    icon = Icons.Rounded.Download,
-                    text = "Download",
-                    onClick = {
-                        onDownload()
-                        onDismiss()
-                    }
-                )
+
+                if (onDownloadClick != null) {
+                    BottomSheetMenuItem(
+                        icon = Icons.Rounded.Download,
+                        text = downloadLabel,
+                        onClick = {
+                            onDownloadClick()
+                            onDismiss()
+                        }
+                    )
+                }
+
+                if (onCancelDownload != null) {
+                    BottomSheetMenuItem(
+                        icon = Icons.Rounded.Cancel,
+                        text = "Cancel download",
+                        onClick = {
+                            onCancelDownload()
+                            onDismiss()
+                        }
+                    )
+                }
+
+                if (onRemoveDownload != null) {
+                    BottomSheetMenuItem(
+                        icon = Icons.Rounded.Delete,
+                        text = "Remove download",
+                        onClick = {
+                            onRemoveDownload()
+                            onDismiss()
+                        }
+                    )
+                }
             }
             
             if (showRemoveFromPlaylist && onRemoveFromPlaylist != null) {
@@ -194,13 +220,155 @@ fun SongBottomSheet(
                 )
             }
             
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AlbumBottomSheet(
+    album: AlbumItem,
+    onDismiss: () -> Unit,
+    onPlay: () -> Unit,
+    onPlayNext: () -> Unit,
+    onAddToQueue: () -> Unit,
+    onNavigateToAlbum: () -> Unit,
+    onNavigateToArtist: (() -> Unit)?,
+    modifier: Modifier = Modifier
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            BottomSheetHeader(
+                title = album.title,
+                onDismiss = onDismiss
+            )
+
             Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
+
             BottomSheetMenuItem(
-                icon = Icons.Rounded.Share,
-                text = "Share",
+                icon = Icons.Rounded.PlayArrow,
+                text = "Play album",
                 onClick = {
-                    onShare()
+                    onPlay()
+                    onDismiss()
+                }
+            )
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.PlaylistPlay,
+                text = "Play next",
+                onClick = {
+                    onPlayNext()
+                    onDismiss()
+                }
+            )
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.QueueMusic,
+                text = "Add to queue",
+                onClick = {
+                    onAddToQueue()
+                    onDismiss()
+                }
+            )
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.Album,
+                text = "Open album",
+                onClick = {
+                    onNavigateToAlbum()
+                    onDismiss()
+                }
+            )
+
+            if (onNavigateToArtist != null) {
+                BottomSheetMenuItem(
+                    icon = Icons.Rounded.Person,
+                    text = "Go to artist",
+                    onClick = {
+                        onNavigateToArtist()
+                        onDismiss()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlaylistBottomSheet(
+    playlist: PlaylistItem,
+    onDismiss: () -> Unit,
+    onPlay: () -> Unit,
+    onPlayNext: () -> Unit,
+    onAddToQueue: () -> Unit,
+    onNavigateToPlaylist: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        ) {
+            BottomSheetHeader(
+                title = playlist.name,
+                onDismiss = onDismiss
+            )
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.PlayArrow,
+                text = "Play playlist",
+                onClick = {
+                    onPlay()
+                    onDismiss()
+                }
+            )
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.PlaylistPlay,
+                text = "Play next",
+                onClick = {
+                    onPlayNext()
+                    onDismiss()
+                }
+            )
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.QueueMusic,
+                text = "Add to queue",
+                onClick = {
+                    onAddToQueue()
+                    onDismiss()
+                }
+            )
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            BottomSheetMenuItem(
+                icon = Icons.Rounded.List,
+                text = "Open playlist",
+                onClick = {
+                    onNavigateToPlaylist()
                     onDismiss()
                 }
             )

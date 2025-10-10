@@ -1,9 +1,11 @@
 package com.shibamusic.data.model
 
-enum class AudioQuality(val codec: AudioCodec, val fileExtension: String) {
-    LOW(AudioCodec.OPUS, "opus"),
-    MEDIUM(AudioCodec.OPUS, "opus"),
-    HIGH(AudioCodec.FLAC, "flac");
+enum class AudioQuality(val codec: AudioCodec) {
+    LOW(AudioCodec.OPUS),
+    MEDIUM(AudioCodec.OPUS),
+    HIGH(AudioCodec.FLAC);
+
+    val fileExtension: String get() = codec.fileExtension
 
     fun getTranscodeFormat(): String {
         return when (this) {
@@ -22,7 +24,12 @@ enum class AudioQuality(val codec: AudioCodec, val fileExtension: String) {
     }
 }
 
-enum class AudioCodec(val displayName: String, val mimeType: String) {
-    OPUS("Opus", "audio/opus"),
-    FLAC("FLAC", "audio/flac")
+enum class AudioCodec(
+    val displayName: String,
+    val downloadMimeType: String,
+    val playbackMimeType: String,
+    val fileExtension: String
+) {
+    OPUS("Opus", "application/ogg", "audio/ogg", "ogg"),
+    FLAC("FLAC", "audio/flac", "audio/flac", "flac")
 }

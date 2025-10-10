@@ -50,6 +50,7 @@ android {
             ndk {
                 debugSymbolLevel 'SYMBOL_TABLE'
             }
+            signingConfig signingConfigs.debug
         }
         debug {
             minifyEnabled false

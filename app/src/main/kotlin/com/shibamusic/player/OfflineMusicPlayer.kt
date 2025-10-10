@@ -11,6 +11,8 @@ import com.shibamusic.data.model.OfflineTrack
 import com.shibamusic.repository.OfflineRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -88,13 +90,19 @@ class OfflineMusicPlayer @Inject constructor(
      * Define a playlist offline para reprodução
      */
     fun setPlaylist(tracks: List<OfflineTrack>, startIndex: Int = 0) {
-        _playlist.value = tracks
+        val normalizedTracks = tracks.map { track ->
+            runBlocking(Dispatchers.IO) {
+                offlineRepository.normalizeOfflineTrack(track.id)
+            } ?: track
+        }
+
+        _playlist.value = normalizedTracks
         _currentIndex.value = startIndex
-        
-        val mediaItems = tracks.map { track ->
+
+        val mediaItems = normalizedTracks.map { track ->
             createMediaItemFromOfflineTrack(track)
         }
-        
+
         exoPlayer?.let { player ->
             player.setMediaItems(mediaItems, startIndex, 0L)
             player.prepare()
@@ -234,6 +242,7 @@ class OfflineMusicPlayer @Inject constructor(
     private fun createMediaItemFromOfflineTrack(track: OfflineTrack): MediaItem {
         val file = File(track.localFilePath)
         val uri = Uri.fromFile(file)
+        val mimeType = track.codec.playbackMimeType
         
         return MediaItem.Builder()
             .setMediaId(track.id)
@@ -245,6 +254,9 @@ class OfflineMusicPlayer @Inject constructor(
                     .setAlbumTitle(track.album)
                     .build()
             )
+            .apply {
+                setMimeType(mimeType)
+            }
             .build()
     }
     

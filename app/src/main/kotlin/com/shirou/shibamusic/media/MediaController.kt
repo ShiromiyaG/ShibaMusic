@@ -2,6 +2,7 @@ package com.shirou.shibamusic.media
 
 import android.content.ComponentName
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -9,6 +10,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
+import com.shibamusic.data.model.AudioCodec
+import com.shibamusic.repository.OfflineRepository
 import com.shirou.shibamusic.glide.CustomGlideRequest
 import com.shirou.shibamusic.repository.QueueRepository
 import com.shirou.shibamusic.service.MediaService
@@ -27,9 +30,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.io.File
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -46,7 +53,8 @@ import kotlin.coroutines.suspendCoroutine
 @UnstableApi
 @Singleton
 class MediaController @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val offlineRepository: OfflineRepository
 ) {
     
     private var mediaBrowserFuture: ListenableFuture<MediaBrowser>? = null
@@ -117,9 +125,16 @@ class MediaController @Inject constructor(
 
         browser.addListener(listener)
         trySend(getCurrentPlayerState(browser))
+        val tickerJob = launch {
+            while (isActive) {
+                trySend(getCurrentPlayerState(browser))
+                delay(500)
+            }
+        }
 
         awaitClose {
             browser.removeListener(listener)
+            tickerJob.cancel()
         }
     }.distinctUntilChanged()
     
@@ -285,6 +300,19 @@ class MediaController @Inject constructor(
             browser.addMediaItem(targetIndex, song.toMediaItem())
         }
     }
+
+    /**
+     * Play next with a list of songs
+     */
+    fun playNext(songs: List<SongItem>) {
+        if (songs.isEmpty()) return
+        mediaBrowser?.let { browser ->
+            val nextIndex = browser.currentMediaItemIndex + 1
+            val targetIndex = if (nextIndex < 0) 0 else nextIndex
+            queueRepository.insertAll(songs.map { it.toChild() }, false, targetIndex)
+            browser.addMediaItems(targetIndex, songs.map { it.toMediaItem() })
+        }
+    }
     
     /**
      * Remove song from queue
@@ -390,12 +418,28 @@ class MediaController @Inject constructor(
      * Convert SongItem to MediaItem
      */
     private fun SongItem.toMediaItem(): MediaItem {
+        val offlineTrack = runBlocking(Dispatchers.IO) {
+            offlineRepository.normalizeOfflineTrack(id)
+        }
+        val localFileUri = offlineTrack?.localFilePath?.let { path ->
+            val file = File(path)
+            if (file.exists()) Uri.fromFile(file) else null
+        }
         val streamUri = getStreamUri(id)
-        val artworkUri = albumArtUrl?.let { android.net.Uri.parse(it) }
+        val resolvedUri = localFileUri ?: Uri.parse(streamUri)
+        val offlineArtworkUri = offlineTrack?.coverArtPath?.let { coverPath ->
+            val file = File(coverPath)
+            if (file.exists()) Uri.fromFile(file) else null
+        }
+        val artworkUri = offlineArtworkUri ?: albumArtUrl?.let { Uri.parse(it) }
         val extras = Bundle().apply {
-            albumArtUrl?.takeIf { it.isNotBlank() }?.let { putString("albumArtUrl", it) }
+            artworkUri?.toString()?.takeIf { it.isNotBlank() }?.let { putString("albumArtUrl", it) }
             albumId?.takeIf { it.isNotBlank() }?.let { putString("albumId", it) }
             artistId?.takeIf { it.isNotBlank() }?.let { putString("artistId", it) }
+            if (localFileUri != null) {
+                putBoolean("isOffline", true)
+                putString("localFilePath", localFileUri.toString())
+            }
         }
         val metadata = MediaMetadata.Builder()
             .setTitle(title)
@@ -408,16 +452,21 @@ class MediaController @Inject constructor(
             .setIsPlayable(true)
             .build()
 
+        val mimeType = offlineTrack?.codec?.playbackMimeType
+
         return MediaItem.Builder()
             .setMediaId(id)
-            .setUri(streamUri)
+            .setUri(resolvedUri)
             .setMediaMetadata(metadata)
             .setRequestMetadata(
                 MediaItem.RequestMetadata.Builder()
-                    .setMediaUri(android.net.Uri.parse(streamUri))
+                    .setMediaUri(resolvedUri)
                     .setExtras(extras)
                     .build()
             )
+            .apply {
+                mimeType?.let { setMimeType(it) }
+            }
             .build()
     }
 

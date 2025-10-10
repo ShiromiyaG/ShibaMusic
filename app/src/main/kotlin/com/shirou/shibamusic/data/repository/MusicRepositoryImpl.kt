@@ -19,8 +19,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,7 +47,20 @@ class MusicRepositoryImpl @Inject constructor(
         private const val DEFAULT_PAGE_SIZE = 120
         private const val DEFAULT_PREFETCH_DISTANCE = 60
         private const val DEFAULT_JUMP_THRESHOLD = 600
+        private const val NETWORK_CACHE_TTL_MS = 5 * 60 * 1000L
+        private const val ALBUM_CACHE_MAX = 256
     }
+
+    private data class CachedAlbumResult(
+        val album: AlbumItem?,
+        val songs: List<SongItem>,
+        val timestamp: Long
+    ) {
+        fun isFresh(now: Long): Boolean = now - timestamp <= NETWORK_CACHE_TTL_MS
+    }
+
+    private val albumCache = ConcurrentHashMap<String, CachedAlbumResult>()
+    private val albumLocks = ConcurrentHashMap<String, Mutex>()
 
     private fun defaultPagingConfig(): PagingConfig = PagingConfig(
         pageSize = DEFAULT_PAGE_SIZE,
@@ -172,6 +188,47 @@ class MusicRepositoryImpl @Inject constructor(
     }
 
     private suspend fun fetchAndCacheAlbum(albumId: String): Pair<AlbumItem?, List<SongItem>> {
+        val now = System.currentTimeMillis()
+        albumCache[albumId]?.takeIf { it.isFresh(now) }?.let { cached ->
+            return cached.album to cached.songs
+        }
+
+        val lock = albumLocks.getOrPut(albumId) { Mutex() }
+        return lock.withLock {
+            val refreshed = albumCache[albumId]
+            if (refreshed != null && refreshed.isFresh(System.currentTimeMillis())) {
+                return@withLock refreshed.album to refreshed.songs
+            }
+
+            val result = fetchAlbumFromServer(albumId)
+            pruneAlbumCache()
+            albumCache[albumId] = CachedAlbumResult(
+                album = result.first,
+                songs = result.second,
+                timestamp = System.currentTimeMillis()
+            )
+            result
+        }
+    }
+
+    private fun pruneAlbumCache(now: Long = System.currentTimeMillis()) {
+        if (albumCache.size <= ALBUM_CACHE_MAX) return
+        val iterator = albumCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (!entry.value.isFresh(now)) {
+                iterator.remove()
+            }
+        }
+        if (albumCache.size > ALBUM_CACHE_MAX) {
+            val surplus = albumCache.entries
+                .sortedBy { it.value.timestamp }
+                .take(albumCache.size - ALBUM_CACHE_MAX)
+            surplus.forEach { albumCache.remove(it.key) }
+        }
+    }
+
+    private suspend fun fetchAlbumFromServer(albumId: String): Pair<AlbumItem?, List<SongItem>> {
         return try {
             val response = App.getSubsonicClientInstance(false)
                 .browsingClient

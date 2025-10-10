@@ -10,6 +10,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Sort
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +39,7 @@ fun LibraryPlaylistsScreen(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onCreatePlaylist: () -> Unit,
     onPlaylistPlay: (PlaylistItem) -> Unit,
+    onPlaylistMenuClick: (PlaylistItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryPlaylistsViewModel = hiltViewModel()
 ) {
@@ -49,6 +51,7 @@ fun LibraryPlaylistsScreen(
         selectedSortOption = uiState.sortOption,
         onPlaylistClick = onPlaylistClick,
         onPlaylistPlay = onPlaylistPlay,
+        onPlaylistMenuClick = onPlaylistMenuClick,
         onCreatePlaylist = onCreatePlaylist,
         modifier = modifier
     )
@@ -61,6 +64,7 @@ fun LibraryPlaylistsContent(
     selectedSortOption: PlaylistSortOption,
     onPlaylistClick: (PlaylistItem) -> Unit,
     onPlaylistPlay: (PlaylistItem) -> Unit,
+    onPlaylistMenuClick: (PlaylistItem) -> Unit,
     onCreatePlaylist: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -143,7 +147,8 @@ fun LibraryPlaylistsContent(
                             PlaylistListItem(
                                 playlist = playlist,
                                 onClick = { onPlaylistClick(playlist) },
-                                onPlayClick = { onPlaylistPlay(playlist) }
+                                onPlayClick = { onPlaylistPlay(playlist) },
+                                onMoreClick = { onPlaylistMenuClick(playlist) }
                             )
                             Divider(modifier = Modifier.padding(start = 80.dp))
                         }
@@ -279,6 +284,7 @@ private fun PlaylistListItem(
     playlist: PlaylistItem,
     onClick: () -> Unit,
     onPlayClick: (() -> Unit)? = null,
+    onMoreClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -344,6 +350,15 @@ private fun PlaylistListItem(
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = "Play playlist"
+                    )
+                }
+            }
+
+            if (onMoreClick != null) {
+                IconButton(onClick = onMoreClick) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "More options"
                     )
                 }
             }

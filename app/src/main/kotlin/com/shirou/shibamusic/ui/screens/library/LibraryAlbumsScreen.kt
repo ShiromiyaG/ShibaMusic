@@ -20,6 +20,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.GridItemPlaceholder
 import com.shirou.shibamusic.ui.model.AlbumItem
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.AlbumSortOption
 import com.shirou.shibamusic.ui.viewmodel.LibraryAlbumsViewModel
 
@@ -31,6 +32,7 @@ import com.shirou.shibamusic.ui.viewmodel.LibraryAlbumsViewModel
 fun LibraryAlbumsScreen(
     onAlbumClick: (AlbumItem) -> Unit,
     onAlbumPlay: (AlbumItem) -> Unit,
+    onAlbumMenuClick: (AlbumItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LibraryAlbumsViewModel = hiltViewModel()
 ) {
@@ -42,6 +44,7 @@ fun LibraryAlbumsScreen(
         isSyncing = uiState.isSyncing,
         onAlbumClick = onAlbumClick,
         onAlbumPlay = onAlbumPlay,
+        onAlbumMenuClick = onAlbumMenuClick,
         selectedSortOption = uiState.sortOption,
         modifier = modifier
     )
@@ -54,6 +57,7 @@ fun LibraryAlbumsContent(
     isSyncing: Boolean,
     onAlbumClick: (AlbumItem) -> Unit,
     onAlbumPlay: (AlbumItem) -> Unit,
+    onAlbumMenuClick: (AlbumItem) -> Unit,
     selectedSortOption: AlbumSortOption,
     modifier: Modifier = Modifier
 ) {
@@ -133,10 +137,11 @@ fun LibraryAlbumsContent(
                             GridItem(
                                 title = album.title,
                                 subtitle = album.artistName,
-                                thumbnailUrl = album.albumArtUrl,
+                                thumbnailUrl = album.getThumbnailUrl(),
                                 isCircular = false,
                                 onClick = { onAlbumClick(album) },
-                                onPrimaryAction = { onAlbumPlay(album) }
+                                onPrimaryAction = { onAlbumPlay(album) },
+                                onMoreClick = { onAlbumMenuClick(album) }
                             )
                         }
 

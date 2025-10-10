@@ -222,7 +222,7 @@ private fun SearchResultsList(
                             title = song.title,
                             artist = song.artistName,
                             album = song.albumName,
-                            thumbnailUrl = song.albumArtUrl,
+                            thumbnailUrl = song.getThumbnailUrl(),
                             isPlaying = currentSongId == song.id && isPlaying,
                             onClick = { onSongClick(song) },
                             onMoreClick = { /* TODO */ }
@@ -279,7 +279,7 @@ private fun SearchResultsList(
                         title = song.title,
                         artist = song.artistName,
                         album = song.albumName,
-                        thumbnailUrl = song.albumArtUrl,
+                        thumbnailUrl = song.getThumbnailUrl(),
                         isPlaying = currentSongId == song.id && isPlaying,
                         onClick = { onSongClick(song) },
                         onMoreClick = { /* TODO */ }
@@ -373,7 +373,7 @@ private fun AlbumListItem(
         ) {
             Card(modifier = Modifier.size(56.dp)) {
                 coil.compose.AsyncImage(
-                    model = album.albumArtUrl,
+                    model = album.getThumbnailUrl(),
                     contentDescription = album.title,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop

@@ -16,7 +16,11 @@ import androidx.room.PrimaryKey
         Index(value = ["album_id"]),
         Index(value = ["date_added"]),
         Index(value = ["is_favorite"]),
-        Index(value = ["date_modified"])
+        Index(value = ["date_modified"]),
+        Index(value = ["artist_name"]),
+        Index(value = ["album_name"]),
+        Index(value = ["last_played_timestamp"]),
+        Index(value = ["play_count"])
     ]
 )
 data class SongEntity(

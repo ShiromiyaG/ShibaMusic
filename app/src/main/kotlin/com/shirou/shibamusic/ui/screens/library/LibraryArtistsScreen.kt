@@ -20,6 +20,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.GridItemPlaceholder
 import com.shirou.shibamusic.ui.model.ArtistItem
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.ArtistSortOption
 import com.shirou.shibamusic.ui.viewmodel.LibraryArtistsViewModel
 
@@ -132,7 +133,7 @@ fun LibraryArtistsContent(
                             GridItem(
                                 title = artist.name,
                                 subtitle = "${artist.albumCount} albums",
-                                thumbnailUrl = artist.imageUrl,
+                                thumbnailUrl = artist.getThumbnailUrl(),
                                 isCircular = true,
                                 onClick = { onArtistClick(artist) },
                                 onPrimaryAction = { onArtistPlay(artist) }

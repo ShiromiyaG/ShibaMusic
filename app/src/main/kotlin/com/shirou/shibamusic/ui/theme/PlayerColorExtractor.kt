@@ -6,7 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
-import coil.ImageLoader
+import coil.imageLoader
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import kotlinx.coroutines.Dispatchers
@@ -33,12 +34,14 @@ object PlayerColorExtractor {
             )
         }
         
-        val imageLoader = ImageLoader(context)
+        val imageLoader = context.imageLoader
         
         try {
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false) // Palette precisa de software bitmap
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .diskCachePolicy(CachePolicy.ENABLED)
                 .build()
             
             val result = imageLoader.execute(request)

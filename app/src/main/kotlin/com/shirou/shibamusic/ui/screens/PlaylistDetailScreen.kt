@@ -1,5 +1,6 @@
 package com.shirou.shibamusic.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,14 +15,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import com.shibamusic.data.model.AudioQuality
+import com.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
+import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
+import com.shirou.shibamusic.util.Preferences
 
 /**
  * Playlist Detail Screen
@@ -41,6 +49,8 @@ fun PlaylistDetailScreen(
     onEditPlaylist: () -> Unit,
     onDeletePlaylist: () -> Unit,
     onAddSongs: () -> Unit,
+    onSongGoToAlbum: (String) -> Unit = {},
+    onSongGoToArtist: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -49,6 +59,13 @@ fun PlaylistDetailScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddSongsDialog by remember { mutableStateOf(false) }
+    val playbackViewModel: PlaybackViewModel = hiltViewModel()
+    val offlineViewModel: OfflineViewModel = hiltViewModel()
+    val offlineTracks by offlineViewModel.offlineTracks.collectAsStateWithLifecycle()
+    val activeDownloads by offlineViewModel.activeDownloads.collectAsStateWithLifecycle()
+    val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
+    val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
+    val context = LocalContext.current
     
     Scaffold(
         topBar = {
@@ -152,7 +169,7 @@ fun PlaylistDetailScreen(
                         title = song.title,
                         artist = song.artistName,
                         album = song.albumName,
-                        thumbnailUrl = song.albumArtUrl,
+                        thumbnailUrl = song.getThumbnailUrl(),
                         isPlaying = currentSongId == song.id && isPlaying,
                         onClick = { onSongClick(song) },
                         onMoreClick = {
@@ -172,19 +189,70 @@ fun PlaylistDetailScreen(
     
     // Bottom Sheet for Song Menu
     if (showBottomSheet && selectedSong != null) {
+        val song = selectedSong!!
+        val isDownloaded = downloadedSongIds.contains(song.id)
+        val downloadInfo = activeDownloadMap[song.id]
+        val isDownloading = downloadInfo != null
+
+        val selectedQuality = Preferences.getOfflineDownloadQuality()
+        val downloadAction: (() -> Unit)? =
+            if (!isDownloaded && !isDownloading) {
+                {
+                    offlineViewModel.downloadTrack(
+                        trackId = song.id,
+                        title = song.title,
+                        artist = song.artistName,
+                        album = song.albumName ?: playlist.name,
+                        duration = song.duration,
+                        coverArtUrl = song.albumArtUrl,
+                        quality = selectedQuality
+                    )
+                }
+            } else null
+
+        val removeDownloadCallback: (() -> Unit)? =
+            if (isDownloaded) {
+                { offlineViewModel.removeOfflineTrack(song.id) }
+            } else null
+
+        val cancelDownloadCallback: (() -> Unit)? =
+            if (isDownloading) {
+                { offlineViewModel.cancelDownload(song.id) }
+            } else null
+
         SongBottomSheet(
-            song = selectedSong!!,
-            onDismiss = { showBottomSheet = false },
-            onPlayNext = { /* TODO */ },
-            onAddToQueue = { /* TODO */ },
-            onGoToAlbum = { /* TODO */ },
-            onGoToArtist = { /* TODO */ },
-            onShare = { /* TODO */ },
+            song = song,
+            onDismiss = {
+                showBottomSheet = false
+                selectedSong = null
+            },
+            onPlayNext = { playbackViewModel.playNext(song) },
+            onAddToQueue = { playbackViewModel.addToQueue(song) },
+            onGoToAlbum = {
+                val albumId = song.albumId
+                if (albumId != null) {
+                    onSongGoToAlbum(albumId)
+                } else {
+                    Toast.makeText(context, "Album info unavailable", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onGoToArtist = {
+                val artistId = song.artistId
+                if (artistId != null) {
+                    onSongGoToArtist(artistId)
+                } else {
+                    Toast.makeText(context, "Artist info unavailable", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDownloadClick = downloadAction,
+            downloadLabel = "Download offline (${selectedQuality.toDownloadLabel()})",
+            onCancelDownload = cancelDownloadCallback,
+            onRemoveDownload = removeDownloadCallback,
             showRemoveFromPlaylist = true,
             onRemoveFromPlaylist = { /* TODO */ }
         )
     }
-    
+
     if (showEditDialog) {
         EditPlaylistDialog(
             playlist = playlist,
@@ -357,6 +425,12 @@ private fun AddSongsDialog(
             }
         }
     }
+}
+
+private fun AudioQuality.toDownloadLabel(): String = when (this) {
+    AudioQuality.LOW -> "128 kbps (Opus)"
+    AudioQuality.MEDIUM -> "320 kbps (Opus)"
+    AudioQuality.HIGH -> "Lossless (FLAC)"
 }
 
 

@@ -11,6 +11,7 @@ import com.shirou.shibamusic.data.database.entity.ArtistEntity
 import com.shirou.shibamusic.data.database.entity.PlaylistEntity
 import com.shirou.shibamusic.data.database.entity.SongEntity
 import com.shirou.shibamusic.di.IoDispatcher
+import com.shirou.shibamusic.subsonic.Subsonic
 import com.shirou.shibamusic.subsonic.base.ApiResponse
 import com.shirou.shibamusic.subsonic.models.AlbumID3
 import com.shirou.shibamusic.subsonic.models.AlbumWithSongsID3
@@ -19,9 +20,14 @@ import com.shirou.shibamusic.subsonic.models.ArtistWithAlbumsID3
 import com.shirou.shibamusic.subsonic.models.ArtistsID3
 import com.shirou.shibamusic.subsonic.models.Child
 import java.io.IOException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
@@ -31,6 +37,7 @@ import javax.inject.Singleton
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Repository for syncing data from Navidrome server to local database
@@ -51,6 +58,9 @@ class SyncRepository @Inject constructor(
     init {
         Log.d(TAG, "SyncRepository initialized")
     }
+
+    private val artistDetailCache = ConcurrentHashMap<String, CachedArtistDetail>()
+    private val albumSongCache = ConcurrentHashMap<String, CachedAlbumSongs>()
     
     /**
      * Extension function to convert AlbumID3 to AlbumEntity
@@ -242,120 +252,226 @@ class SyncRepository @Inject constructor(
             return@withContext ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
         }
 
-        // Seed database with base artist metadata before fetching details
         artistDao.insertArtists(selectedArtists.map { artist -> artist.toEntity() })
 
-        var processedArtists = 0
-        var storedAlbums = 0
-        var storedSongs = 0
+        val semaphore = Semaphore(permits = ARTIST_SYNC_CONCURRENCY)
 
-        selectedArtists.forEach { artist ->
-            val artistId = artist.id ?: return@forEach
-
-            if (throttleMs > 0) {
-                delay(throttleMs)
-            }
-
-            val artistDetailResponse = try {
-                client.browsingClient.getArtist(artistId).execute()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
-                Log.e(TAG, "Error fetching artist $artistId", error)
-                return@forEach
-            }
-
-            if (!artistDetailResponse.isSuccessful) {
-                Log.e(
-                    TAG,
-                    "Failed to fetch artist $artistId: ${artistDetailResponse.code()} ${artistDetailResponse.message()}"
-                )
-                return@forEach
-            }
-
-            val artistDetail = artistDetailResponse.body()?.subsonicResponse?.artist
-            val albums = artistDetail?.albums.orEmpty().filter { !it.id.isNullOrBlank() }
-
-            val limitedAlbums = when {
-                albumLimitPerArtist == null || albumLimitPerArtist <= 0 -> albums
-                albumLimitPerArtist >= albums.size -> albums
-                else -> albums.take(albumLimitPerArtist)
-            }
-
-            if (limitedAlbums.isNotEmpty()) {
-                val albumEntities = limitedAlbums.mapNotNull { album ->
-                    try {
-                        album.toEntity()
-                    } catch (error: Exception) {
-                        Log.e(TAG, "Error converting album ${album.id}", error)
-                        null
-                    }
-                }
-
-                if (albumEntities.isNotEmpty()) {
-                    albumDao.insertAlbums(albumEntities)
-                    storedAlbums += albumEntities.size
-                }
-            }
-
-            var songsForArtist = 0
-
-            if (syncSongs && limitedAlbums.isNotEmpty()) {
-                limitedAlbums.forEach { album ->
-                    val albumId = album.id ?: return@forEach
-
-                    if (throttleMs > 0) {
-                        delay(throttleMs)
-                    }
-
-                    val albumResponse = try {
-                        client.browsingClient.getAlbum(albumId).execute()
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (error: Exception) {
-                        Log.e(TAG, "Error fetching album $albumId", error)
-                        return@forEach
-                    }
-
-                    if (!albumResponse.isSuccessful) {
-                        Log.e(
-                            TAG,
-                            "Failed to fetch album $albumId: ${albumResponse.code()} ${albumResponse.message()}"
+        val reports = coroutineScope {
+            selectedArtists.map { artist ->
+                async {
+                    semaphore.withPermit {
+                        syncArtistDeep(
+                            client = client,
+                            artist = artist,
+                            albumLimitPerArtist = albumLimitPerArtist,
+                            syncSongs = syncSongs,
+                            throttleMs = throttleMs
                         )
-                        return@forEach
-                    }
-
-                    val albumWithSongs: AlbumWithSongsID3? = albumResponse.body()?.subsonicResponse?.album
-                    val songEntities = albumWithSongs?.songs.orEmpty().mapNotNull { it.toEntityOrNull() }
-
-                    if (songEntities.isNotEmpty()) {
-                        songDao.insertSongs(songEntities)
-                        storedSongs += songEntities.size
-                        songsForArtist += songEntities.size
-
-                        val totalDuration = songEntities.sumOf { it.durationMs }
-                        albumDao.updateAlbumStats(albumId, songEntities.size, totalDuration)
                     }
                 }
-            }
-
-            artistDetail?.let { detail ->
-                artistDao.insertArtist(
-                    detail.toEntity(
-                        albumCountOverride = limitedAlbums.size,
-                        songCount = songsForArtist
-                    )
-                )
-            }
-
-            processedArtists += 1
+            }.awaitAll()
         }
 
-        ArtistAlbumSyncReport(
-            artists = processedArtists,
-            albums = storedAlbums,
-            songs = storedSongs
+        reports.fold(
+            ArtistAlbumSyncReport(
+                artists = 0,
+                albums = 0,
+                songs = 0
+            )
+        ) { acc, report ->
+            ArtistAlbumSyncReport(
+                artists = acc.artists + report.artists,
+                albums = acc.albums + report.albums,
+                songs = acc.songs + report.songs
+            )
+        }
+    }
+
+    private suspend fun syncArtistDeep(
+        client: Subsonic,
+        artist: ArtistID3,
+        albumLimitPerArtist: Int?,
+        syncSongs: Boolean,
+        throttleMs: Long
+    ): ArtistAlbumSyncReport {
+        val artistId = artist.id ?: return ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
+
+        val now = System.currentTimeMillis()
+        val cachedArtist = artistDetailCache[artistId]
+        val artistDetail: ArtistWithAlbumsID3? =
+            if (cachedArtist != null && cachedArtist.isFresh(now)) {
+                cachedArtist.detail
+            } else {
+                throttleForNetwork(throttleMs, ARTIST_SYNC_CONCURRENCY)
+
+                val artistDetailResponse = try {
+                    client.browsingClient.getArtist(artistId).execute()
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (error: Exception) {
+                    Log.e(TAG, "Error fetching artist $artistId", error)
+                    return ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
+                }
+
+                if (!artistDetailResponse.isSuccessful) {
+                    Log.e(
+                        TAG,
+                        "Failed to fetch artist $artistId: ${artistDetailResponse.code()} ${artistDetailResponse.message()}"
+                    )
+                    return ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
+                }
+
+                val detail = artistDetailResponse.body()?.subsonicResponse?.artist
+                artistDetailCache[artistId] = CachedArtistDetail(detail, now)
+                pruneArtistCache()
+                detail
+            }
+        val albums = artistDetail?.albums.orEmpty().filter { !it.id.isNullOrBlank() }
+
+        val limitedAlbums = when {
+            albumLimitPerArtist == null || albumLimitPerArtist <= 0 -> albums
+            albumLimitPerArtist >= albums.size -> albums
+            else -> albums.take(albumLimitPerArtist)
+        }
+
+        val albumEntities = limitedAlbums.mapNotNull { album ->
+            try {
+                album.toEntity()
+            } catch (error: Exception) {
+                Log.e(TAG, "Error converting album ${album.id}", error)
+                null
+            }
+        }
+
+        if (albumEntities.isNotEmpty()) {
+            albumDao.insertAlbums(albumEntities)
+        }
+
+        val albumResults = if (syncSongs && limitedAlbums.isNotEmpty()) {
+            val albumSemaphore = Semaphore(permits = ALBUM_SYNC_CONCURRENCY)
+            coroutineScope {
+                limitedAlbums.mapNotNull { album ->
+                    val albumId = album.id ?: return@mapNotNull null
+                    async {
+                        albumSemaphore.withPermit {
+                            fetchAlbumSongs(client, albumId, throttleMs)
+                        }
+                    }
+                }.awaitAll()
+            }
+        } else {
+            emptyList()
+        }
+
+        val totalSongsForArtist = albumResults.sumOf { it.songCount }
+
+        artistDetail?.let { detail ->
+            artistDao.insertArtist(
+                detail.toEntity(
+                    albumCountOverride = limitedAlbums.size,
+                    songCount = totalSongsForArtist
+                )
+            )
+        }
+
+        return ArtistAlbumSyncReport(
+            artists = 1,
+            albums = albumEntities.size,
+            songs = totalSongsForArtist
         )
+    }
+
+    private suspend fun fetchAlbumSongs(
+        client: Subsonic,
+        albumId: String,
+        throttleMs: Long
+    ): AlbumSongSyncResult {
+        val now = System.currentTimeMillis()
+        val cached = albumSongCache[albumId]
+        if (cached != null && cached.isFresh(now)) {
+            return cached.result
+        }
+
+        throttleForNetwork(throttleMs, ALBUM_SYNC_CONCURRENCY)
+
+        val albumResponse = try {
+            client.browsingClient.getAlbum(albumId).execute()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            Log.e(TAG, "Error fetching album $albumId", error)
+            return AlbumSongSyncResult(albumId = albumId, songCount = 0, totalDuration = 0)
+        }
+
+        if (!albumResponse.isSuccessful) {
+            Log.e(
+                TAG,
+                "Failed to fetch album $albumId: ${albumResponse.code()} ${albumResponse.message()}"
+            )
+            return AlbumSongSyncResult(albumId = albumId, songCount = 0, totalDuration = 0)
+        }
+
+        val albumWithSongs: AlbumWithSongsID3? = albumResponse.body()?.subsonicResponse?.album
+        val songEntities = albumWithSongs?.songs.orEmpty().mapNotNull { it.toEntityOrNull() }
+
+        if (songEntities.isEmpty()) {
+            return AlbumSongSyncResult(albumId = albumId, songCount = 0, totalDuration = 0)
+        }
+
+        songDao.insertSongs(songEntities)
+        val totalDuration = songEntities.sumOf { it.durationMs }
+        albumDao.updateAlbumStats(albumId, songEntities.size, totalDuration)
+
+        val result = AlbumSongSyncResult(
+            albumId = albumId,
+            songCount = songEntities.size,
+            totalDuration = totalDuration
+        )
+        albumSongCache[albumId] = CachedAlbumSongs(result, System.currentTimeMillis())
+        pruneAlbumSongCache()
+        return result
+    }
+
+    private suspend fun throttleForNetwork(throttleMs: Long, concurrency: Int) {
+        if (throttleMs <= 0) return
+        val adjustedDelay = throttleMs / concurrency.coerceAtLeast(1)
+        if (adjustedDelay > 0) {
+            delay(adjustedDelay)
+        }
+    }
+
+    private fun pruneArtistCache(now: Long = System.currentTimeMillis()) {
+        if (artistDetailCache.size <= ARTIST_CACHE_MAX) return
+        val iterator = artistDetailCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (!entry.value.isFresh(now)) {
+                iterator.remove()
+            }
+        }
+        if (artistDetailCache.size > ARTIST_CACHE_MAX) {
+            val surplus = artistDetailCache.entries
+                .sortedBy { it.value.timestamp }
+                .take(artistDetailCache.size - ARTIST_CACHE_MAX)
+            surplus.forEach { artistDetailCache.remove(it.key) }
+        }
+    }
+
+    private fun pruneAlbumSongCache(now: Long = System.currentTimeMillis()) {
+        if (albumSongCache.size <= ALBUM_SONG_CACHE_MAX) return
+        val iterator = albumSongCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (!entry.value.isFresh(now)) {
+                iterator.remove()
+            }
+        }
+        if (albumSongCache.size > ALBUM_SONG_CACHE_MAX) {
+            val surplus = albumSongCache.entries
+                .sortedBy { it.value.timestamp }
+                .take(albumSongCache.size - ALBUM_SONG_CACHE_MAX)
+            surplus.forEach { albumSongCache.remove(it.key) }
+        }
     }
 
     /**
@@ -424,22 +540,30 @@ class SyncRepository @Inject constructor(
                                 response.body()?.subsonicResponse?.playlists?.playlists != null) {
                                 
                                 val playlists = response.body()!!.subsonicResponse.playlists!!.playlists!!
-                                
+
                                 val playlistEntities = playlists.mapNotNull { playlist ->
+                                    val playlistId = playlist.id
+                                    if (playlistId.isNullOrEmpty()) {
+                                        Log.w(TAG, "Skipping playlist with missing id")
+                                        return@mapNotNull null
+                                    }
+
                                     try {
+                                        val name = playlist.name ?: playlistId
+                                        val durationSeconds = playlist.duration.coerceAtLeast(0L)
                                         PlaylistEntity(
-                                            id = playlist.id ?: return@mapNotNull null,
-                                            name = playlist.name ?: "",
+                                            id = playlistId,
+                                            name = name,
                                             description = playlist.comment,
                                             coverUrl = playlist.coverArtId,
-                                            songCount = playlist.songCount ?: 0,
-                                            durationMs = (playlist.duration ?: 0).toLong() * 1000,
+                                            songCount = playlist.songCount.coerceAtLeast(0),
+                                            durationMs = durationSeconds * 1000,
                                             dateCreated = playlist.created?.time ?: System.currentTimeMillis(),
                                             dateModified = playlist.changed?.time ?: System.currentTimeMillis(),
                                             isFavorite = false
                                         )
                                     } catch (e: Exception) {
-                                        Log.e(TAG, "Error converting playlist", e)
+                                        Log.e(TAG, "Error converting playlist $playlistId", e)
                                         null
                                     }
                                 }
@@ -655,6 +779,31 @@ data class ArtistAlbumSyncReport(
     val songs: Int
 )
 
+data class AlbumSongSyncResult(
+    val albumId: String,
+    val songCount: Int,
+    val totalDuration: Long
+)
+
+private data class CachedArtistDetail(
+    val detail: ArtistWithAlbumsID3?,
+    val timestamp: Long
+) {
+    fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
+}
+
+private data class CachedAlbumSongs(
+    val result: AlbumSongSyncResult,
+    val timestamp: Long
+) {
+    fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
+}
+
 private const val DEFAULT_PAGE_SIZE = 500
 private const val DEFAULT_MAX_PAGES = 500
 private const val DEFAULT_THROTTLE_MS = 50L
+private const val ARTIST_SYNC_CONCURRENCY = 4
+private const val ALBUM_SYNC_CONCURRENCY = 4
+private const val SYNC_CACHE_TTL_MS = 5 * 60 * 1000L
+private const val ARTIST_CACHE_MAX = 256
+private const val ALBUM_SONG_CACHE_MAX = 512

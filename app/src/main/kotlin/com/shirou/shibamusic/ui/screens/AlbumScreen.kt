@@ -75,7 +75,7 @@ fun AlbumScreen(
                     ) {
                         // Album artwork
                         AsyncImage(
-                            model = album?.albumArtUrl,
+                            model = album?.getPlayerArtworkUrl(),
                             contentDescription = album?.title,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -167,7 +167,7 @@ fun AlbumScreen(
                         title = song.title,
                         artist = song.artistName,
                         album = null, // Don't show album since we're on album screen
-                        thumbnailUrl = song.albumArtUrl ?: album?.albumArtUrl,
+                        thumbnailUrl = song.getThumbnailUrl() ?: album?.getThumbnailUrl(),
                         isPlaying = song.id == currentlyPlayingSongId,
                         onClick = { onSongClick(song) },
                         onMoreClick = { onSongMenuClick(song) },

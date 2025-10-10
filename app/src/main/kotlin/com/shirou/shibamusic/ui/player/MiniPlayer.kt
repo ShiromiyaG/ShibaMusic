@@ -1,9 +1,6 @@
 package com.shirou.shibamusic.ui.player
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.*
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -11,9 +8,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +68,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.MiniPlayerSeekBar
 import com.shirou.shibamusic.ui.model.PlaybackState
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -97,6 +96,8 @@ fun MiniPlayer(
 ) {
     val playbackState by viewModel.playbackState.collectAsStateWithLifecycle()
     val nowPlaying = playbackState.nowPlaying ?: return
+
+    val sharedElementKey = "album_artwork_${nowPlaying.id}"
 
     val durationMs = playbackState.progress.duration.takeIf { it > 0 } ?: 0L
     val positionMs = playbackState.progress.currentPosition.coerceIn(0, durationMs)
@@ -189,6 +190,8 @@ fun MiniPlayer(
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
+            val isPlaying = playbackState.isPlaying && playbackState.playbackState != PlaybackState.ENDED
+
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -209,33 +212,86 @@ fun MiniPlayer(
                     }
 
                     with(sharedTransitionScope) {
-                        Box(
-                            contentAlignment = Alignment.Center,
+                        val cornerProgress = rememberSharedAlbumCornerProgress(
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            visibleProgress = 1f,
+                            hiddenProgress = 0f
+                        )
+                        val sharedShape = rememberSharedAlbumShape(cornerProgress = cornerProgress)
+
+                        Surface(
                             modifier = Modifier
                                 .size(40.dp)
-                                .clip(CircleShape)
-                                .border(
-                                    width = 1.dp,
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                    shape = CircleShape
-                                )
                                 .sharedElement(
-                                    state = rememberSharedContentState(key = "album_artwork"),
+                                    state = rememberSharedContentState(key = sharedElementKey),
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     boundsTransform = { _, _ ->
-                                        tween(durationMillis = 400, easing = androidx.compose.animation.core.FastOutSlowInEasing)
+                                        tween(
+                                            durationMillis = 400,
+                                            easing = androidx.compose.animation.core.FastOutSlowInEasing
+                                        )
                                     }
                                 )
+                                .renderInSharedTransitionScopeOverlay(
+                                    renderInOverlay = { isTransitionActive },
+                                    zIndexInOverlay = 1f
+                                ),
+                            shape = sharedShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            border = BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                            ),
+                            tonalElevation = 0.dp
                         ) {
                             AsyncImage(
-                                model = nowPlaying.albumArtUrl,
+                                model = nowPlaying.getThumbnailUrl(),
                                 contentDescription = nowPlaying.title,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(CircleShape)
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
+                    }
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = if (isPlaying) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                },
+                                shape = CircleShape
+                            )
+                            .background(
+                                color = if (isPlaying) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                } else {
+                                    Color.Transparent
+                                },
+                                shape = CircleShape
+                            )
+                            .clickable {
+                                if (playbackState.playbackState == PlaybackState.ENDED) {
+                                    viewModel.seekTo(0L)
+                                }
+                                viewModel.playPause()
+                            }
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) {
+                                Icons.Rounded.Pause
+                            } else {
+                                Icons.Rounded.PlayArrow
+                            },
+                            contentDescription = if (isPlaying) "Pause" else "Play",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
@@ -276,45 +332,25 @@ fun MiniPlayer(
                     }
                 }
 
-                val isPlaying = playbackState.isPlaying && playbackState.playbackState != PlaybackState.ENDED
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .border(
-                            width = 1.dp,
-                            color = if (isPlaying) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            } else {
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                            },
-                            shape = CircleShape
-                        )
-                        .background(
-                            color = if (isPlaying) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            } else {
-                                Color.Transparent
-                            },
-                            shape = CircleShape
-                        )
-                        .clickable {
-                            if (playbackState.playbackState == PlaybackState.ENDED) {
-                                viewModel.seekTo(0L)
-                            }
-                            viewModel.playPause()
-                        }
+                IconButton(
+                    onClick = { viewModel.toggleFavorite() }
                 ) {
                     Icon(
-                        imageVector = if (isPlaying) {
-                            Icons.Rounded.Pause
+                        imageVector = if (playbackState.isFavorite) {
+                            Icons.Rounded.Favorite
                         } else {
-                            Icons.Rounded.PlayArrow
+                            Icons.Rounded.FavoriteBorder
                         },
-                        contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
+                        contentDescription = if (playbackState.isFavorite) {
+                            "Remove from favorites"
+                        } else {
+                            "Add to favorites"
+                        },
+                        tint = if (playbackState.isFavorite) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
                     )
                 }
 
@@ -388,7 +424,7 @@ fun MiniPlayerRounded(
             ) {
                 // Thumbnail quadrado com cantos arredondados
                 com.shirou.shibamusic.ui.component.MusicThumbnail(
-                    imageUrl = nowPlaying.albumArtUrl,
+                    imageUrl = nowPlaying.getThumbnailUrl(),
                     size = 56.dp,
                     contentDescription = nowPlaying.title
                 )
