@@ -31,6 +31,7 @@ import com.shirou.shibamusic.repository.SystemRepository
 import com.shirou.shibamusic.ui.offline.OfflineViewModel
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.util.Preferences
+import com.shirou.shibamusic.BuildConfig
 
 /**
  * Settings Screen
