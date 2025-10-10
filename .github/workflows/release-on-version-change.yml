@@ -1,0 +1,182 @@
+name: Release APK on version bump
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - app/build.gradle
+  workflow_dispatch:
+
+jobs:
+  detect_version_change:
+    name: Detect version bump
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.detect.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect versionName change
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          before_sha="${{ github.event.before }}"
+          if [[ -z "$before_sha" || "$before_sha" == "0000000000000000000000000000000000000000" ]]; then
+            before_sha="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          if git diff "$before_sha" "${{ github.sha }}" -- app/build.gradle | grep -q "versionName"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build_and_release:
+    name: Build APK and publish release
+    needs: detect_version_change
+    if: needs.detect_version_change.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Prepare Gradle
+        run: chmod +x gradlew
+
+      - name: Extract version metadata
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_name="$(sed -n "s/^[[:space:]]*versionName[[:space:]]*'\\(.*\\)'/\\1/p" app/build.gradle | head -n 1)"
+          version_code="$(sed -n "s/^[[:space:]]*versionCode[[:space:]]*\\([0-9]*\\)/\\1/p" app/build.gradle | head -n 1)"
+
+          if [[ -z "$version_name" ]]; then
+            echo "Não foi possível extrair versionName de app/build.gradle" >&2
+            exit 1
+          fi
+
+          echo "version_name=$version_name" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "VERSION_NAME=$version_name" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        run: ./gradlew --stacktrace assembleRelease
+
+      - name: Rename artifact
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          cp app/build/outputs/apk/release/app-release.apk "artifacts/ShibaMusic-${VERSION_NAME}.apk"
+
+      - name: Generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          last_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          current_tag="v${VERSION_NAME}"
+
+          if [[ -n "$last_tag" ]]; then
+            range="${last_tag}..HEAD"
+            compare_url="${{ github.server_url }}/${{ github.repository }}/compare/${last_tag}...${current_tag}"
+          else
+            range="HEAD"
+            compare_url=""
+          fi
+
+          features=""
+          fixes=""
+          chores=""
+          others=""
+
+          while IFS= read -r summary; do
+            [[ -z "$summary" ]] && continue
+            lower_summary="$(echo "$summary" | tr '[:upper:]' '[:lower:]')"
+            if [[ "$lower_summary" == feat* ]]; then
+              features+="- ${summary}\n"
+            elif [[ "$lower_summary" == fix* || "$lower_summary" == bugfix* ]]; then
+              fixes+="- ${summary}\n"
+            elif [[ "$lower_summary" == chore* || "$lower_summary" == refactor* || "$lower_summary" == build* || "$lower_summary" == ci* ]]; then
+              chores+="- ${summary}\n"
+            else
+              others+="- ${summary}\n"
+            fi
+          done < <(git log --no-merges --pretty=format:'%s' "$range")
+
+          {
+            echo "## 🚀 ShibaMusic ${VERSION_NAME}"
+            echo
+            echo "- **Versão**: \`${VERSION_NAME}\`"
+            if [[ -n "${VERSION_CODE}" ]]; then
+              echo "- **VersionCode**: \`${VERSION_CODE}\`"
+            fi
+            if [[ -n "$compare_url" ]]; then
+              echo "- **Diff completo**: [$compare_url]($compare_url)"
+            fi
+            echo
+
+            if [[ -n "$features" ]]; then
+              echo "### ✨ Novidades"
+              printf "%b" "$features"
+              echo
+            fi
+
+            if [[ -n "$fixes" ]]; then
+              echo "### 🐛 Correções"
+              printf "%b" "$fixes"
+              echo
+            fi
+
+            if [[ -n "$chores" ]]; then
+              echo "### 🛠️ Manutenção"
+              printf "%b" "$chores"
+              echo
+            fi
+
+            if [[ -n "$others" ]]; then
+              echo "### 📦 Outros"
+              printf "%b" "$others"
+              echo
+            fi
+
+            if [[ -z "$features$fixes$chores$others" ]]; then
+              echo "Nenhuma alteração registrada desde a última versão. 🎉"
+              echo
+            fi
+
+            echo "Gerado automaticamente pelo pipeline de release."
+          } > release_notes.md
+
+          echo "body_path=release_notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version_name }}
+          name: ShibaMusic v${{ steps.version.outputs.version_name }}
+          body_path: ${{ steps.changelog.outputs.body_path }}
+          files: artifacts/ShibaMusic-${{ steps.version.outputs.version_name }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -346,7 +346,7 @@ fun SettingsScreen(
                 SettingsItem(
                     icon = Icons.Rounded.Info,
                     title = stringResource(com.shirou.shibamusic.R.string.settings_version_title_item),
-                    subtitle = "1.0.0",
+                    subtitle = BuildConfig.VERSION_NAME,
                     onClick = {}
                 )
                 
