@@ -16,6 +16,13 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import com.shirou.shibamusic.ui.theme.rememberPlayerColors
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 
 /**
  * Album Detail Screen
@@ -36,158 +43,195 @@ fun AlbumScreen(
 ) {
     val album = albumDetail?.album
     val songs = albumDetail?.songs ?: emptyList()
-    Scaffold(
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                shadowElevation = 0.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            }
-        },
-        contentWindowInsets = WindowInsets(0.dp)
-    ) { paddingValues ->
-        val layoutDirection = LocalLayoutDirection.current
-        val horizontalPadding = PaddingValues(
-            start = paddingValues.calculateStartPadding(layoutDirection),
-            end = paddingValues.calculateEndPadding(layoutDirection)
+
+    val playerColors by rememberPlayerColors(
+        imageUrl = album?.getThumbnailUrl(),
+        defaultColor = MaterialTheme.colorScheme.background
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        AsyncImage(
+            model = album?.getThumbnailUrl(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(120.dp)
+                .alpha(0.6f)
         )
-        val topPadding = paddingValues.calculateTopPadding()
-        if (album == null || isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontalPadding)
-                    .padding(top = topPadding)
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(horizontalPadding)
-                    .padding(top = topPadding)
-            ) {
-                // Album header with artwork
-                item {
-                    Column(
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            playerColors.background.copy(alpha = 0.95f),
+                            playerColors.surface.copy(alpha = 0.85f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        )
+
+        Scaffold(
+            topBar = {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.0f),
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Album artwork
-                        AsyncImage(
-                            model = album?.getPlayerArtworkUrl(),
-                            contentDescription = album?.title,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(1f),
-                            contentScale = ContentScale.Crop
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Album title
-                        Text(
-                            text = album.title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // Artist name (clickable)
-                        TextButton(
-                            onClick = onArtistClick,
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(
-                                text = album.artistName,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBack,
+                                contentDescription = "Back"
                             )
-                        }
-                        
-                        Spacer(modifier = Modifier.height(4.dp))
-                        
-                        // Album info
-                        Text(
-                            text = buildString {
-                                album.year?.let { append("$it • ") }
-                                append("${songs.size} songs")
-                                if (album.duration > 0) {
-                                    append(" • ${album.duration.formatDuration()}")
-                                }
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Action buttons
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = onPlayClick,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.PlayArrow,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Play")
-                            }
-                            
-                            OutlinedButton(
-                                onClick = onShuffleClick,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Shuffle,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Shuffle")
-                            }
                         }
                     }
                 }
-                
-                item {
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+            },
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp)
+        ) { paddingValues ->
+            val layoutDirection = LocalLayoutDirection.current
+            val horizontalPadding = PaddingValues(
+                start = paddingValues.calculateStartPadding(layoutDirection),
+                end = paddingValues.calculateEndPadding(layoutDirection)
+            )
+            val topPadding = paddingValues.calculateTopPadding()
+            if (album == null || isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontalPadding)
+                        .padding(top = topPadding)
+                ) {
+                    CircularProgressIndicator()
                 }
-                
-                // Songs list
-                items(songs, key = { it.id }) { song ->
-                    SongListItem(
-                        title = song.title,
-                        artist = song.artistName,
-                        album = null, // Don't show album since we're on album screen
-                        thumbnailUrl = song.getThumbnailUrl() ?: album?.getThumbnailUrl(),
-                        isPlaying = song.id == currentlyPlayingSongId,
-                        onClick = { onSongClick(song) },
-                        onMoreClick = { onSongMenuClick(song) },
-                        trailingIcon = Icons.Rounded.MoreVert
-                    )
+            } else {
+                LazyColumn(
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(horizontalPadding)
+                        .padding(top = topPadding)
+                ) {
+                    // Album header with artwork
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            // Album artwork
+                            AsyncImage(
+                                model = album?.getPlayerArtworkUrl(),
+                                contentDescription = album?.title,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f),
+                                contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Album title
+                            Text(
+                                text = album.title,
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Artist name (clickable)
+                            TextButton(
+                                onClick = onArtistClick,
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text(
+                                    text = album.artistName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Album info
+                            Text(
+                                text = buildString {
+                                    album.year?.let { append("$it • ") }
+                                    append("${songs.size} songs")
+                                    if (album.duration > 0) {
+                                        append(" • ${album.duration.formatDuration()}")
+                                    }
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Action buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = onPlayClick,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.PlayArrow,
+                                        contentDescription = null
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Play")
+                                }
+
+                                OutlinedButton(
+                                    onClick = onShuffleClick,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.Shuffle,
+                                        contentDescription = null
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Shuffle")
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+
+                    // Songs list
+                    items(songs, key = { it.id }) { song ->
+                        SongListItem(
+                            title = song.title,
+                            artist = song.artistName,
+                            album = null, // Don't show album since we're on album screen
+                            thumbnailUrl = song.getThumbnailUrl() ?: album?.getThumbnailUrl(),
+                            isPlaying = song.id == currentlyPlayingSongId,
+                            onClick = { onSongClick(song) },
+                            onMoreClick = { onSongMenuClick(song) },
+                            trailingIcon = Icons.Rounded.MoreVert
+                        )
+                    }
                 }
             }
         }

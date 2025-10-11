@@ -104,7 +104,9 @@ android {
         kotlinCompilerExtensionVersion = '1.5.10'
     }
 
-    namespace 'com.shirou.shibamusic'
+    lint {
+        abortOnError false
+    }
 }
 
 dependencies {

@@ -15,6 +15,8 @@ import java.util.Date
 import java.util.Locale
 import kotlin.collections.LinkedHashMap
 
+import android.graphics.drawable.Drawable
+
 object UIUtil {
     fun getSpanCount(itemCount: Int, maxSpan: Int): Int {
         val itemSize = if (itemCount == 0) 1 else itemCount
@@ -24,16 +26,18 @@ object UIUtil {
     fun getDividerItemDecoration(context: Context): DividerItemDecoration {
         val ATTRS = intArrayOf(android.R.attr.listDivider)
 
-        val insetDivider = context.obtainStyledAttributes(ATTRS).use { a: TypedArray ->
-            val divider = a.getDrawable(0)
-            // The original Java code does not check for null. If divider is null, InsetDrawable constructor
-            // would likely throw an IllegalArgumentException or NPE when its methods are called.
-            // Using `!!` here mirrors that behavior for semantic equivalence.
-            InsetDrawable(divider!!, 42, 0, 42, 42)
+        val insetDivider: Drawable?
+        val a = context.obtainStyledAttributes(ATTRS)
+        try {
+            insetDivider = a.getDrawable(0)
+        } finally {
+            a.recycle()
         }
 
         return DividerItemDecoration(context, DividerItemDecoration.VERTICAL).apply {
-            setDrawable(insetDivider)
+            if (insetDivider != null) {
+                setDrawable(insetDivider)
+            }
         }
     }
 

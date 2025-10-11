@@ -28,6 +28,11 @@ import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import com.shirou.shibamusic.util.Preferences
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Color
+import com.shirou.shibamusic.ui.theme.rememberPlayerColors
+import androidx.compose.foundation.background
 
 /**
  * Artist Detail Screen
@@ -59,195 +64,231 @@ fun ArtistScreen(
     val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
     val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
     val context = LocalContext.current
-    
-    Scaffold(
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                shadowElevation = 0.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = onMenuClick) {
-                        Icon(
-                            imageVector = Icons.Rounded.MoreVert,
-                            contentDescription = "More"
-                        )
-                    }
-                }
-            }
-        },
-        modifier = modifier,
-        contentWindowInsets = WindowInsets(0.dp)
-    ) { paddingValues ->
-        val layoutDirection = LocalLayoutDirection.current
-        LazyColumn(
+
+    val playerColors by rememberPlayerColors(
+        imageUrl = artist.imageUrl,
+        defaultColor = MaterialTheme.colorScheme.background
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        AsyncImage(
+            model = artist.imageUrl,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    start = paddingValues.calculateStartPadding(layoutDirection),
-                    end = paddingValues.calculateEndPadding(layoutDirection),
-                    top = paddingValues.calculateTopPadding()
+                .blur(120.dp)
+                .alpha(0.6f)
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            playerColors.background.copy(alpha = 0.95f),
+                            playerColors.surface.copy(alpha = 0.85f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
                 )
-        ) {
-            // Artist Header with Image and Stats
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surface,
-                                    MaterialTheme.colorScheme.background
+        )
+
+        Scaffold(
+            topBar = {
+                Surface(
+                    color = Color.Transparent,
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = onMenuClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "More"
+                            )
+                        }
+                    }
+                }
+            },
+            modifier = modifier,
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp)
+        ) { paddingValues ->
+            val layoutDirection = LocalLayoutDirection.current
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(
+                        start = paddingValues.calculateStartPadding(layoutDirection),
+                        end = paddingValues.calculateEndPadding(layoutDirection),
+                        top = paddingValues.calculateTopPadding()
+                    )
+            ) {
+                // Artist Header with Image and Stats
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Transparent
+                                    )
                                 )
                             )
-                        )
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Circular Artist Image
-                    Card(
-                        modifier = Modifier
-                            .size(200.dp)
-                            .clip(CircleShape),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        AsyncImage(
-                            model = artist.imageUrl,
-                            contentDescription = artist.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Artist Name
-                    Text(
-                        text = artist.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Stats
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "${artist.albumCount} albums",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "•",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "${artist.songCount} songs",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-                    
-                    // Action Buttons
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = onPlayClick,
-                            modifier = Modifier.weight(1f)
+                        // Circular Artist Image
+                        Card(
+                            modifier = Modifier
+                                .size(200.dp)
+                                .clip(CircleShape),
+                            elevation = CardDefaults.cardElevation(8.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.PlayArrow,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                            AsyncImage(
+                                model = artist.imageUrl,
+                                contentDescription = artist.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Play")
                         }
-                        
-                        OutlinedButton(
-                            onClick = onShuffleClick,
-                            modifier = Modifier.weight(1f)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Artist Name
+                        Text(
+                            text = artist.name,
+                            style = MaterialTheme.typography.headlineMedium,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Stats
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Shuffle,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
+                            Text(
+                                text = "${artist.albumCount} albums",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Shuffle")
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${artist.songCount} songs",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Action Buttons
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = onPlayClick,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.PlayArrow,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Play")
+                            }
+
+                            OutlinedButton(
+                                onClick = onShuffleClick,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Shuffle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Shuffle")
+                            }
                         }
                     }
                 }
-            }
-            
-            // Popular Songs Section
-            if (popularSongs.isNotEmpty()) {
+
+                // Popular Songs Section
+                if (popularSongs.isNotEmpty()) {
+                    item {
+                        SectionHeader(
+                            title = "Popular Songs",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    items(popularSongs.take(5), key = { it.id }) { song ->
+                        SongListItem(
+                            title = song.title,
+                            artist = song.artistName,
+                            album = song.albumName,
+                            thumbnailUrl = song.getThumbnailUrl(),
+                            isPlaying = currentSongId == song.id && isPlaying,
+                            onClick = { onSongClick(song) },
+                            onMoreClick = {
+                                selectedSong = song
+                                showBottomSheet = true
+                            }
+                        )
+                    }
+                }
+
+                // Albums Section
+                if (albums.isNotEmpty()) {
+                    item {
+                        SectionHeader(
+                            title = "Albums",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+
+                    items(albums, key = { it.id }) { album ->
+                        AlbumListItem(
+                            album = album,
+                            onClick = { onAlbumClick(album) }
+                        )
+                    }
+                }
+
+                // Bottom spacing
                 item {
-                    SectionHeader(
-                        title = "Popular Songs",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
-                
-                items(popularSongs.take(5), key = { it.id }) { song ->
-                    SongListItem(
-                        title = song.title,
-                        artist = song.artistName,
-                        album = song.albumName,
-                        thumbnailUrl = song.getThumbnailUrl(),
-                        isPlaying = currentSongId == song.id && isPlaying,
-                        onClick = { onSongClick(song) },
-                        onMoreClick = {
-                            selectedSong = song
-                            showBottomSheet = true
-                        }
-                    )
-                }
-            }
-            
-            // Albums Section
-            if (albums.isNotEmpty()) {
-                item {
-                    SectionHeader(
-                        title = "Albums",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-                
-                items(albums, key = { it.id }) { album ->
-                    AlbumListItem(
-                        album = album,
-                        onClick = { onAlbumClick(album) }
-                    )
-                }
-            }
-            
-            // Bottom spacing
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }
-    
+
     // Bottom Sheet for Song Menu
     if (showBottomSheet && selectedSong != null) {
         val song = selectedSong!!
@@ -325,6 +366,7 @@ private fun AlbumListItem(
 ) {
     Surface(
         onClick = onClick,
+        color = Color.Transparent,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)

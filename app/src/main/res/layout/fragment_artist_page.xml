@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:expandedTitleMarginStart="@dimen/activity_margin_content"
-            app:contentScrim="?attr/colorSurface"
+            app:contentScrim="@android:color/transparent"
             app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
 
             <ImageView
@@ -151,6 +151,7 @@
 
             <!--  Label and button  -->
             <LinearLayout
+                android:background="@android:color/transparent"
                 android:id="@+id/artist_page_top_songs_sector"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -194,6 +195,7 @@
             </LinearLayout>
 
             <LinearLayout
+                android:background="@android:color/transparent"
                 android:id="@+id/artist_page_albums_sector"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -66,8 +66,8 @@ class AlbumHorizontalAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val album = albums[position]
 
-    holder.item.albumTitleTextView.text = album.name.orEmpty()
-    holder.item.albumArtistTextView.text = album.artist ?: album.displayArtist.orEmpty()
+        holder.item.albumTitleTextView.text = album.name.orEmpty()
+        holder.item.albumArtistTextView.text = album.artist ?: album.displayArtist.orEmpty()
 
         CustomGlideRequest.Builder
             .from(holder.itemView.context, album.coverArtId, CustomGlideRequest.ResourceType.Album)

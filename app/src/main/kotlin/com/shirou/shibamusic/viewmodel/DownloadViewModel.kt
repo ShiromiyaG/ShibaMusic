@@ -60,7 +60,7 @@ class DownloadViewModel(application: Application) : AndroidViewModel(application
         // As initViewStack is called in the constructor, _viewStack.value is guaranteed to be non-null.
         val currentStack = _viewStack.value!!
         if (currentStack.isNotEmpty()) {
-            currentStack.removeLast()
+            currentStack.removeAt(currentStack.size - 1)
             _viewStack.value = currentStack // Reassign to notify observers
         } else {
             Log.w(TAG, "viewStack is empty, cannot pop element.")

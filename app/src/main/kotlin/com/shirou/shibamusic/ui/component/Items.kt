@@ -43,11 +43,7 @@ fun SongListItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = if (isPlaying) {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        } else {
-            Color.Transparent
-        }
+        color = Color.Transparent
     ) {
         Row(
             modifier = Modifier
