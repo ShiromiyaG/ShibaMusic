@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
@@ -175,7 +176,7 @@ fun LibraryPlaylistsContent(
                                 onPlayClick = { onPlaylistPlay(playlist) },
                                 onMoreClick = { onPlaylistMenuClick(playlist) }
                             )
-                            Divider(modifier = Modifier.padding(start = 80.dp))
+                            Divider()
                         }
 
                         if (appendState is LoadState.Loading) {
@@ -321,33 +322,17 @@ private fun PlaylistListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Playlist Thumbnail
-            Card(
-                modifier = Modifier.size(56.dp)
-            ) {
-                if (playlist.thumbnailUrl != null) {
-                    AsyncImage(
-                        model = playlist.thumbnailUrl,
-                        contentDescription = playlist.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    // Default playlist icon
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.QueueMusic,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            if (playlist.thumbnailUrl != null) {
+                AsyncImage(
+                    model = playlist.thumbnailUrl,
+                    contentDescription = playlist.name,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(MaterialTheme.shapes.medium),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.width(16.dp))
             }
-            
-            Spacer(modifier = Modifier.width(16.dp))
             
             // Playlist Info
             Column(
@@ -396,3 +381,4 @@ private fun PlaylistListItem(
         }
     }
 }
+

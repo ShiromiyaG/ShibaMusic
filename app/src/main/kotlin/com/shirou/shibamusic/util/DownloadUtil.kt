@@ -2,9 +2,13 @@ package com.shirou.shibamusic.util
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.util.Log
 
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.DatabaseProvider
 import androidx.media3.database.StandaloneDatabaseProvider
@@ -23,6 +27,7 @@ import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.service.DownloaderManager // Assumed to exist
 
 import java.io.File
@@ -52,6 +57,8 @@ object DownloadUtil {
     private var downloadManager: DownloadManager? = null
     private var downloaderManager: DownloaderManager? = null
     private var downloadNotificationHelper: DownloadNotificationHelper? = null
+    private var appIconBitmap: Bitmap? = null
+    private var appIconCompat: IconCompat? = null
 
     fun useExtensionRenderers(): Boolean {
         return true
@@ -341,9 +348,33 @@ object DownloadUtil {
     ): Notification {
         return NotificationCompat.Builder(context, channelId)
             .setContentTitle(title)
-            .setSmallIcon(icon)
+            .setSmallIcon(getAppIconCompat(context))
+            .setLargeIcon(getAppIconBitmap(context))
             .setGroup(groupId)
             .setGroupSummary(true)
             .build()
+    }
+
+    @Synchronized
+    fun getAppIconBitmap(context: Context): Bitmap {
+        return appIconBitmap ?: run {
+            val drawable = ContextCompat.getDrawable(context, R.drawable.shiba_vector)
+                ?: throw IllegalStateException("Missing shiba_vector drawable resource")
+            val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 128
+            val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 128
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            appIconBitmap = bitmap
+            bitmap
+        }
+    }
+
+    @Synchronized
+    fun getAppIconCompat(context: Context): IconCompat {
+        return appIconCompat ?: IconCompat.createWithResource(context, R.drawable.shiba_vector).also {
+            appIconCompat = it
+        }
     }
 }

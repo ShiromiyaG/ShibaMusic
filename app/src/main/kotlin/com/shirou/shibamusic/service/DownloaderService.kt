@@ -2,6 +2,8 @@ package com.shirou.shibamusic.service
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.drawable.Icon
+import android.os.Build
 import androidx.media3.common.util.NotificationUtil
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -42,15 +44,28 @@ class DownloaderService : androidx.media3.exoplayer.offline.DownloadService(
         downloads: List<Download>,
         @Requirements.RequirementFlags notMetRequirements: Int
     ): Notification {
-        return DownloadUtil.getDownloadNotificationHelper(this)
+        val notification = DownloadUtil.getDownloadNotificationHelper(this)
             .buildProgressNotification(
                 this,
-                R.drawable.ic_download,
+                R.drawable.shiba_vector,
                 null,
                 null,
                 downloads,
                 notMetRequirements
             )
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            Notification.Builder.recoverBuilder(this, notification)
+                .setLargeIcon(DownloadUtil.getAppIconBitmap(this))
+                .apply {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        setSmallIcon(Icon.createWithResource(this@DownloaderService, R.drawable.shiba_vector))
+                    }
+                }
+                .build()
+        } else {
+            notification
+        }
     }
 
     private class TerminalStateNotificationHelper(
@@ -66,7 +81,7 @@ class DownloaderService : androidx.media3.exoplayer.offline.DownloadService(
             this.context,
             DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID,
             DownloadUtil.DOWNLOAD_NOTIFICATION_SUCCESSFUL_GROUP,
-            R.drawable.ic_check_circle,
+            R.drawable.shiba_vector,
             "Downloads completed"
         )
 
@@ -74,7 +89,7 @@ class DownloaderService : androidx.media3.exoplayer.offline.DownloadService(
             this.context,
             DownloadUtil.DOWNLOAD_NOTIFICATION_CHANNEL_ID,
             DownloadUtil.DOWNLOAD_NOTIFICATION_FAILED_GROUP,
-            R.drawable.ic_error,
+            R.drawable.shiba_vector,
             "Downloads failed"
         )
 
@@ -89,28 +104,53 @@ class DownloaderService : androidx.media3.exoplayer.offline.DownloadService(
             val notification: Notification = if (download.state == Download.STATE_COMPLETED) {
                 val completedNotification = notificationHelper.buildDownloadCompletedNotification(
                     context,
-                    R.drawable.ic_check_circle,
+                    R.drawable.shiba_vector,
                     null,
                     DownloaderManager.getDownloadNotificationMessage(download.request.id)
                 )
-                Notification.Builder.recoverBuilder(context, completedNotification)
-                    .setGroup(DownloadUtil.DOWNLOAD_NOTIFICATION_SUCCESSFUL_GROUP)
-                    .build().also {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    Notification.Builder.recoverBuilder(context, completedNotification)
+                        .setGroup(DownloadUtil.DOWNLOAD_NOTIFICATION_SUCCESSFUL_GROUP)
+                        .setLargeIcon(DownloadUtil.getAppIconBitmap(context))
+                        .apply {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                setSmallIcon(Icon.createWithResource(context, R.drawable.shiba_vector))
+                            }
+                        }
+                        .build().also {
+                            NotificationUtil.setNotification(this.context, successfulDownloadGroupNotificationId, successfulDownloadGroupNotification)
+                            DownloaderManager.updateRequestDownload(download)
+                        }
+                } else {
+                    completedNotification.also {
                         NotificationUtil.setNotification(this.context, successfulDownloadGroupNotificationId, successfulDownloadGroupNotification)
                         DownloaderManager.updateRequestDownload(download)
                     }
+                }
             } else if (download.state == Download.STATE_FAILED) {
                 val failedNotification = notificationHelper.buildDownloadFailedNotification(
                     context,
-                    R.drawable.ic_error,
+                    R.drawable.shiba_vector,
                     null,
                     DownloaderManager.getDownloadNotificationMessage(download.request.id)
                 )
-                Notification.Builder.recoverBuilder(context, failedNotification)
-                    .setGroup(DownloadUtil.DOWNLOAD_NOTIFICATION_FAILED_GROUP)
-                    .build().also {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    Notification.Builder.recoverBuilder(context, failedNotification)
+                        .setGroup(DownloadUtil.DOWNLOAD_NOTIFICATION_FAILED_GROUP)
+                        .setLargeIcon(DownloadUtil.getAppIconBitmap(context))
+                        .apply {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                setSmallIcon(Icon.createWithResource(context, R.drawable.shiba_vector))
+                            }
+                        }
+                        .build().also {
+                            NotificationUtil.setNotification(this.context, failedDownloadGroupNotificationId, failedDownloadGroupNotification)
+                        }
+                } else {
+                    failedNotification.also {
                         NotificationUtil.setNotification(this.context, failedDownloadGroupNotificationId, failedDownloadGroupNotification)
                     }
+                }
             } else {
                 return
             }

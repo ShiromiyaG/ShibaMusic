@@ -7,6 +7,8 @@ import com.shirou.shibamusic.repository.OfflineRepository
 import com.shirou.shibamusic.repository.OfflineStorageInfo
 import com.shirou.shibamusic.data.model.AudioQuality
 import com.shirou.shibamusic.data.model.DownloadProgress
+import com.shirou.shibamusic.data.repository.MusicRepository
+import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -19,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class OfflineViewModel @Inject constructor(
     private val offlineRepository: OfflineRepository,
-    private val offlineMusicPlayer: OfflineMusicPlayer
+    private val offlineMusicPlayer: OfflineMusicPlayer,
+    private val musicRepository: MusicRepository
 ) : ViewModel() {
     
     // Estados da interface
@@ -97,6 +100,56 @@ class OfflineViewModel @Inject constructor(
         }
     }
     
+    /**
+     * Inicia o download de todas as musicas de uma playlist
+     */
+    fun downloadPlaylist(playlistId: String, quality: AudioQuality? = null) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+
+                val songs = musicRepository.getPlaylistSongs(playlistId)
+                if (songs.isEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            message = "Playlist vazia"
+                        )
+                    }
+                    return@launch
+                }
+
+                val resolvedQuality = quality ?: Preferences.getOfflineDownloadQuality()
+
+                songs.forEach { song ->
+                    offlineRepository.downloadTrack(
+                        trackId = song.id,
+                        title = song.title,
+                        artist = song.artistName,
+                        album = song.albumName ?: "",
+                        duration = song.duration,
+                        coverArtUrl = song.getThumbnailUrl(),
+                        quality = resolvedQuality
+                    )
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "Download iniciado para ${songs.size} musica(s)"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erro ao baixar playlist: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
     /**
      * Remove uma música offline
      */
@@ -185,14 +238,14 @@ class OfflineViewModel @Inject constructor(
     }
     
     /**
-     * Reproduz músicas de um artista offline
+     * Reproduz musicas de um artista offline
      */
     fun playArtistOffline(artist: String) {
         offlineMusicPlayer.playArtistOffline(artist)
     }
     
     /**
-     * Reproduz músicas de um álbum offline
+     * Reproduz musicas de um álbum offline
      */
     fun playAlbumOffline(album: String) {
         offlineMusicPlayer.playAlbumOffline(album)
@@ -324,3 +377,7 @@ data class OfflineUiState(
     val message: String? = null,
     val storageInfo: OfflineStorageInfo? = null
 )
+
+
+
+

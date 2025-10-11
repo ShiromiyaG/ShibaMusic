@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -168,11 +169,16 @@ fun PlaylistDetailScreen(
             ) {
                 // Playlist Header
                 item {
+                    val playlistDownload: () -> Unit = {
+                        offlineViewModel.downloadPlaylist(playlist.id)
+                        Toast.makeText(context, "Download iniciado para a playlist", Toast.LENGTH_SHORT).show()
+                    }
                     PlaylistHeader(
                         playlist = playlist,
                         songCount = songs.size,
                         onPlayClick = onPlayClick,
                         onShuffleClick = onShuffleClick,
+                        onDownloadClick = playlistDownload,
                         onEditClick = { /* TODO */ }
                     )
                 }
@@ -502,6 +508,7 @@ private fun PlaylistHeader(
     songCount: Int,
     onPlayClick: () -> Unit,
     onShuffleClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onEditClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -520,35 +527,22 @@ private fun PlaylistHeader(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Playlist Cover
-        Card(
-            modifier = Modifier
-                .size(200.dp)
-                .aspectRatio(1f),
-            elevation = CardDefaults.cardElevation(8.dp)
-        ) {
-            if (playlist.thumbnailUrl != null) {
-                AsyncImage(
-                    model = playlist.thumbnailUrl,
-                    contentDescription = playlist.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.QueueMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+        if (playlist.thumbnailUrl != null) {
+            AsyncImage(
+                model = playlist.thumbnailUrl,
+                contentDescription = playlist.name,
+                modifier = Modifier
+                    .size(200.dp)
+                    .clip(MaterialTheme.shapes.extraLarge),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
-        
-        Spacer(modifier = Modifier.height(16.dp))
+
+        if (playlist.thumbnailUrl == null) {
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         
         // Playlist Name
         Text(
@@ -580,17 +574,40 @@ private fun PlaylistHeader(
         Spacer(modifier = Modifier.height(24.dp))
         
         // Action Buttons
-        Button(
-            onClick = onPlayClick,
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Rounded.PlayArrow,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Play")
+            FilledIconButton(
+                onClick = onPlayClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.PlayArrow,
+                    contentDescription = "Play playlist"
+                )
+            }
+
+            OutlinedIconButton(
+                onClick = onShuffleClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Shuffle,
+                    contentDescription = "Shuffle playlist"
+                )
+            }
+
+            OutlinedIconButton(
+                onClick = onDownloadClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = "Download playlist"
+                )
+            }
         }
     }
 }
@@ -623,26 +640,18 @@ private fun EmptyPlaylistContent(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Card(
-                modifier = Modifier
-                    .size(120.dp)
-                    .aspectRatio(1f),
-                elevation = CardDefaults.cardElevation(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.QueueMusic,
-                        contentDescription = null,
-                        modifier = Modifier.size(60.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            if (playlist.thumbnailUrl != null) {
+                AsyncImage(
+                    model = playlist.thumbnailUrl,
+                    contentDescription = playlist.name,
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(MaterialTheme.shapes.large),
+                    contentScale = ContentScale.Crop
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
             
             Text(
                 text = playlist.name,

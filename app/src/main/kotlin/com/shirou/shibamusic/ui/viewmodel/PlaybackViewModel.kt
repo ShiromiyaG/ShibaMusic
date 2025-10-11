@@ -239,7 +239,7 @@ class PlaybackViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * Play or pause current song
      */

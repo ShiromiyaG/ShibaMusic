@@ -1,6 +1,5 @@
 package com.shirou.shibamusic.service
 
-import android.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,10 +11,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.dao.OfflineTrackDao
 import com.shirou.shibamusic.data.model.AudioQuality
 import com.shirou.shibamusic.data.model.DownloadProgress
 import com.shirou.shibamusic.data.model.DownloadStatus
+import com.shirou.shibamusic.util.DownloadUtil
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -286,12 +287,16 @@ class OfflineDownloadService : Service() {
             AudioQuality.HIGH -> "FLAC Lossless"
         }
 
+        val appIconBitmap = DownloadUtil.getAppIconBitmap(this)
+        val appIcon = DownloadUtil.getAppIconCompat(this)
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Baixando música")
             .setContentText("Progresso: ${(progress * 100).toInt()}% ($qualityText)")
-            .setSmallIcon(R.drawable.stat_sys_download)
+            .setSmallIcon(appIcon)
+            .setLargeIcon(appIconBitmap)
             .setProgress(100, (progress * 100).toInt(), false)
-            .addAction(R.drawable.ic_menu_close_clear_cancel, "Cancelar", cancelPendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Cancelar", cancelPendingIntent)
             .setOngoing(true)
             .build()
     }
