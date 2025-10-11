@@ -52,6 +52,7 @@ fun PlaylistDetailScreen(
     onAddSongs: () -> Unit,
     onSongGoToAlbum: (String) -> Unit = {},
     onSongGoToArtist: (String) -> Unit = {},
+    onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -169,16 +170,12 @@ fun PlaylistDetailScreen(
             ) {
                 // Playlist Header
                 item {
-                    val playlistDownload: () -> Unit = {
-                        offlineViewModel.downloadPlaylist(playlist.id)
-                        Toast.makeText(context, "Download iniciado para a playlist", Toast.LENGTH_SHORT).show()
-                    }
                     PlaylistHeader(
                         playlist = playlist,
                         songCount = songs.size,
                         onPlayClick = onPlayClick,
                         onShuffleClick = onShuffleClick,
-                        onDownloadClick = playlistDownload,
+                        onDownloadClick = onDownloadClick,
                         onEditClick = { /* TODO */ }
                     )
                 }

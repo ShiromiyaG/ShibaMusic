@@ -33,7 +33,10 @@ import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import com.shirou.shibamusic.ui.viewmodel.PlaylistDetailViewModel
 import com.shirou.shibamusic.ui.viewmodel.PlayerViewModel
 import com.shirou.shibamusic.ui.viewmodel.SearchViewModel
+import com.shirou.shibamusic.ui.offline.OfflineViewModel
+import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.ui.viewmodel.PlaylistDetailEvent
+import android.util.Log
 
 /**
  * Main navigation graph for the app
@@ -135,6 +138,7 @@ fun ShibaMusicNavGraph(
             val albumId = backStackEntry.arguments?.getString(NavArgs.ALBUM_ID) ?: return@composable
             val albumViewModel: AlbumDetailViewModel = hiltViewModel(backStackEntry)
             val playbackViewModel: PlaybackViewModel = hiltViewModel()
+            val offlineViewModel: OfflineViewModel = hiltViewModel()
             val uiState by albumViewModel.uiState.collectAsState()
             val playbackState by playbackViewModel.playbackState.collectAsState()
 
@@ -152,6 +156,11 @@ fun ShibaMusicNavGraph(
                     uiState.songs.takeIf { it.isNotEmpty() }?.let { songs ->
                         playbackViewModel.playSongs(songs.shuffled())
                     }
+                },
+                onDownloadClick = {
+                    val songs = uiState.songs
+                    Log.d("NavGraph", "Album download clicked for albumId: $albumId (songs=${songs.size})")
+                    offlineViewModel.downloadAlbum(albumId, songs)
                 },
                 onSongClick = { song -> playbackViewModel.playSong(song) },
                 onSongMenuClick = { /* TODO: Show song actions */ },
@@ -173,6 +182,7 @@ fun ShibaMusicNavGraph(
             val artistId = backStackEntry.arguments?.getString(NavArgs.ARTIST_ID) ?: return@composable
             val artistViewModel: ArtistDetailViewModel = hiltViewModel(backStackEntry)
             val playbackViewModel: PlaybackViewModel = hiltViewModel()
+            val offlineViewModel: OfflineViewModel = hiltViewModel()
             val uiState by artistViewModel.uiState.collectAsState()
             val playbackState by playbackViewModel.playbackState.collectAsState()
 
@@ -210,6 +220,11 @@ fun ShibaMusicNavGraph(
                                 playbackViewModel.playSongs(uiState.songs.shuffled())
                             }
                         },
+                        onDownloadClick = {
+                            val songs = uiState.songs
+                            Log.d("NavGraph", "Artist download clicked for artistId: $artistId (songs=${songs.size})")
+                            offlineViewModel.downloadArtist(artistId, songs)
+                        },
                         onSongClick = { song -> playbackViewModel.playSong(song) },
                         onAlbumClick = { album ->
                             navController.navigate(Screen.Album.createRoute(album.id))
@@ -233,6 +248,7 @@ fun ShibaMusicNavGraph(
             val playlistId = backStackEntry.arguments?.getString(NavArgs.PLAYLIST_ID) ?: return@composable
             val playlistViewModel: PlaylistDetailViewModel = hiltViewModel(backStackEntry)
             val playbackViewModel: PlaybackViewModel = hiltViewModel()
+            val offlineViewModel: OfflineViewModel = hiltViewModel()
             val uiState by playlistViewModel.uiState.collectAsState()
             val playbackState by playbackViewModel.playbackState.collectAsState()
 
@@ -295,6 +311,9 @@ fun ShibaMusicNavGraph(
                             },
                             onSongGoToArtist = { artistId ->
                                 navController.navigate(Screen.Artist.createRoute(artistId))
+                            },
+                            onDownloadClick = {
+                                offlineViewModel.downloadPlaylist(playlist.id, uiState.songs)
                             }
                         )
 

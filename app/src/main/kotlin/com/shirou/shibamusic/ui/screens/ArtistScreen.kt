@@ -49,6 +49,7 @@ fun ArtistScreen(
     onBackClick: () -> Unit,
     onPlayClick: () -> Unit,
     onShuffleClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onAlbumClick: (AlbumItem) -> Unit,
     onSongGoToAlbum: (String) -> Unit = {},
@@ -208,32 +209,38 @@ fun ArtistScreen(
 
                         // Action Buttons
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Button(
+                            FilledIconButton(
                                 onClick = onPlayClick,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    contentDescription = "Play"
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Play")
                             }
 
-                            OutlinedButton(
+                            OutlinedIconButton(
                                 onClick = onShuffleClick,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Shuffle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                    contentDescription = "Shuffle"
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Shuffle")
+                            }
+
+                            OutlinedIconButton(
+                                onClick = onDownloadClick,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Download,
+                                    contentDescription = "Download"
+                                )
                             }
                         }
                     }

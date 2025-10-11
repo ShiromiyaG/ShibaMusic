@@ -8,12 +8,14 @@ import com.shirou.shibamusic.repository.OfflineStorageInfo
 import com.shirou.shibamusic.data.model.AudioQuality
 import com.shirou.shibamusic.data.model.DownloadProgress
 import com.shirou.shibamusic.data.repository.MusicRepository
+import com.shirou.shibamusic.ui.model.SongItem
 import com.shirou.shibamusic.ui.model.getThumbnailUrl
 import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
 
 /**
  * ViewModel para gerenciar funcionalidades offline
@@ -99,17 +101,39 @@ class OfflineViewModel @Inject constructor(
             }
         }
     }
-    
+
+    private suspend fun enqueueSongDownloads(
+        songs: List<SongItem>,
+        quality: AudioQuality
+    ) {
+        songs.forEach { song ->
+            offlineRepository.downloadTrack(
+                trackId = song.id,
+                title = song.title,
+                artist = song.artistName,
+                album = song.albumName ?: song.artistName,
+                duration = song.duration,
+                coverArtUrl = song.getThumbnailUrl(),
+                quality = quality
+            )
+        }
+    }
+
     /**
      * Inicia o download de todas as musicas de uma playlist
      */
-    fun downloadPlaylist(playlistId: String, quality: AudioQuality? = null) {
+    fun downloadPlaylist(
+        playlistId: String,
+        songs: List<SongItem>? = null,
+        quality: AudioQuality? = null
+    ) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true) }
 
-                val songs = musicRepository.getPlaylistSongs(playlistId)
-                if (songs.isEmpty()) {
+                val songsToDownload = songs?.takeIf { it.isNotEmpty() }
+                    ?: musicRepository.getPlaylistSongs(playlistId)
+                if (songsToDownload.isEmpty()) {
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -121,22 +145,12 @@ class OfflineViewModel @Inject constructor(
 
                 val resolvedQuality = quality ?: Preferences.getOfflineDownloadQuality()
 
-                songs.forEach { song ->
-                    offlineRepository.downloadTrack(
-                        trackId = song.id,
-                        title = song.title,
-                        artist = song.artistName,
-                        album = song.albumName ?: "",
-                        duration = song.duration,
-                        coverArtUrl = song.getThumbnailUrl(),
-                        quality = resolvedQuality
-                    )
-                }
+                enqueueSongDownloads(songsToDownload, resolvedQuality)
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        message = "Download iniciado para ${songs.size} musica(s)"
+                        message = "Download iniciado para ${songsToDownload.size} musica(s)"
                     )
                 }
             } catch (e: Exception) {
@@ -144,6 +158,98 @@ class OfflineViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         error = "Erro ao baixar playlist: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Inicia o download de todas as musicas de um album
+     */
+    fun downloadAlbum(
+        albumId: String,
+        songs: List<SongItem>? = null,
+        quality: AudioQuality? = null
+    ) {
+        Log.d("OfflineViewModel", "downloadAlbum called with albumId: $albumId")
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+
+                val songsToDownload = songs?.takeIf { it.isNotEmpty() }
+                    ?: musicRepository.getAlbumSongs(albumId)
+                if (songsToDownload.isEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            message = "Album vazio"
+                        )
+                    }
+                    return@launch
+                }
+
+                val resolvedQuality = quality ?: Preferences.getOfflineDownloadQuality()
+
+                enqueueSongDownloads(songsToDownload, resolvedQuality)
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "Download iniciado para ${songsToDownload.size} musica(s)"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erro ao baixar album: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Inicia o download de todas as musicas de um artista
+     */
+    fun downloadArtist(
+        artistId: String,
+        songs: List<SongItem>? = null,
+        quality: AudioQuality? = null
+    ) {
+        Log.d("OfflineViewModel", "downloadArtist called with artistId: $artistId")
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+
+                val songsToDownload = songs?.takeIf { it.isNotEmpty() }
+                    ?: musicRepository.getArtistSongs(artistId)
+                if (songsToDownload.isEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            message = "Artista sem musicas"
+                        )
+                    }
+                    return@launch
+                }
+
+                val resolvedQuality = quality ?: Preferences.getOfflineDownloadQuality()
+
+                enqueueSongDownloads(songsToDownload, resolvedQuality)
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = "Download iniciado para ${songsToDownload.size} musica(s)"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = "Erro ao baixar musicas do artista: ${e.message}"
                     )
                 }
             }
