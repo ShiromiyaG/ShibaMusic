@@ -6,6 +6,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,8 @@ fun SongListItem(
     onMoreClick: (() -> Unit)? = null,
     trailingIcon: ImageVector? = null,
     isPlaying: Boolean = false,
+    isDownloaded: Boolean = false,
+    downloadInfo: com.shirou.shibamusic.data.model.DownloadProgress? = null,
     trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     Surface(
@@ -90,20 +94,63 @@ fun SongListItem(
             }
             
             // Trailing icon/action
-            if (trailingContent != null) {
-                Row(
-                    modifier = Modifier.padding(start = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    content = trailingContent
-                )
-            } else if (trailingIcon != null && onMoreClick != null) {
-                IconButton(onClick = onMoreClick) {
-                    Icon(
-                        imageVector = trailingIcon,
-                        contentDescription = "More options",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            Row(
+                modifier = Modifier.padding(start = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (trailingContent != null) {
+                    trailingContent()
+                } else {
+                    when {
+                        downloadInfo != null -> {
+                            val progressValue = downloadInfo.progress.coerceIn(0f, 1f)
+                            Box(
+                                modifier = Modifier.size(40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (progressValue > 0f) {
+                                    CircularProgressIndicator(
+                                        progress = progressValue,
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                } else {
+                                    CircularProgressIndicator(
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+                        isDownloaded -> {
+                            Box(
+                                modifier = Modifier.size(40.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.DownloadDone,
+                                    contentDescription = "Disponível offline",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        else -> {
+                            if (onMoreClick != null) {
+                                Box(modifier = Modifier.size(40.dp))
+                            }
+                        }
+                    }
+
+                    if (onMoreClick != null) {
+                        IconButton(onClick = onMoreClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
         }

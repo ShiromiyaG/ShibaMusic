@@ -40,6 +40,8 @@ fun AlbumScreen(
     onSongClick: (SongItem) -> Unit,
     onSongMenuClick: (SongItem) -> Unit,
     onArtistClick: () -> Unit,
+    downloadedSongIds: Set<String>,
+    activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
     modifier: Modifier = Modifier
 ) {
     val album = albumDetail?.album
@@ -229,6 +231,9 @@ fun AlbumScreen(
 
                     // Songs list
                     items(songs, key = { it.id }) { song ->
+                        val isDownloaded = downloadedSongIds.contains(song.id)
+                        val downloadInfo = activeDownloads[song.id]
+
                         SongListItem(
                             title = song.title,
                             artist = song.artistName,
@@ -237,7 +242,8 @@ fun AlbumScreen(
                             isPlaying = song.id == currentlyPlayingSongId,
                             onClick = { onSongClick(song) },
                             onMoreClick = { onSongMenuClick(song) },
-                            trailingIcon = Icons.Rounded.MoreVert
+                            isDownloaded = isDownloaded,
+                            downloadInfo = downloadInfo
                         )
                     }
                 }

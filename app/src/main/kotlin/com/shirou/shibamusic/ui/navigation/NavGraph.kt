@@ -75,9 +75,14 @@ fun ShibaMusicNavGraph(
         composable(Screen.Search.route) { backStackEntry ->
             val searchViewModel: SearchViewModel = hiltViewModel(backStackEntry)
             val playbackViewModel: PlaybackViewModel = hiltViewModel()
+            val offlineViewModel: OfflineViewModel = hiltViewModel()
             val query by searchViewModel.searchQuery.collectAsState()
             val uiState by searchViewModel.uiState.collectAsState()
             val playbackState by playbackViewModel.playbackState.collectAsState()
+            val offlineTracks by offlineViewModel.offlineTracks.collectAsState()
+            val activeDownloads by offlineViewModel.activeDownloads.collectAsState()
+            val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
+            val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
 
             SearchScreen(
                 query = query,
@@ -105,7 +110,9 @@ fun ShibaMusicNavGraph(
                 },
                 onClearQuery = searchViewModel::clearQuery,
                 errorMessage = uiState.error,
-                onDismissError = searchViewModel::clearError
+                onDismissError = searchViewModel::clearError,
+                downloadedSongIds = downloadedSongIds,
+                activeDownloads = activeDownloadMap
             )
         }
         
@@ -141,6 +148,10 @@ fun ShibaMusicNavGraph(
             val offlineViewModel: OfflineViewModel = hiltViewModel()
             val uiState by albumViewModel.uiState.collectAsState()
             val playbackState by playbackViewModel.playbackState.collectAsState()
+            val offlineTracks by offlineViewModel.offlineTracks.collectAsState()
+            val activeDownloads by offlineViewModel.activeDownloads.collectAsState()
+            val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
+            val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
 
             AlbumScreen(
                 albumDetail = uiState.album,
@@ -168,7 +179,9 @@ fun ShibaMusicNavGraph(
                     uiState.album?.album?.artistId?.let { artistId ->
                         navController.navigate(Screen.Artist.createRoute(artistId))
                     }
-                }
+                },
+                downloadedSongIds = downloadedSongIds,
+                activeDownloads = activeDownloadMap
             )
         }
         
@@ -207,6 +220,7 @@ fun ShibaMusicNavGraph(
 
                 uiState.artist != null -> {
                     val artistDetail = requireNotNull(uiState.artist)
+
                     ArtistScreen(
                         artist = artistDetail,
                         popularSongs = uiState.popularSongs,

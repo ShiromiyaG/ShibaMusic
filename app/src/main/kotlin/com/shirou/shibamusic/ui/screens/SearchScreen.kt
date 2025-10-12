@@ -36,6 +36,8 @@ fun SearchScreen(
     onClearQuery: () -> Unit,
     errorMessage: String? = null,
     onDismissError: () -> Unit = {},
+    downloadedSongIds: Set<String>,
+    activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(SearchTab.ALL) }
@@ -142,6 +144,8 @@ fun SearchScreen(
                     onAlbumPlay = onAlbumPlay,
                     onArtistClick = onArtistClick,
                     onArtistPlay = onArtistPlay,
+                    downloadedSongIds = downloadedSongIds,
+                    activeDownloads = activeDownloads,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -201,6 +205,8 @@ private fun SearchResultsList(
     onAlbumPlay: (AlbumItem) -> Unit,
     onArtistClick: (ArtistItem) -> Unit,
     onArtistPlay: (ArtistItem) -> Unit,
+    downloadedSongIds: Set<String>,
+    activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier) {
@@ -217,18 +223,21 @@ private fun SearchResultsList(
                     items(
                         items = searchResults.songs.take(5),
                         key = { it.id }
-                    ) { song ->
-                        SongListItem(
-                            title = song.title,
-                            artist = song.artistName,
-                            album = song.albumName,
-                            thumbnailUrl = song.getThumbnailUrl(),
-                            isPlaying = currentSongId == song.id && isPlaying,
-                            onClick = { onSongClick(song) },
-                            onMoreClick = { /* TODO */ }
-                        )
-                    }
-                }
+                                    ) { song ->
+                                        val isDownloaded = downloadedSongIds.contains(song.id)
+                                        val downloadInfo = activeDownloads[song.id]
+                                        SongListItem(
+                                            title = song.title,
+                                            artist = song.artistName,
+                                            album = song.albumName,
+                                            thumbnailUrl = song.getThumbnailUrl(),
+                                            isPlaying = currentSongId == song.id && isPlaying,
+                                            onClick = { onSongClick(song) },
+                                            onMoreClick = { /* TODO */ },
+                                            isDownloaded = isDownloaded,
+                                            downloadInfo = downloadInfo
+                                        )
+                                    }                }
                 
                 // Albums
                 if (searchResults.albums.isNotEmpty()) {
@@ -275,6 +284,8 @@ private fun SearchResultsList(
                     items = searchResults.songs,
                     key = { it.id }
                 ) { song ->
+                    val isDownloaded = downloadedSongIds.contains(song.id)
+                    val downloadInfo = activeDownloads[song.id]
                     SongListItem(
                         title = song.title,
                         artist = song.artistName,
@@ -282,7 +293,9 @@ private fun SearchResultsList(
                         thumbnailUrl = song.getThumbnailUrl(),
                         isPlaying = currentSongId == song.id && isPlaying,
                         onClick = { onSongClick(song) },
-                        onMoreClick = { /* TODO */ }
+                        onMoreClick = { /* TODO */ },
+                        isDownloaded = isDownloaded,
+                        downloadInfo = downloadInfo
                     )
                 }
             }

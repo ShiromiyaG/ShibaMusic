@@ -182,6 +182,9 @@ fun PlaylistDetailScreen(
                 
                 // Songs List
                 items(songs, key = { it.id }) { song ->
+                    val isDownloaded = downloadedSongIds.contains(song.id)
+                    val downloadInfo = activeDownloadMap[song.id]
+
                     SongListItem(
                         title = song.title,
                         artist = song.artistName,
@@ -192,7 +195,9 @@ fun PlaylistDetailScreen(
                         onMoreClick = {
                             selectedSong = song
                             showBottomSheet = true
-                        }
+                        },
+                        isDownloaded = isDownloaded,
+                        downloadInfo = downloadInfo
                     )
                 }
                 
