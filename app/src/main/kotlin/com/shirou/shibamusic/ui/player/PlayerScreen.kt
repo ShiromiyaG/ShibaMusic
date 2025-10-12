@@ -11,7 +11,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -19,6 +22,9 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +34,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -50,9 +57,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntSize
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,6 +74,7 @@ import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -356,6 +366,12 @@ private fun PlayerScreenContent(
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
     var isDragging by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableStateOf(position) }
+    var dragOffset by remember { mutableStateOf(0f) }
+    var resetJob by remember { mutableStateOf<Job?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val exitThreshold = with(density) { 140.dp.toPx() }
+    val velocityThreshold = 2200f
 
     // Atualiza a posição periodicamente quando está tocando
     LaunchedEffect(isPlaying, position) {
@@ -394,9 +410,48 @@ private fun PlayerScreenContent(
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
+    fun animateToOffset(target: Float) {
+        resetJob?.cancel()
+        resetJob = coroutineScope.launch {
+            val start = dragOffset
+            animate(
+                initialValue = start,
+                targetValue = target,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                )
+            ) { value, _ ->
+                dragOffset = value
+            }
+            resetJob = null
+        }
+    }
+
+    val draggableState = rememberDraggableState { delta ->
+        resetJob?.cancel()
+        resetJob = null
+        val newOffset = (dragOffset + delta).coerceAtLeast(0f)
+        dragOffset = newOffset
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .offset { IntOffset(0, dragOffset.roundToInt()) }
+                .draggable(
+                state = draggableState,
+                orientation = Orientation.Vertical,
+                onDragStopped = { velocity ->
+                    val shouldDismiss = dragOffset > exitThreshold || velocity > velocityThreshold
+                    if (shouldDismiss) {
+                        dragOffset = 0f
+                        onNavigateBack()
+                    } else {
+                        animateToOffset(0f)
+                    }
+                }
+            )
             .background(MaterialTheme.colorScheme.background)
     ) {
         if (thumbnailUrl != null) {

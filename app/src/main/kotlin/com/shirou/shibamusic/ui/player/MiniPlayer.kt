@@ -9,7 +9,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,9 +56,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -72,6 +77,7 @@ import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
@@ -107,6 +113,10 @@ fun MiniPlayer(
     val offsetX = remember { Animatable(0f) }
     var dragStartTime by remember { mutableLongStateOf(0L) }
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val viewConfiguration = LocalViewConfiguration.current
+    val verticalSwipeThreshold: Float = with(density) { 72.dp.toPx() }
+    val touchSlop = viewConfiguration.touchSlop
 
     val animationSpec = remember {
         spring<Float>(
@@ -127,57 +137,94 @@ fun MiniPlayer(
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .padding(horizontal = 12.dp)
             .pointerInput(playbackState.hasNext, playbackState.hasPrevious) {
-                detectHorizontalDragGestures(
-                    onDragStart = {
-                        dragStartTime = System.currentTimeMillis()
-                        totalDragDistance = 0f
-                    },
-                    onDragCancel = {
-                        coroutineScope.launch {
-                            offsetX.animateTo(0f, animationSpec)
-                        }
-                    },
-                    onHorizontalDrag = { _, dragAmount ->
-                        val adjusted = if (layoutDirection == LayoutDirection.Rtl) -dragAmount else dragAmount
-                        val allowLeft = adjusted < 0 && playbackState.hasNext
-                        val allowRight = adjusted > 0 && playbackState.hasPrevious
-                        if (allowLeft || allowRight) {
-                            totalDragDistance += abs(adjusted)
-                            coroutineScope.launch {
-                                offsetX.snapTo(offsetX.value + adjusted)
-                            }
-                        }
-                    },
-                    onDragEnd = {
-                        val dragDuration = System.currentTimeMillis() - dragStartTime
-                        val velocity = if (dragDuration > 0) {
-                            totalDragDistance / dragDuration.toFloat()
-                        } else {
-                            0f
-                        }
-                        val currentOffset = offsetX.value
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    dragStartTime = System.currentTimeMillis()
+                    totalDragDistance = 0f
+                    var accumulatedX = 0f
+                    var accumulatedY = 0f
+                    var orientation: Orientation? = null
+                    var navigationTriggered = false
 
-                        val minDistanceThreshold = 60f
-                        val velocityThreshold = 2.5f
-                        val shouldChangeSong = (
-                            abs(currentOffset) > minDistanceThreshold &&
-                                velocity > velocityThreshold
-                            ) || abs(currentOffset) > autoSwipeThresholdPx
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull() ?: break
 
-                        if (shouldChangeSong) {
-                            val isRightSwipe = currentOffset > 0
-                            if (isRightSwipe && playbackState.hasPrevious) {
-                                viewModel.skipToPrevious()
-                            } else if (!isRightSwipe && playbackState.hasNext) {
-                                viewModel.skipToNext()
+                        if (change.changedToUpIgnoreConsumed()) {
+                            change.consume()
+                            break
+                        }
+
+                        val delta = change.position - change.previousPosition
+                        accumulatedX += delta.x
+                        accumulatedY += delta.y
+
+                        if (orientation == null) {
+                            val absX = abs(accumulatedX)
+                            val absY = abs(accumulatedY)
+                            if (max(absX, absY) > touchSlop) {
+                                orientation = if (absX > absY) Orientation.Horizontal else Orientation.Vertical
                             }
                         }
 
-                        coroutineScope.launch {
-                            offsetX.animateTo(0f, animationSpec)
+                        when (orientation) {
+                            Orientation.Horizontal -> {
+                                val adjusted = if (layoutDirection == LayoutDirection.Rtl) -delta.x else delta.x
+                                val allowLeft = adjusted < 0 && playbackState.hasNext
+                                val allowRight = adjusted > 0 && playbackState.hasPrevious
+                                if (allowLeft || allowRight) {
+                                    totalDragDistance += abs(adjusted)
+                                    coroutineScope.launch {
+                                        offsetX.snapTo(offsetX.value + adjusted)
+                                    }
+                                    change.consume()
+                                }
+                            }
+
+                            Orientation.Vertical -> {
+                                change.consume()
+                                if (!navigationTriggered && accumulatedY <= -verticalSwipeThreshold) {
+                                    navigationTriggered = true
+                                    onClick()
+                                }
+                            }
+
+                            null -> Unit
+                        }
+
+                        if (navigationTriggered) {
+                            change.consume()
                         }
                     }
-                )
+
+                    val dragDuration = System.currentTimeMillis() - dragStartTime
+                    val velocity = if (dragDuration > 0) {
+                        totalDragDistance / dragDuration.toFloat()
+                    } else {
+                        0f
+                    }
+                    val currentOffset = offsetX.value
+
+                    val minDistanceThreshold = 60f
+                    val velocityThreshold = 2.5f
+                    val shouldChangeSong = (
+                        abs(currentOffset) > minDistanceThreshold &&
+                            velocity > velocityThreshold
+                        ) || abs(currentOffset) > autoSwipeThresholdPx
+
+                    if (orientation == Orientation.Horizontal && shouldChangeSong) {
+                        val isRightSwipe = currentOffset > 0
+                        if (isRightSwipe && playbackState.hasPrevious) {
+                            viewModel.skipToPrevious()
+                        } else if (!isRightSwipe && playbackState.hasNext) {
+                            viewModel.skipToNext()
+                        }
+                    }
+
+                    coroutineScope.launch {
+                        offsetX.animateTo(0f, animationSpec)
+                    }
+                }
             }
     ) {
         Box(
