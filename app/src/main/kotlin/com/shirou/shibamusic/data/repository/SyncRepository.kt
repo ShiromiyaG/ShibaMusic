@@ -19,6 +19,7 @@ import com.shirou.shibamusic.subsonic.models.ArtistID3
 import com.shirou.shibamusic.subsonic.models.ArtistWithAlbumsID3
 import com.shirou.shibamusic.subsonic.models.ArtistsID3
 import com.shirou.shibamusic.subsonic.models.Child
+import com.shirou.shibamusic.util.Preferences
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,6 +62,17 @@ class SyncRepository @Inject constructor(
 
     private val artistDetailCache = ConcurrentHashMap<String, CachedArtistDetail>()
     private val albumSongCache = ConcurrentHashMap<String, CachedAlbumSongs>()
+
+    private fun shouldSkipSync(
+        lastSync: Long,
+        now: Long,
+        ttlMs: Long,
+        force: Boolean
+    ): Boolean {
+        if (force) return false
+        if (lastSync <= 0) return false
+        return now - lastSync < ttlMs
+    }
     
     /**
      * Extension function to convert AlbumID3 to AlbumEntity
@@ -145,11 +157,23 @@ class SyncRepository @Inject constructor(
         type: String = "alphabeticalByName",
         pageSize: Int = DEFAULT_PAGE_SIZE,
         maxPages: Int = DEFAULT_MAX_PAGES,
-        throttleMs: Long = DEFAULT_THROTTLE_MS
+        throttleMs: Long = DEFAULT_THROTTLE_MS,
+        force: Boolean = false
     ): AlbumSyncReport = withContext(ioDispatcher) {
+        val now = System.currentTimeMillis()
+        val lastSync = Preferences.getLastLibraryAlbumSync()
+        if (shouldSkipSync(lastSync, now, LIBRARY_ALBUM_SYNC_TTL_MS, force)) {
+            Log.d(
+                TAG,
+                "Skipping album sync; last run ${(now - lastSync) / 1000}s ago (force=$force)"
+            )
+            return@withContext AlbumSyncReport(fetched = 0, inserted = 0, pages = 0)
+        }
+
         var fetchedCount = 0
         var insertedCount = 0
         var currentPage = 0
+        var encounteredError = false
 
         while (currentPage < maxPages) {
             val offset = currentPage * pageSize
@@ -162,11 +186,13 @@ class SyncRepository @Inject constructor(
                     .getAlbumList2(type, pageSize, offset, null, null)
                     .execute()
             } catch (e: Exception) {
+                encounteredError = true
                 Log.e(TAG, "Exception fetching page $currentPage", e)
                 break
             }
 
             if (!response.isSuccessful) {
+                encounteredError = true
                 Log.e(TAG, "Failed to fetch albums page=$currentPage code=${response.code()}")
                 break
             }
@@ -208,6 +234,10 @@ class SyncRepository @Inject constructor(
         
         Log.d(TAG, "Album sync complete: fetched=$fetchedCount inserted=$insertedCount pages=$currentPage")
 
+        if (!encounteredError) {
+            Preferences.setLastLibraryAlbumSync(System.currentTimeMillis())
+        }
+
         AlbumSyncReport(
             fetched = fetchedCount,
             inserted = insertedCount,
@@ -219,14 +249,32 @@ class SyncRepository @Inject constructor(
         artistLimit: Int? = null,
         albumLimitPerArtist: Int? = null,
         syncSongs: Boolean = true,
-        throttleMs: Long = DEFAULT_THROTTLE_MS
+        throttleMs: Long = DEFAULT_THROTTLE_MS,
+        force: Boolean = false
     ): ArtistAlbumSyncReport = withContext(ioDispatcher) {
+        val now = System.currentTimeMillis()
+        val lastSync = Preferences.getLastArtistDeepSync()
+        if (shouldSkipSync(lastSync, now, ARTIST_DEEP_SYNC_TTL_MS, force)) {
+            Log.d(
+                TAG,
+                "Skipping deep artist sync; last run ${(now - lastSync) / 1000}s ago (force=$force)"
+            )
+            return@withContext ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
+        }
+
         val client = App.getSubsonicClientInstance(false)
 
-        val artistsResponse = client
-            .browsingClient
-            .getArtists()
-            .execute()
+        val artistsResponse = try {
+            client
+                .browsingClient
+                .getArtists()
+                .execute()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            Log.e(TAG, "Error fetching artists", error)
+            throw error
+        }
 
         if (!artistsResponse.isSuccessful) {
             throw IOException(
@@ -249,6 +297,7 @@ class SyncRepository @Inject constructor(
         }
 
         if (selectedArtists.isEmpty()) {
+            Preferences.setLastArtistDeepSync(System.currentTimeMillis())
             return@withContext ArtistAlbumSyncReport(artists = 0, albums = 0, songs = 0)
         }
 
@@ -272,7 +321,7 @@ class SyncRepository @Inject constructor(
             }.awaitAll()
         }
 
-        reports.fold(
+        val finalReport = reports.fold(
             ArtistAlbumSyncReport(
                 artists = 0,
                 albums = 0,
@@ -285,6 +334,9 @@ class SyncRepository @Inject constructor(
                 songs = acc.songs + report.songs
             )
         }
+
+        Preferences.setLastArtistDeepSync(System.currentTimeMillis())
+        finalReport
     }
 
     private suspend fun syncArtistDeep(
@@ -526,68 +578,82 @@ class SyncRepository @Inject constructor(
     /**
      * Sync playlists from server
      */
-    private suspend fun syncPlaylists(): Result<List<PlaylistEntity>> = suspendCoroutine { continuation ->
-        try {
-            Log.d(TAG, "Syncing playlists from server")
-            
-            App.getSubsonicClientInstance(false)
-                .playlistClient
-                .getPlaylists()
-                .enqueue(object : Callback<ApiResponse> {
-                    override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
-                        try {
-                            if (response.isSuccessful &&
-                                response.body()?.subsonicResponse?.playlists?.playlists != null) {
-                                
-                                val playlists = response.body()!!.subsonicResponse.playlists!!.playlists!!
+    private suspend fun syncPlaylists(force: Boolean = false): Result<List<PlaylistEntity>> {
+        val now = System.currentTimeMillis()
+        val lastSync = Preferences.getLastPlaylistSync()
+        if (shouldSkipSync(lastSync, now, PLAYLIST_SYNC_TTL_MS, force)) {
+            Log.d(
+                TAG,
+                "Skipping playlist sync; last run ${(now - lastSync) / 1000}s ago (force=$force)"
+            )
+            return Result.success(emptyList())
+        }
 
-                                val playlistEntities = playlists.mapNotNull { playlist ->
-                                    val playlistId = playlist.id
-                                    if (playlistId.isNullOrEmpty()) {
-                                        Log.w(TAG, "Skipping playlist with missing id")
-                                        return@mapNotNull null
+        return suspendCoroutine { continuation ->
+            try {
+                Log.d(TAG, "Syncing playlists from server")
+
+                App.getSubsonicClientInstance(false)
+                    .playlistClient
+                    .getPlaylists()
+                    .enqueue(object : Callback<ApiResponse> {
+                        override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
+                            try {
+                                if (response.isSuccessful &&
+                                    response.body()?.subsonicResponse?.playlists?.playlists != null) {
+
+                                    val playlists = response.body()!!.subsonicResponse.playlists!!.playlists!!
+
+                                    val playlistEntities = playlists.mapNotNull { playlist ->
+                                        val playlistId = playlist.id
+                                        if (playlistId.isNullOrEmpty()) {
+                                            Log.w(TAG, "Skipping playlist with missing id")
+                                            return@mapNotNull null
+                                        }
+
+                                        try {
+                                            val name = playlist.name ?: playlistId
+                                            val durationSeconds = playlist.duration.coerceAtLeast(0L)
+                                            PlaylistEntity(
+                                                id = playlistId,
+                                                name = name,
+                                                description = playlist.comment,
+                                                coverUrl = playlist.coverArtId,
+                                                songCount = playlist.songCount.coerceAtLeast(0),
+                                                durationMs = durationSeconds * 1000,
+                                                dateCreated = playlist.created?.time ?: System.currentTimeMillis(),
+                                                dateModified = playlist.changed?.time ?: System.currentTimeMillis(),
+                                                isFavorite = false
+                                            )
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Error converting playlist $playlistId", e)
+                                            null
+                                        }
                                     }
 
-                                    try {
-                                        val name = playlist.name ?: playlistId
-                                        val durationSeconds = playlist.duration.coerceAtLeast(0L)
-                                        PlaylistEntity(
-                                            id = playlistId,
-                                            name = name,
-                                            description = playlist.comment,
-                                            coverUrl = playlist.coverArtId,
-                                            songCount = playlist.songCount.coerceAtLeast(0),
-                                            durationMs = durationSeconds * 1000,
-                                            dateCreated = playlist.created?.time ?: System.currentTimeMillis(),
-                                            dateModified = playlist.changed?.time ?: System.currentTimeMillis(),
-                                            isFavorite = false
-                                        )
-                                    } catch (e: Exception) {
-                                        Log.e(TAG, "Error converting playlist $playlistId", e)
-                                        null
-                                    }
+                                    Log.d(TAG, "Converted ${playlistEntities.size} playlists")
+                                    Preferences.setLastPlaylistSync(System.currentTimeMillis())
+                                    continuation.resume(Result.success(playlistEntities))
+                                } else {
+                                    Log.e(TAG, "Failed to sync playlists: empty response")
+                                    Preferences.setLastPlaylistSync(System.currentTimeMillis())
+                                    continuation.resume(Result.success(emptyList()))
                                 }
-                                
-                                Log.d(TAG, "Converted ${playlistEntities.size} playlists")
-                                continuation.resume(Result.success(playlistEntities))
-                            } else {
-                                Log.e(TAG, "Failed to sync playlists: empty response")
-                                continuation.resume(Result.success(emptyList()))
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error processing playlist response", e)
+                                continuation.resumeWithException(e)
                             }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error processing playlist response", e)
-                            continuation.resumeWithException(e)
                         }
-                    }
 
-                    override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
-                        Log.e(TAG, "Error syncing playlists", t)
-                        continuation.resumeWithException(t)
-                    }
-                })
-        } catch (e: Exception) {
-            Log.e(TAG, "Error initiating playlist sync", e)
-            continuation.resumeWithException(e)
+                        override fun onFailure(call: Call<ApiResponse>, t: Throwable) {
+                            Log.e(TAG, "Error syncing playlists", t)
+                            continuation.resumeWithException(t)
+                        }
+                    })
+            } catch (e: Exception) {
+                Log.e(TAG, "Error initiating playlist sync", e)
+                continuation.resumeWithException(e)
+            }
         }
     }
     
@@ -646,7 +712,7 @@ class SyncRepository @Inject constructor(
             val stats = SyncStats()
             
             // Sync albums using paged sync
-            val albumReport = syncAllAlbumsPaged()
+            val albumReport = syncAllAlbumsPaged(force = true)
             stats.albumCount = albumReport.inserted
             Log.d(TAG, "Synced ${stats.albumCount} albums")
             
@@ -737,7 +803,7 @@ class SyncRepository @Inject constructor(
             Log.d(TAG, "Synced ${stats.artistCount} artists")
             
             // Sync playlists
-            val playlistResult = syncPlaylists()
+            val playlistResult = syncPlaylists(force = true)
             if (playlistResult.isSuccess) {
                 val playlistEntities = playlistResult.getOrNull() ?: emptyList()
                 playlistEntities.forEach { entity ->
@@ -805,5 +871,8 @@ private const val DEFAULT_THROTTLE_MS = 50L
 private const val ARTIST_SYNC_CONCURRENCY = 4
 private const val ALBUM_SYNC_CONCURRENCY = 4
 private const val SYNC_CACHE_TTL_MS = 5 * 60 * 1000L
+private const val LIBRARY_ALBUM_SYNC_TTL_MS = 10 * 60 * 1000L
+private const val ARTIST_DEEP_SYNC_TTL_MS = 10 * 60 * 1000L
+private const val PLAYLIST_SYNC_TTL_MS = 5 * 60 * 1000L
 private const val ARTIST_CACHE_MAX = 256
 private const val ALBUM_SONG_CACHE_MAX = 512

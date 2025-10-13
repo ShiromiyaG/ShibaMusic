@@ -38,6 +38,7 @@ class AlbumSyncScheduler @Inject constructor(
             .putInt(AlbumSyncWorker.KEY_MAX_PAGES, maxPages)
             .putLong(AlbumSyncWorker.KEY_THROTTLE_MS, throttleMs)
             .putBoolean(AlbumSyncWorker.KEY_SYNC_SONGS, syncSongs)
+            .putBoolean(AlbumSyncWorker.KEY_FORCE, force)
             .putInt(AlbumSyncWorker.KEY_ARTIST_LIMIT, artistLimit ?: UNSET_VALUE)
             .putInt(AlbumSyncWorker.KEY_ALBUM_LIMIT_PER_ARTIST, albumLimitPerArtist ?: UNSET_VALUE)
             .build()

@@ -24,6 +24,7 @@ class AlbumSyncWorker @AssistedInject constructor(
             val maxPages = inputData.getInt(KEY_MAX_PAGES, DEFAULT_MAX_PAGES)
             val throttleMs = inputData.getLong(KEY_THROTTLE_MS, DEFAULT_THROTTLE_MS)
             val syncSongs = inputData.getBoolean(KEY_SYNC_SONGS, DEFAULT_SYNC_SONGS)
+            val forceSync = inputData.getBoolean(KEY_FORCE, DEFAULT_FORCE)
 
             val artistLimit = inputData.getInt(KEY_ARTIST_LIMIT, VALUE_UNSET)
                 .takeIf { it != VALUE_UNSET }
@@ -33,14 +34,16 @@ class AlbumSyncWorker @AssistedInject constructor(
             val pageReport = syncRepository.syncAllAlbumsPaged(
                 pageSize = pageSize,
                 maxPages = maxPages,
-                throttleMs = throttleMs
+                throttleMs = throttleMs,
+                force = forceSync
             )
 
             val deepReport = syncRepository.syncArtistsAndAlbumsDeep(
                 artistLimit = artistLimit,
                 albumLimitPerArtist = albumLimitPerArtist,
                 syncSongs = syncSongs,
-                throttleMs = throttleMs
+                throttleMs = throttleMs,
+                force = forceSync
             )
 
             Result.success(
@@ -75,6 +78,7 @@ class AlbumSyncWorker @AssistedInject constructor(
         const val KEY_SYNC_SONGS = "sync_songs"
         const val KEY_ARTIST_LIMIT = "artist_limit"
         const val KEY_ALBUM_LIMIT_PER_ARTIST = "album_limit_per_artist"
+        const val KEY_FORCE = "force"
         const val KEY_FETCHED_COUNT = "fetched_count"
         const val KEY_INSERTED_COUNT = "inserted_count"
         const val KEY_PAGE_COUNT = "page_count"
@@ -87,6 +91,7 @@ class AlbumSyncWorker @AssistedInject constructor(
         private const val DEFAULT_MAX_PAGES = 500
         private const val DEFAULT_THROTTLE_MS = 50L
         private const val DEFAULT_SYNC_SONGS = true
+        private const val DEFAULT_FORCE = false
         private const val MAX_ATTEMPTS = 3
         private const val VALUE_UNSET = -1
 
@@ -95,6 +100,7 @@ class AlbumSyncWorker @AssistedInject constructor(
             KEY_MAX_PAGES to DEFAULT_MAX_PAGES,
             KEY_THROTTLE_MS to DEFAULT_THROTTLE_MS,
             KEY_SYNC_SONGS to DEFAULT_SYNC_SONGS,
+            KEY_FORCE to DEFAULT_FORCE,
             KEY_ARTIST_LIMIT to VALUE_UNSET,
             KEY_ALBUM_LIMIT_PER_ARTIST to VALUE_UNSET
         )

@@ -44,6 +44,9 @@ object Preferences {
     private const val QUEUE_SYNCING_COUNTDOWN = "queue_syncing_countdown"
     private const val ROUNDED_CORNER = "rounded_corner"
     private const val ROUNDED_CORNER_SIZE = "rounded_corner_size"
+    private const val LAST_LIBRARY_ALBUM_SYNC = "last_library_album_sync"
+    private const val LAST_ARTIST_DEEP_SYNC = "last_artist_deep_sync"
+    private const val LAST_PLAYLIST_SYNC = "last_playlist_sync"
     private const val PODCAST_SECTION_VISIBILITY = "podcast_section_visibility"
     private const val RADIO_SECTION_VISIBILITY = "radio_section_visibility"
     private const val MUSIC_DIRECTORY_SECTION_VISIBILITY = "music_directory_section_visibility"
@@ -582,5 +585,35 @@ object Preferences {
         return App.getInstance().preferences.getLong(
                 LAST_INSTANT_MIX, 0
         ) + 5000 < System.currentTimeMillis()
+    }
+
+    @JvmStatic
+    fun getLastLibraryAlbumSync(): Long {
+        return App.getInstance().preferences.getLong(LAST_LIBRARY_ALBUM_SYNC, 0L)
+    }
+
+    @JvmStatic
+    fun setLastLibraryAlbumSync(timestamp: Long) {
+        App.getInstance().preferences.edit().putLong(LAST_LIBRARY_ALBUM_SYNC, timestamp).apply()
+    }
+
+    @JvmStatic
+    fun getLastArtistDeepSync(): Long {
+        return App.getInstance().preferences.getLong(LAST_ARTIST_DEEP_SYNC, 0L)
+    }
+
+    @JvmStatic
+    fun setLastArtistDeepSync(timestamp: Long) {
+        App.getInstance().preferences.edit().putLong(LAST_ARTIST_DEEP_SYNC, timestamp).apply()
+    }
+
+    @JvmStatic
+    fun getLastPlaylistSync(): Long {
+        return App.getInstance().preferences.getLong(LAST_PLAYLIST_SYNC, 0L)
+    }
+
+    @JvmStatic
+    fun setLastPlaylistSync(timestamp: Long) {
+        App.getInstance().preferences.edit().putLong(LAST_PLAYLIST_SYNC, timestamp).apply()
     }
 }
