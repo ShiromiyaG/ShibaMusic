@@ -53,7 +53,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val systemRepository = remember { SystemRepository() }
-    val latestReleaseLiveData = remember(systemRepository) { systemRepository.checkShibaMusicUpdate() }
+    val latestReleaseLiveData = remember(systemRepository) { systemRepository.checkShibaMusicUpdate(context) }
     val latestRelease by latestReleaseLiveData.observeAsState()
     val updateAvailable = remember(latestRelease) {
         latestRelease?.let { UpdateUtil.showUpdateDialog(it) } == true

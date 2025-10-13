@@ -27,7 +27,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkShibaMusicUpdate(): LiveData<LatestRelease?> {
-        return systemRepository.checkShibaMusicUpdate()
+        return systemRepository.checkShibaMusicUpdate(getApplication())
     }
 
     companion object {
