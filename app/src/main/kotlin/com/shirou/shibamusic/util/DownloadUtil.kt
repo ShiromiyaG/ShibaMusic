@@ -92,27 +92,15 @@ object DownloadUtil {
     fun getDataSourceFactory(context: Context): DataSource.Factory {
         return dataSourceFactory ?: run {
             val appContext = context.applicationContext
-
             val upstreamFactory = DefaultDataSource.Factory(appContext, getHttpDataSourceFactory())
 
             if (Preferences.getStreamingCacheSize() > 0) {
-                val streamCacheFactory = CacheDataSource.Factory()
+                CacheDataSource.Factory()
                     .setCache(getStreamingCache(appContext))
                     .setUpstreamDataSourceFactory(upstreamFactory)
-
-                val resolvingFactory = ResolvingDataSource.Factory(
-                    StreamingCacheDataSource.Factory(streamCacheFactory)
-                ) { dataSpec ->
-                    dataSpec.buildUpon()
-                        .setFlags(dataSpec.flags and DataSpec.FLAG_DONT_CACHE_IF_LENGTH_UNKNOWN.inv())
-                        .build()
-                }
-
-                buildReadOnlyCacheDataSource(resolvingFactory, getDownloadCache(appContext))
                     .also { dataSourceFactory = it }
             } else {
-                buildReadOnlyCacheDataSource(upstreamFactory, getDownloadCache(appContext))
-                    .also { dataSourceFactory = it }
+                upstreamFactory.also { dataSourceFactory = it }
             }
         }
     }
