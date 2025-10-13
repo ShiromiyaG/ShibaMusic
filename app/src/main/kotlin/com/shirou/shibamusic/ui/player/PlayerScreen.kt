@@ -1,5 +1,8 @@
 package com.shirou.shibamusic.ui.player
 
+import com.shirou.shibamusic.ui.viewmodel.PlayerViewModel
+import com.shirou.shibamusic.ui.model.RepeatMode
+
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -70,7 +73,7 @@ import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.model.getPlayerArtworkUrl
 import com.shirou.shibamusic.ui.theme.rememberPlayerColors
 import com.shirou.shibamusic.ui.utils.TimeUtils
-import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
+
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
@@ -100,11 +103,11 @@ fun PlayerScreen(
     onNavigateToArtist: (String) -> Unit = {},
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
-    viewModel: PlaybackViewModel = hiltViewModel()
+    playerViewModel: PlayerViewModel
 ) {
     
 
-    val playerState by viewModel.playbackState.collectAsStateWithLifecycle()
+    val playerState by playerViewModel.playerState.collectAsStateWithLifecycle()
     val nowPlaying = playerState.nowPlaying
     
     // Placeholder se nada está tocando
@@ -164,21 +167,17 @@ fun PlayerScreen(
                 duration = playerState.progress.duration,
                 bufferedPosition = playerState.progress.bufferedPosition,
                 isShuffle = playerState.shuffleMode,
-                repeatMode = when (playerState.repeatMode) {
-                    com.shirou.shibamusic.ui.model.RepeatMode.OFF -> RepeatMode.OFF
-                    com.shirou.shibamusic.ui.model.RepeatMode.ONE -> RepeatMode.ONE
-                    com.shirou.shibamusic.ui.model.RepeatMode.ALL -> RepeatMode.ALL
-                },
+                repeatMode = playerState.repeatMode,
                 playerColors = playerColors,
                 isFavorite = playerState.isFavorite,
                 onNavigateBack = onNavigateBack,
-                onPlayPauseClick = { viewModel.playPause() },
-                onNextClick = { viewModel.skipToNext() },
-                onPreviousClick = { viewModel.skipToPrevious() },
-                onSeekTo = { position -> viewModel.seekTo(position) },
-                onShuffleClick = { viewModel.toggleShuffle() },
-                onRepeatClick = { viewModel.toggleRepeat() },
-                onToggleFavorite = { viewModel.toggleFavorite() },
+                onPlayPauseClick = { playerViewModel.playPause() },
+                onNextClick = { playerViewModel.skipToNext() },
+                onPreviousClick = { playerViewModel.skipToPrevious() },
+                onSeekTo = { position -> playerViewModel.seekTo(position) },
+                onShuffleClick = { playerViewModel.toggleShuffle() },
+                onRepeatClick = { playerViewModel.toggleRepeatMode() },
+                onToggleFavorite = { playerViewModel.toggleFavorite() },
                 onShowQueue = onShowQueue,
                 onShowLyrics = onShowLyrics,
                 onShowEqualizer = { /* Navigate to equalizer - Not implemented yet */ },
@@ -319,11 +318,7 @@ private fun PlayerPrimaryTransportButton(
     }
 }
 
-private enum class RepeatMode {
-    OFF,
-    ONE,
-    ALL
-}
+
 
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalAnimationApi::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
@@ -748,7 +743,8 @@ private fun PlayerScreenContent(
                     Icon(
                         imageVector = when (repeatMode) {
                             RepeatMode.ONE -> Icons.Rounded.RepeatOne
-                            else -> Icons.Rounded.Repeat
+                            RepeatMode.ALL -> Icons.Rounded.Repeat
+                            RepeatMode.OFF -> Icons.Rounded.Repeat
                         },
                         contentDescription = "Repeat",
                         tint = if (repeatMode != RepeatMode.OFF) accent else MaterialTheme.colorScheme.onSurfaceVariant
