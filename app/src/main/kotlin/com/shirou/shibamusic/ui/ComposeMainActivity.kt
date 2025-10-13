@@ -14,6 +14,9 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -24,7 +27,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
-val LocalNavAnimatedVisibilityScope = compositionLocalOf<androidx.compose.animation.AnimatedVisibilityScope?> { null }
 
 /**
  * Main Activity using Jetpack Compose
@@ -50,6 +52,8 @@ fun ShibaMusicApp() {
 	val navController = rememberNavController()
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	val currentDestination = navBackStackEntry?.destination
+	val density = LocalDensity.current
+	var miniPlayerHeightPx by remember { mutableStateOf(0) }
     
 	// Check if user is logged in
 	val isLoggedIn by remember {
@@ -76,15 +80,19 @@ fun ShibaMusicApp() {
 		currentDestination?.route != Screen.Login.route &&
 		currentDestination?.route != Screen.Settings.route
 	}
-    
+
+	val miniPlayerBottomPadding = if (showMiniPlayer && miniPlayerHeightPx > 0) {
+		with(density) { miniPlayerHeightPx.toDp() }
+	} else {
+		0.dp
+	}
+
 	SharedTransitionLayout {
 		Scaffold(
 			bottomBar = {
 				if (showBottomBar) {
 					Column(
-						modifier = Modifier.windowInsetsPadding(
-							WindowInsets.navigationBars
-						)
+						modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
 					) {
 						NavigationBar(
 							modifier = Modifier.renderInSharedTransitionScopeOverlay(
@@ -125,11 +133,24 @@ fun ShibaMusicApp() {
 				LocalSharedTransitionScope provides this@SharedTransitionLayout
 			) {
 				Box(modifier = Modifier.fillMaxSize()) {
-					ShibaMusicNavGraph(
-						navController = navController,
-						startDestination = startDestination,
-						modifier = Modifier.padding(paddingValues)
-					)
+					Column(
+						modifier = Modifier
+							.fillMaxSize()
+							.padding(paddingValues)
+					) {
+						Box(
+							modifier = Modifier
+								.weight(1f)
+								.fillMaxWidth()
+						) {
+							ShibaMusicNavGraph(
+								navController = navController,
+								startDestination = startDestination,
+								modifier = Modifier.fillMaxSize(),
+								contentBottomPadding = miniPlayerBottomPadding
+							)
+						}
+					}
 					
 					AnimatedVisibility(
 						visible = showMiniPlayer,
@@ -142,13 +163,22 @@ fun ShibaMusicApp() {
 						) + fadeIn(tween(250)),
 						exit = fadeOut(tween(150))
 					) {
-						MiniPlayer(
-							onClick = {
-								navController.navigate(Screen.Player.route)
-							},
-							animatedVisibilityScope = this,
-							sharedTransitionScope = this@SharedTransitionLayout
-						)
+						val animatedScope = this
+						Box(
+							modifier = Modifier.onSizeChanged { size ->
+								if (miniPlayerHeightPx != size.height) {
+									miniPlayerHeightPx = size.height
+								}
+							}
+						) {
+							MiniPlayer(
+								onClick = {
+									navController.navigate(Screen.Player.route)
+								},
+								animatedVisibilityScope = animatedScope,
+								sharedTransitionScope = this@SharedTransitionLayout
+							)
+						}
 					}
 				}
 			}

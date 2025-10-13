@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,7 +44,8 @@ fun LibraryPlaylistsScreen(
     onPlaylistPlay: (PlaylistItem) -> Unit,
     onPlaylistMenuClick: (PlaylistItem) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryPlaylistsViewModel = hiltViewModel()
+    viewModel: LibraryPlaylistsViewModel = hiltViewModel(),
+    contentBottomPadding: Dp = 0.dp
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagingPlaylists = viewModel.playlists.collectAsLazyPagingItems()
@@ -55,7 +57,8 @@ fun LibraryPlaylistsScreen(
         onPlaylistPlay = onPlaylistPlay,
         onPlaylistMenuClick = onPlaylistMenuClick,
         onCreatePlaylist = onCreatePlaylist,
-        modifier = modifier
+        modifier = modifier,
+        contentBottomPadding = contentBottomPadding
     )
 }
 
@@ -68,7 +71,8 @@ fun LibraryPlaylistsContent(
     onPlaylistPlay: (PlaylistItem) -> Unit,
     onPlaylistMenuClick: (PlaylistItem) -> Unit,
     onCreatePlaylist: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     Scaffold(
         floatingActionButton = {
@@ -166,7 +170,8 @@ fun LibraryPlaylistsContent(
                 else -> {
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = contentBottomPadding)
                     ) {
                         items(playlists.itemCount, key = { index -> playlists[index]?.id ?: index }) { index ->
                             val playlist = playlists[index] ?: return@items
@@ -215,7 +220,7 @@ fun LibraryPlaylistsContent(
                         }
 
                         item {
-                            Spacer(modifier = Modifier.height(80.dp))
+                            Spacer(modifier = Modifier.height(contentBottomPadding))
                         }
                     }
                 }

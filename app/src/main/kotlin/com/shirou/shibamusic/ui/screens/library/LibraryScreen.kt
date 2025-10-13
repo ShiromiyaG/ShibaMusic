@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -36,7 +37,8 @@ fun LibraryScreen(
     onNavigateToSettings: () -> Unit = {},
     modifier: Modifier = Modifier,
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
-    offlineViewModel: OfflineViewModel = hiltViewModel()
+    offlineViewModel: OfflineViewModel = hiltViewModel(),
+    contentBottomPadding: Dp = 0.dp
 ) {
     val playbackState by playbackViewModel.playbackState.collectAsStateWithLifecycle()
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
@@ -196,7 +198,8 @@ fun LibraryScreen(
                             playbackViewModel.shuffleAll()
                         },
                         downloadedSongIds = downloadedSongIds,
-                        activeDownloads = activeDownloadMap
+                        activeDownloads = activeDownloadMap,
+                        contentBottomPadding = contentBottomPadding
                     )
                 }
                 LibraryTab.ALBUMS -> albumsViewModel?.let { vm ->
@@ -211,7 +214,8 @@ fun LibraryScreen(
                         onAlbumMenuClick = { album ->
                             selectedAlbum = album
                             showAlbumBottomSheet = true
-                        }
+                        },
+                        contentBottomPadding = contentBottomPadding
                     )
                 }
                 LibraryTab.ARTISTS -> artistsViewModel?.let { vm ->
@@ -221,7 +225,8 @@ fun LibraryScreen(
                         },
                         onArtistPlay = { artist ->
                             playbackViewModel.playArtist(artist.id)
-                        }
+                        },
+                        contentBottomPadding = contentBottomPadding
                     )
                 }
                 LibraryTab.PLAYLISTS -> playlistsViewModel?.let { vm ->
@@ -236,7 +241,8 @@ fun LibraryScreen(
                         onPlaylistMenuClick = { playlist ->
                             selectedPlaylist = playlist
                             showPlaylistBottomSheet = true
-                        }
+                        },
+                        contentBottomPadding = contentBottomPadding
                     )
                 }
             }

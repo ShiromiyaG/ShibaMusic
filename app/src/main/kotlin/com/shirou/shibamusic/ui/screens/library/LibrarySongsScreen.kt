@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,7 +37,8 @@ fun LibrarySongsScreen(
     modifier: Modifier = Modifier,
     viewModel: LibrarySongsViewModel = hiltViewModel(),
     downloadedSongIds: Set<String>,
-    activeDownloads: Map<String, DownloadProgress>
+    activeDownloads: Map<String, DownloadProgress>,
+    contentBottomPadding: Dp = 0.dp
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagingSongs = viewModel.songs.collectAsLazyPagingItems()
@@ -52,7 +54,8 @@ fun LibrarySongsScreen(
         selectedSortOption = uiState.sortOption,
         downloadedSongIds = downloadedSongIds,
         activeDownloads = activeDownloads,
-        modifier = modifier
+        modifier = modifier,
+        contentBottomPadding = contentBottomPadding
     )
 }
 
@@ -69,7 +72,8 @@ fun LibrarySongsContent(
     selectedSortOption: SongSortOption,
     downloadedSongIds: Set<String>,
     activeDownloads: Map<String, DownloadProgress>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp)
@@ -150,7 +154,7 @@ fun LibrarySongsContent(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(vertical = 8.dp)
+                            contentPadding = PaddingValues(top = 8.dp, bottom = contentBottomPadding + 8.dp)
                         ) {
                             items(
                                 count = songs.itemCount,

@@ -69,7 +69,8 @@ fun HomeScreen(
     onNavigateToAlbum: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
-    playbackViewModel: PlaybackViewModel = hiltViewModel()
+    playbackViewModel: PlaybackViewModel = hiltViewModel(),
+    contentBottomPadding: Dp = 0.dp
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val playbackState by playbackViewModel.playbackState.collectAsState()
@@ -160,7 +161,7 @@ fun HomeScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = contentBottomPadding + 8.dp),
                     state = listState
                 ) {
                     // Random Song Card at top

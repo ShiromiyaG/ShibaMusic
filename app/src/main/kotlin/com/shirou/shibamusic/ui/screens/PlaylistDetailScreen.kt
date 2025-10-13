@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,7 +54,8 @@ fun PlaylistDetailScreen(
     onSongGoToAlbum: (String) -> Unit = {},
     onSongGoToArtist: (String) -> Unit = {},
     onDownloadClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -166,7 +168,8 @@ fun PlaylistDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontalPadding)
-                    .padding(top = topPadding)
+                    .padding(top = topPadding),
+                contentPadding = PaddingValues(bottom = contentBottomPadding)
             ) {
                 // Playlist Header
                 item {

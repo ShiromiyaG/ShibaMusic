@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,7 +36,8 @@ fun LibraryAlbumsScreen(
     onAlbumPlay: (AlbumItem) -> Unit,
     onAlbumMenuClick: (AlbumItem) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LibraryAlbumsViewModel = hiltViewModel()
+    viewModel: LibraryAlbumsViewModel = hiltViewModel(),
+    contentBottomPadding: Dp = 0.dp
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagingAlbums = viewModel.albums.collectAsLazyPagingItems()
@@ -47,7 +49,8 @@ fun LibraryAlbumsScreen(
         onAlbumPlay = onAlbumPlay,
         onAlbumMenuClick = onAlbumMenuClick,
         selectedSortOption = uiState.sortOption,
-        modifier = modifier
+        modifier = modifier,
+        contentBottomPadding = contentBottomPadding
     )
 }
 
@@ -60,7 +63,8 @@ fun LibraryAlbumsContent(
     onAlbumPlay: (AlbumItem) -> Unit,
     onAlbumMenuClick: (AlbumItem) -> Unit,
     selectedSortOption: AlbumSortOption,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp)
@@ -159,7 +163,8 @@ fun LibraryAlbumsContent(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             start = 8.dp,
-                            end = 8.dp
+                            end = 8.dp,
+                            bottom = contentBottomPadding
                         )
                     ) {
                         items(albums.itemCount, key = { index -> albums[index]?.id ?: index }) { index ->

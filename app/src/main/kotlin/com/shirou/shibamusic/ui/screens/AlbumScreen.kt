@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.*
@@ -42,7 +43,8 @@ fun AlbumScreen(
     onArtistClick: () -> Unit,
     downloadedSongIds: Set<String>,
     activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     val album = albumDetail?.album
     val songs = albumDetail?.songs ?: emptyList()
@@ -125,7 +127,8 @@ fun AlbumScreen(
                     modifier = modifier
                         .fillMaxSize()
                         .padding(horizontalPadding)
-                        .padding(top = topPadding)
+                        .padding(top = topPadding),
+                    contentPadding = PaddingValues(bottom = contentBottomPadding)
                 ) {
                     // Album header with artwork
                     item {

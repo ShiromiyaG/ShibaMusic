@@ -46,7 +46,8 @@ import android.util.Log
 fun ShibaMusicNavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Home.route,
-    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier
+    modifier: androidx.compose.ui.Modifier = androidx.compose.ui.Modifier,
+    contentBottomPadding: androidx.compose.ui.unit.Dp = 0.dp
 ) {
     NavHost(
         navController = navController,
@@ -67,7 +68,8 @@ fun ShibaMusicNavGraph(
                 },
                 onNavigateToAlbum = { albumId ->
                     navController.navigate(Screen.Album.createRoute(albumId))
-                }
+                },
+                contentBottomPadding = contentBottomPadding
             )
         }
         
@@ -112,7 +114,8 @@ fun ShibaMusicNavGraph(
                 errorMessage = uiState.error,
                 onDismissError = searchViewModel::clearError,
                 downloadedSongIds = downloadedSongIds,
-                activeDownloads = activeDownloadMap
+                activeDownloads = activeDownloadMap,
+                contentBottomPadding = contentBottomPadding
             )
         }
         
@@ -131,7 +134,8 @@ fun ShibaMusicNavGraph(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
-                }
+                },
+                contentBottomPadding = contentBottomPadding
             )
         }
         
@@ -181,7 +185,8 @@ fun ShibaMusicNavGraph(
                     }
                 },
                 downloadedSongIds = downloadedSongIds,
-                activeDownloads = activeDownloadMap
+                activeDownloads = activeDownloadMap,
+                contentBottomPadding = contentBottomPadding
             )
         }
         
@@ -246,7 +251,8 @@ fun ShibaMusicNavGraph(
                         onSongGoToAlbum = { albumId ->
                             navController.navigate(Screen.Album.createRoute(albumId))
                         },
-                        onMenuClick = { /* TODO: Show artist menu */ }
+                        onMenuClick = { /* TODO: Show artist menu */ },
+                        contentBottomPadding = contentBottomPadding
                     )
                 }
             }
@@ -303,7 +309,7 @@ fun ShibaMusicNavGraph(
                             isPlaying = playbackState.isPlaying,
                             onBackClick = { navController.navigateUp() },
                             onPlayClick = {
-                                if (uiState.songs.isNotEmpty()) {
+                                if (uiState.songs.isNotEmpty() ) {
                                     playbackViewModel.playSongs(uiState.songs)
                                 }
                             },
@@ -328,7 +334,8 @@ fun ShibaMusicNavGraph(
                             },
                             onDownloadClick = {
                                 offlineViewModel.downloadPlaylist(playlist.id, uiState.songs)
-                            }
+                            },
+                            contentBottomPadding = contentBottomPadding
                         )
 
                         if (uiState.isProcessing) {
@@ -396,7 +403,8 @@ fun ShibaMusicNavGraph(
                 onSongClick = { index -> playerViewModel.seekToSong(index) },
                 onRemoveSong = { index -> playerViewModel.removeFromQueue(index) },
                 onClearQueue = { playerViewModel.clearQueue() },
-                onSaveQueue = { /* TODO: Save queue as playlist */ }
+                onSaveQueue = { /* TODO: Save queue as playlist */ },
+                contentBottomPadding = contentBottomPadding
             )
         }
         

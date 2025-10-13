@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.shirou.shibamusic.ui.component.EmptyPlaceholder
@@ -37,7 +38,8 @@ fun QueueScreen(
     onRemoveSong: (Int) -> Unit,
     onClearQueue: () -> Unit,
     onSaveQueue: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     val listState = rememberLazyListState()
     
@@ -99,7 +101,8 @@ fun QueueScreen(
                 
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = contentBottomPadding)
                 ) {
                     itemsIndexed(
                         items = queue,

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.ListItemPlaceholder
@@ -38,7 +39,8 @@ fun SearchScreen(
     onDismissError: () -> Unit = {},
     downloadedSongIds: Set<String>,
     activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     var selectedTab by remember { mutableStateOf(SearchTab.ALL) }
     
@@ -146,7 +148,8 @@ fun SearchScreen(
                     onArtistPlay = onArtistPlay,
                     downloadedSongIds = downloadedSongIds,
                     activeDownloads = activeDownloads,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentBottomPadding = contentBottomPadding
                 )
             }
         }
@@ -207,9 +210,10 @@ private fun SearchResultsList(
     onArtistPlay: (ArtistItem) -> Unit,
     downloadedSongIds: Set<String>,
     activeDownloads: Map<String, com.shirou.shibamusic.data.model.DownloadProgress>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
-    LazyColumn(modifier = modifier) {
+    LazyColumn(modifier = modifier, contentPadding = PaddingValues(bottom = contentBottomPadding)) {
         when (selectedTab) {
             SearchTab.ALL -> {
                 // Songs
@@ -327,7 +331,7 @@ private fun SearchResultsList(
         
         // Bottom spacing
         item {
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(height = contentBottomPadding))
         }
     }
 }

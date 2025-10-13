@@ -18,6 +18,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,7 +55,8 @@ fun ArtistScreen(
     onAlbumClick: (AlbumItem) -> Unit,
     onSongGoToAlbum: (String) -> Unit = {},
     onMenuClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    contentBottomPadding: Dp = 0.dp
 ) {
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedSong by remember { mutableStateOf<SongItem?>(null) }
@@ -140,7 +142,8 @@ fun ArtistScreen(
                         start = paddingValues.calculateStartPadding(layoutDirection),
                         end = paddingValues.calculateEndPadding(layoutDirection),
                         top = paddingValues.calculateTopPadding()
-                    )
+                    ),
+                contentPadding = PaddingValues(bottom = contentBottomPadding)
             ) {
                 // Artist Header with Image and Stats
                 item {
