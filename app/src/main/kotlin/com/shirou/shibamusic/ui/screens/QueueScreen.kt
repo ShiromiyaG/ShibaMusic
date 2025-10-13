@@ -54,6 +54,7 @@ fun QueueScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Queue") },
+                windowInsets = WindowInsets(0.dp),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -63,12 +64,6 @@ fun QueueScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onSaveQueue) {
-                        Icon(
-                            imageVector = Icons.Rounded.Save,
-                            contentDescription = "Save queue as playlist"
-                        )
-                    }
                     IconButton(onClick = onClearQueue) {
                         Icon(
                             imageVector = Icons.Rounded.Clear,
