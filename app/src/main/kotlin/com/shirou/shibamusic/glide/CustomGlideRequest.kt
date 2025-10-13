@@ -1,6 +1,7 @@
 package com.shirou.shibamusic.glide
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.util.Log
@@ -21,6 +22,8 @@ import com.bumptech.glide.signature.ObjectKey
 import com.shirou.shibamusic.App
 import com.shirou.shibamusic.R
 import com.shirou.shibamusic.BuildConfig
+import com.shirou.shibamusic.util.AlbumArtCache
+import com.shirou.shibamusic.util.NetworkUtil
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.util.Util
 import com.google.android.material.elevation.SurfaceColors
@@ -168,21 +171,18 @@ object CustomGlideRequest {
 
     class Builder private constructor(context: Context, item: String?, type: ResourceType) {
         private val requestManager: RequestManager
-        private var item: Any? = null // item can be null initially, then set to URL or remain null
+        private var model: Any? = null // Model can be URL, File, or null for placeholder
+        private val coverArtId: String? = item
+        private val requestedSize = Preferences.getImageSize()
 
         init {
             this.requestManager = Glide.with(context)
 
-            // Only create URL if item is valid and not in data saving mode
-            if (!item.isNullOrBlank() && !Preferences.isDataSavingMode()) {
-                val url = CustomGlideRequest.createUrl(item, Preferences.getImageSize())
-                url?.let {
-                    this.item = it
-                }
-                // If URL creation fails, item remains null and placeholder will be used
-            }
+            model = resolveModel()
 
-            requestManager.applyDefaultRequestOptions(CustomGlideRequest.createRequestOptions(context, item, type))
+            requestManager.applyDefaultRequestOptions(
+                CustomGlideRequest.createRequestOptions(context, item, type)
+            )
         }
 
         companion object {
@@ -193,7 +193,7 @@ object CustomGlideRequest {
 
         fun build(): RequestBuilder<Drawable> {
             return requestManager
-                .load(item)
+                .load(model)
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .listener(object : RequestListener<Drawable> {
                     override fun onLoadFailed(
@@ -214,9 +214,37 @@ object CustomGlideRequest {
                         isFirstResource: Boolean
                     ): Boolean {
                         Log.d(TAG, "Successfully loaded cover art from: $dataSource")
+                        if (coverArtId != null &&
+                            resource is BitmapDrawable &&
+                            (dataSource == DataSource.REMOTE || dataSource == DataSource.DATA_DISK_CACHE)
+                        ) {
+                            AlbumArtCache.storeAsync(
+                                coverArtId = coverArtId,
+                                requestedSize = requestedSize,
+                                bitmap = resource.bitmap
+                            )
+                        }
                         return false // Return false to allow Glide to proceed normally
                     }
                 })
+        }
+
+        private fun resolveModel(): Any? {
+            val coverId = coverArtId ?: return null
+
+            AlbumArtCache.getCachedFile(coverId, requestedSize)?.let { cached ->
+                return cached
+            }
+
+            if (Preferences.isDataSavingMode()) {
+                return null
+            }
+
+            if (NetworkUtil.isOffline()) {
+                return null
+            }
+
+            return CustomGlideRequest.createUrl(coverId, requestedSize)
         }
     }
 }
