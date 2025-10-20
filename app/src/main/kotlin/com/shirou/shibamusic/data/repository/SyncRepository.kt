@@ -39,6 +39,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import java.util.concurrent.ConcurrentHashMap
+import com.shirou.shibamusic.util.PreferencesExt
 
 /**
  * Repository for syncing data from Navidrome server to local database
@@ -54,6 +55,17 @@ class SyncRepository @Inject constructor(
 ) {
     companion object {
         private const val TAG = "ShibaMusicSync"
+        private const val DEFAULT_PAGE_SIZE = 500
+        private const val DEFAULT_MAX_PAGES = 500
+        private const val DEFAULT_THROTTLE_MS = 50L
+        private const val LIBRARY_ALBUM_SYNC_TTL_MS = 10 * 60 * 1000L
+        private const val ARTIST_DEEP_SYNC_TTL_MS = 10 * 60 * 1000L
+        private const val PLAYLIST_SYNC_TTL_MS = 5 * 60 * 1000L
+        private const val SYNC_CACHE_TTL_MS = 5 * 60 * 1000L
+        private const val ARTIST_SYNC_CONCURRENCY = 4
+        private const val ALBUM_SYNC_CONCURRENCY = 4
+        private const val ARTIST_CACHE_MAX = 256
+        private const val ALBUM_SONG_CACHE_MAX = 512
     }
     
     init {
@@ -62,6 +74,20 @@ class SyncRepository @Inject constructor(
 
     private val artistDetailCache = ConcurrentHashMap<String, CachedArtistDetail>()
     private val albumSongCache = ConcurrentHashMap<String, CachedAlbumSongs>()
+
+    private data class CachedArtistDetail(
+        val detail: ArtistWithAlbumsID3?,
+        val timestamp: Long
+    ) {
+        fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
+    }
+
+    private data class CachedAlbumSongs(
+        val result: AlbumSongSyncResult,
+        val timestamp: Long
+    ) {
+        fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
+    }
 
     private fun shouldSkipSync(
         lastSync: Long,
@@ -702,13 +728,45 @@ class SyncRepository @Inject constructor(
     }
     
     /**
+     * Delta sync using getIndexes(ifModifiedSince). Only runs full sync when server reports changes.
+     */
+    suspend fun syncIfChangedUsingIndexes(): Boolean = withContext(ioDispatcher) {
+        try {
+            val lastToken = PreferencesExt.getLastIndexesModified().takeIf { it > 0 }
+            val client = App.getSubsonicClientInstance(false).browsingClient
+            val response = client.getIndexes(null, lastToken).execute()
+            if (!response.isSuccessful) {
+                Log.w(TAG, "getIndexes() failed: ${response.code()}")
+                return@withContext false
+            }
+            val indexes = response.body()?.subsonicResponse?.indexes
+            if (indexes == null) {
+                Log.d(TAG, "Indexes unchanged since $lastToken; skipping full sync.")
+                return@withContext false
+            }
+            Log.d(TAG, "Indexes changed (lastModified=${indexes.lastModified}); running album sync.")
+            val report = syncAllAlbumsPaged(force = true)
+            Log.d(TAG, "Album sync: fetched=${report.fetched}, inserted=${report.inserted}, pages=${report.pages}")
+            PreferencesExt.setLastIndexesModified(indexes.lastModified)
+            true
+        } catch (t: Throwable) {
+            Log.e(TAG, "Delta sync via getIndexes failed", t)
+            false
+        }
+    }
+
+    /**
      * Full initial sync after login
      * Directly calls Subsonic API and saves to Room database
      */
     suspend fun performInitialSync(): Result<SyncStats> = withContext(ioDispatcher) {
         try {
+            // Try a cheap delta sync first; skip full sync if nothing changed.
+            if (syncIfChangedUsingIndexes()) {
+                Log.d(TAG, "Delta sync done; skipping full sync.")
+            }
             Log.d(TAG, ">>>>> STARTING INITIAL SYNC <<<<<")
-            
+
             val stats = SyncStats()
             
             // Sync albums using paged sync
@@ -850,29 +908,3 @@ data class AlbumSongSyncResult(
     val songCount: Int,
     val totalDuration: Long
 )
-
-private data class CachedArtistDetail(
-    val detail: ArtistWithAlbumsID3?,
-    val timestamp: Long
-) {
-    fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
-}
-
-private data class CachedAlbumSongs(
-    val result: AlbumSongSyncResult,
-    val timestamp: Long
-) {
-    fun isFresh(now: Long): Boolean = now - timestamp <= SYNC_CACHE_TTL_MS
-}
-
-private const val DEFAULT_PAGE_SIZE = 500
-private const val DEFAULT_MAX_PAGES = 500
-private const val DEFAULT_THROTTLE_MS = 50L
-private const val ARTIST_SYNC_CONCURRENCY = 4
-private const val ALBUM_SYNC_CONCURRENCY = 4
-private const val SYNC_CACHE_TTL_MS = 5 * 60 * 1000L
-private const val LIBRARY_ALBUM_SYNC_TTL_MS = 10 * 60 * 1000L
-private const val ARTIST_DEEP_SYNC_TTL_MS = 10 * 60 * 1000L
-private const val PLAYLIST_SYNC_TTL_MS = 5 * 60 * 1000L
-private const val ARTIST_CACHE_MAX = 256
-private const val ALBUM_SONG_CACHE_MAX = 512

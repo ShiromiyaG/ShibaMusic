@@ -75,10 +75,12 @@ import com.shirou.shibamusic.ui.theme.rememberPlayerColors
 import com.shirou.shibamusic.ui.utils.TimeUtils
 
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.shirou.shibamusic.ui.component.SeekBarM3
 
 /**
  * PlayerScreen
@@ -379,9 +381,7 @@ private fun PlayerScreenContent(
         }
     }
 
-    val rawSliderValue = if (duration > 0) {
-        currentPosition.toFloat() / duration
-    } else 0f
+    val rawSliderValue = currentPosition.toFloat()
 
     val sliderValue = when {
         isDragging -> sliderPosition ?: rawSliderValue
@@ -389,11 +389,11 @@ private fun PlayerScreenContent(
     }
 
     val displayPosition = if (isDragging) {
-        sliderPosition?.let { (duration * it).toLong() } ?: currentPosition
+        sliderPosition?.toLong() ?: currentPosition
     } else currentPosition
     
     val sliderBufferedValue = if (duration > 0) {
-        max(rawSliderValue, bufferedPosition.toFloat() / duration)
+        max(rawSliderValue, bufferedPosition.toFloat())
     } else rawSliderValue
 
     val accent = playerColors.accent
@@ -622,26 +622,29 @@ private fun PlayerScreenContent(
                     .padding(bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Slider(
-                    value = sliderValue,
+                val valueRange = if (duration > 0) {
+                    0f..duration.toFloat()
+                } else {
+                    0f..1f
+                }
+                val clampedBuffered = min(valueRange.endInclusive, sliderBufferedValue)
+                SeekBarM3(
+                    value = sliderValue.coerceIn(valueRange.start, valueRange.endInclusive),
+                    bufferedValue = clampedBuffered,
+                    valueRange = valueRange,
                     onValueChange = {
                         isDragging = true
                         sliderPosition = it
                     },
                     onValueChangeFinished = {
                         sliderPosition?.let { value ->
-                            onSeekTo((duration * value).toLong())
+                            onSeekTo(value.toLong())
                         }
                         sliderPosition = null
                         isDragging = false
                     },
-                    modifier = Modifier.fillMaxWidth(),
                     enabled = duration > 0,
-                    colors = SliderDefaults.colors(
-                        activeTrackColor = accent,
-                        thumbColor = accent,
-                        inactiveTrackColor = playerColors.surface.copy(alpha = 0.35f)
-                    )
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Row(

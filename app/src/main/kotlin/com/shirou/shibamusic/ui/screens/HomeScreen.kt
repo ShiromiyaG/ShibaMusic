@@ -181,7 +181,7 @@ fun HomeScreen(
                             SectionHeader(
                                 title = stringResource(R.string.home_favorite_albums),
                                 actionText = stringResource(R.string.home_see_all),
-                                onActionClick = { /* TODO */ }
+                                onActionClick = { onNavigateToLibrary() }
                             )
                         }
                         
@@ -191,7 +191,7 @@ fun HomeScreen(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(uiState.favoriteAlbums.take(10)) { album ->
-                                    Text(album.title) // TODO: Create AlbumCard component
+                                    AlbumCard(album = album, onClick = { onNavigateToAlbum(album.id) })
                                 }
                             }
                         }
