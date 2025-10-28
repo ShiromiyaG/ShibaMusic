@@ -20,7 +20,15 @@ import com.shirou.shibamusic.ui.component.SongBottomSheet
 import com.shirou.shibamusic.ui.component.AlbumBottomSheet
 import com.shirou.shibamusic.ui.component.PlaylistBottomSheet
 import com.shirou.shibamusic.ui.model.*
+import com.shirou.shibamusic.ui.viewmodel.AlbumSortOption
+import com.shirou.shibamusic.ui.viewmodel.ArtistSortOption
+import com.shirou.shibamusic.ui.viewmodel.LibraryAlbumsViewModel
+import com.shirou.shibamusic.ui.viewmodel.LibraryArtistsViewModel
+import com.shirou.shibamusic.ui.viewmodel.LibraryPlaylistsViewModel
+import com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel
+import com.shirou.shibamusic.ui.viewmodel.PlaylistSortOption
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
+import com.shirou.shibamusic.ui.viewmodel.SongSortOption
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.data.model.AudioQuality
 
@@ -41,7 +49,12 @@ fun LibraryScreen(
     contentBottomPadding: Dp = 0.dp
 ) {
     val playbackState by playbackViewModel.playbackState.collectAsStateWithLifecycle()
-    var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.SONGS) }
+    val initialTab = remember {
+        Preferences.getLibraryLastTab()
+            ?.let { stored -> runCatching { LibraryTab.valueOf(stored) }.getOrNull() }
+            ?: LibraryTab.SONGS
+    }
+    var selectedTab by rememberSaveable { mutableStateOf(initialTab) }
     var showSortMenu by remember { mutableStateOf(false) }
     val offlineTracks by offlineViewModel.offlineTracks.collectAsStateWithLifecycle()
     val activeDownloads by offlineViewModel.activeDownloads.collectAsStateWithLifecycle()
@@ -54,16 +67,25 @@ fun LibraryScreen(
     var selectedPlaylist by remember { mutableStateOf<PlaylistItem?>(null) }
     var showPlaylistBottomSheet by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    LaunchedEffect(selectedTab) {
+        Preferences.setLibraryLastTab(selectedTab.name)
+    }
     
-    // Lazy load ViewModels apenas quando necessário
-    val songsViewModel: com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel? = 
-        if (selectedTab == LibraryTab.SONGS) hiltViewModel() else null
-    val albumsViewModel: com.shirou.shibamusic.ui.viewmodel.LibraryAlbumsViewModel? = 
-        if (selectedTab == LibraryTab.ALBUMS) hiltViewModel() else null
-    val artistsViewModel: com.shirou.shibamusic.ui.viewmodel.LibraryArtistsViewModel? = 
-        if (selectedTab == LibraryTab.ARTISTS) hiltViewModel() else null
-    val playlistsViewModel: com.shirou.shibamusic.ui.viewmodel.LibraryPlaylistsViewModel? = 
-        if (selectedTab == LibraryTab.PLAYLISTS) hiltViewModel() else null
+    var songsViewModel by remember { mutableStateOf<LibrarySongsViewModel?>(null) }
+    var albumsViewModel by remember { mutableStateOf<LibraryAlbumsViewModel?>(null) }
+    var artistsViewModel by remember { mutableStateOf<LibraryArtistsViewModel?>(null) }
+    var playlistsViewModel by remember { mutableStateOf<LibraryPlaylistsViewModel?>(null) }
+
+    if (selectedTab == LibraryTab.SONGS && songsViewModel == null) {
+        songsViewModel = hiltViewModel()
+    } else if (selectedTab == LibraryTab.ALBUMS && albumsViewModel == null) {
+        albumsViewModel = hiltViewModel()
+    } else if (selectedTab == LibraryTab.ARTISTS && artistsViewModel == null) {
+        artistsViewModel = hiltViewModel()
+    } else if (selectedTab == LibraryTab.PLAYLISTS && playlistsViewModel == null) {
+        playlistsViewModel = hiltViewModel()
+    }
     
     // Column com TopBar e Tabs integrados
     Column(modifier = modifier.fillMaxSize()) {
@@ -87,7 +109,7 @@ fun LibraryScreen(
                         when (selectedTab) {
                             LibraryTab.SONGS -> songsViewModel?.let { vm ->
                                 val songsState by vm.uiState.collectAsStateWithLifecycle()
-                                com.shirou.shibamusic.ui.viewmodel.SongSortOption.values().forEach { option ->
+                                SongSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
                                         onClick = {
@@ -102,7 +124,7 @@ fun LibraryScreen(
                             }
                             LibraryTab.ALBUMS -> albumsViewModel?.let { vm ->
                                 val albumsState by vm.uiState.collectAsStateWithLifecycle()
-                                com.shirou.shibamusic.ui.viewmodel.AlbumSortOption.values().forEach { option ->
+                                AlbumSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
                                         onClick = {
@@ -117,7 +139,7 @@ fun LibraryScreen(
                             }
                             LibraryTab.ARTISTS -> artistsViewModel?.let { vm ->
                                 val artistsState by vm.uiState.collectAsStateWithLifecycle()
-                                com.shirou.shibamusic.ui.viewmodel.ArtistSortOption.values().forEach { option ->
+                                ArtistSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
                                         onClick = {
@@ -132,7 +154,7 @@ fun LibraryScreen(
                             }
                             LibraryTab.PLAYLISTS -> playlistsViewModel?.let { vm ->
                                 val playlistsState by vm.uiState.collectAsStateWithLifecycle()
-                                com.shirou.shibamusic.ui.viewmodel.PlaylistSortOption.values().forEach { option ->
+                                PlaylistSortOption.values().forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(option.displayName) },
                                         onClick = {
@@ -220,6 +242,7 @@ fun LibraryScreen(
                 }
                 LibraryTab.ARTISTS -> artistsViewModel?.let { vm ->
                     LibraryArtistsScreen(
+                        viewModel = vm,
                         onArtistClick = { artist ->
                             onNavigateToArtist(artist.id)
                         },
@@ -231,6 +254,7 @@ fun LibraryScreen(
                 }
                 LibraryTab.PLAYLISTS -> playlistsViewModel?.let { vm ->
                     LibraryPlaylistsScreen(
+                        viewModel = vm,
                         onPlaylistClick = { playlist ->
                             onNavigateToPlaylist(playlist.id)
                         },

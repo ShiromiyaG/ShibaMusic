@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.ui.model.PlaylistItem
+import com.shirou.shibamusic.util.Preferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,10 +35,14 @@ class LibraryPlaylistsViewModel @Inject constructor(
     private val musicRepository: MusicRepository
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(LibraryPlaylistsUiState())
+    private val initialSort = Preferences.getLibraryPlaylistSort()
+        ?.let { stored -> runCatching { PlaylistSortOption.valueOf(stored) }.getOrNull() }
+        ?: PlaylistSortOption.NAME_ASC
+
+    private val _uiState = MutableStateFlow(LibraryPlaylistsUiState(sortOption = initialSort))
     val uiState: StateFlow<LibraryPlaylistsUiState> = _uiState.asStateFlow()
 
-    private val sortOptionFlow = MutableStateFlow(PlaylistSortOption.NAME_ASC)
+    private val sortOptionFlow = MutableStateFlow(initialSort)
 
     val playlists: Flow<PagingData<PlaylistItem>> = sortOptionFlow
         .flatMapLatest { option ->
@@ -54,6 +59,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
         if (option == _uiState.value.sortOption) return
         sortOptionFlow.value = option
         _uiState.value = _uiState.value.copy(sortOption = option)
+        Preferences.setLibraryPlaylistSort(option.name)
     }
 
     fun createPlaylist(name: String, comment: String = "") {

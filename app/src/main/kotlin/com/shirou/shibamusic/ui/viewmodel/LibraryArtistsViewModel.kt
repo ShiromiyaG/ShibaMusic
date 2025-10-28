@@ -7,6 +7,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.ui.model.ArtistItem
+import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.worker.AlbumSyncScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -44,10 +45,14 @@ class LibraryArtistsViewModel @Inject constructor(
         private const val TAG = "LibraryArtists"
     }
     
-    private val _uiState = MutableStateFlow(LibraryArtistsUiState())
+    private val initialSort = Preferences.getLibraryArtistSort()
+        ?.let { stored -> runCatching { ArtistSortOption.valueOf(stored) }.getOrNull() }
+        ?: ArtistSortOption.NAME_ASC
+
+    private val _uiState = MutableStateFlow(LibraryArtistsUiState(sortOption = initialSort))
     val uiState: StateFlow<LibraryArtistsUiState> = _uiState.asStateFlow()
 
-    private val sortOptionFlow = MutableStateFlow(ArtistSortOption.NAME_ASC)
+    private val sortOptionFlow = MutableStateFlow(initialSort)
 
     val artists: Flow<PagingData<ArtistItem>> = sortOptionFlow
         .flatMapLatest { option ->
@@ -72,6 +77,7 @@ class LibraryArtistsViewModel @Inject constructor(
         if (option == _uiState.value.sortOption) return
         sortOptionFlow.value = option
         _uiState.value = _uiState.value.copy(sortOption = option)
+        Preferences.setLibraryArtistSort(option.name)
     }
 
     private fun requestAlbumSync(force: Boolean) {

@@ -75,6 +75,11 @@ object Preferences {
     private const val NEXT_UPDATE_CHECK = "next_update_check"
     private const val CONTINUOUS_PLAY = "continuous_play"
     private const val LAST_INSTANT_MIX = "last_instant_mix"
+    private const val LIBRARY_LAST_TAB = "library_last_tab"
+    private const val LIBRARY_SONG_SORT = "library_song_sort"
+    private const val LIBRARY_ALBUM_SORT = "library_album_sort"
+    private const val LIBRARY_ARTIST_SORT = "library_artist_sort"
+    private const val LIBRARY_PLAYLIST_SORT = "library_playlist_sort"
 
 
     @JvmStatic
@@ -615,5 +620,55 @@ object Preferences {
     @JvmStatic
     fun setLastPlaylistSync(timestamp: Long) {
         App.getInstance().preferences.edit().putLong(LAST_PLAYLIST_SYNC, timestamp).apply()
+    }
+
+    @JvmStatic
+    fun getLibraryLastTab(): String? {
+        return App.getInstance().preferences.getString(LIBRARY_LAST_TAB, null)
+    }
+
+    @JvmStatic
+    fun setLibraryLastTab(tab: String) {
+        App.getInstance().preferences.edit().putString(LIBRARY_LAST_TAB, tab).apply()
+    }
+
+    @JvmStatic
+    fun getLibrarySongSort(): String? {
+        return App.getInstance().preferences.getString(LIBRARY_SONG_SORT, null)
+    }
+
+    @JvmStatic
+    fun setLibrarySongSort(option: String) {
+        App.getInstance().preferences.edit().putString(LIBRARY_SONG_SORT, option).apply()
+    }
+
+    @JvmStatic
+    fun getLibraryAlbumSort(): String? {
+        return App.getInstance().preferences.getString(LIBRARY_ALBUM_SORT, null)
+    }
+
+    @JvmStatic
+    fun setLibraryAlbumSort(option: String) {
+        App.getInstance().preferences.edit().putString(LIBRARY_ALBUM_SORT, option).apply()
+    }
+
+    @JvmStatic
+    fun getLibraryArtistSort(): String? {
+        return App.getInstance().preferences.getString(LIBRARY_ARTIST_SORT, null)
+    }
+
+    @JvmStatic
+    fun setLibraryArtistSort(option: String) {
+        App.getInstance().preferences.edit().putString(LIBRARY_ARTIST_SORT, option).apply()
+    }
+
+    @JvmStatic
+    fun getLibraryPlaylistSort(): String? {
+        return App.getInstance().preferences.getString(LIBRARY_PLAYLIST_SORT, null)
+    }
+
+    @JvmStatic
+    fun setLibraryPlaylistSort(option: String) {
+        App.getInstance().preferences.edit().putString(LIBRARY_PLAYLIST_SORT, option).apply()
     }
 }
