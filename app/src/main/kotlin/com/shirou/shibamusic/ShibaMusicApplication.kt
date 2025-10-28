@@ -6,6 +6,7 @@ import androidx.work.Configuration
 import androidx.hilt.work.HiltWorkerFactory
 import com.shirou.shibamusic.data.repository.SyncRepository
 import com.shirou.shibamusic.helper.ThemeHelper
+import com.shirou.shibamusic.repository.SystemRepository
 import com.shirou.shibamusic.util.Preferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +39,9 @@ class ShibaMusicApplication : Application(), Configuration.Provider {
         // Initialize legacy App singleton for backward compatibility
         // This is needed because many parts of the code still use App.getInstance()
         App.initializeFromShibaMusicApplication(this)
-        
+
+        SystemRepository().checkShibaMusicUpdate(applicationContext)
+
         maybeStartInitialSync()
     }
 

@@ -1,10 +1,5 @@
 package com.shirou.shibamusic.ui.screens.settings
 
-import android.app.DownloadManager
-import android.content.Context
-import android.net.Uri
-import android.os.Environment
-import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,11 +19,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.livedata.observeAsState
 import com.shirou.shibamusic.data.model.AudioQuality
-import com.shirou.shibamusic.github.models.Assets
 import com.shirou.shibamusic.github.models.LatestRelease
 import com.shirou.shibamusic.github.utils.UpdateUtil
 import com.shirou.shibamusic.repository.SystemRepository
 import com.shirou.shibamusic.ui.offline.OfflineViewModel
+import com.shirou.shibamusic.ui.components.UpdateAvailableDialog
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.BuildConfig
@@ -396,86 +391,9 @@ fun SettingsScreen(
                 )
 
                 if (updateAvailable && showUpdateDialog) {
-                    val release = latestRelease!!
-                    val apkAsset = remember(release) { findApkAsset(release) }
-                    val changelog = release.body?.takeIf { it.isNotBlank() }
-                    val formattedSize = apkAsset?.size?.let { size ->
-                        Formatter.formatFileSize(context, size.toLong())
-                    }
-
-                    AlertDialog(
-                        onDismissRequest = { showUpdateDialog = false },
-                        title = {
-                            val dialogTitle = if (releaseVersionLabel.isNotBlank()) {
-                                stringResource(
-                                    com.shirou.shibamusic.R.string.settings_update_dialog_title,
-                                    releaseVersionLabel
-                                )
-                            } else {
-                                stringResource(com.shirou.shibamusic.R.string.settings_update_title_item)
-                            }
-                            Text(
-                                text = dialogTitle
-                            )
-                        },
-                        text = {
-                            Column(
-                                modifier = Modifier.verticalScroll(rememberScrollState())
-                            ) {
-                                if (formattedSize != null) {
-                                    Text(
-                                        text = stringResource(
-                                            com.shirou.shibamusic.R.string.settings_update_dialog_size,
-                                            formattedSize
-                                        ),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Spacer(Modifier.height(8.dp))
-                                }
-                                if (changelog != null) {
-                                    Text(
-                                        text = changelog,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                } else {
-                                    Text(
-                                        text = stringResource(com.shirou.shibamusic.R.string.settings_update_dialog_no_notes),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    val started = startUpdateDownload(context, release)
-                                    val label = releaseVersionLabel.ifBlank {
-                                        release.tagName ?: release.name ?: BuildConfig.VERSION_NAME
-                                    }
-                                    val message = if (started) {
-                                        context.getString(
-                                            com.shirou.shibamusic.R.string.settings_update_download_started,
-                                            label
-                                        )
-                                    } else {
-                                        context.getString(com.shirou.shibamusic.R.string.settings_update_download_error)
-                                    }
-                                    Toast.makeText(
-                                        context,
-                                        message,
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    showUpdateDialog = false
-                                }
-                            ) {
-                                Text(stringResource(com.shirou.shibamusic.R.string.settings_update_dialog_download))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showUpdateDialog = false }) {
-                                Text(stringResource(com.shirou.shibamusic.R.string.settings_update_dialog_later))
-                            }
-                        }
+                    UpdateAvailableDialog(
+                        release = latestRelease!!,
+                        onDismiss = { showUpdateDialog = false }
                     )
                 }
 
@@ -605,43 +523,4 @@ fun SettingsItemWithSwitch(
             onCheckedChange = onCheckedChange
         )
     }
-}
-
-private fun findApkAsset(release: LatestRelease): Assets? {
-    return release.assets.firstOrNull { asset ->
-        val url = asset.browserDownloadUrl?.lowercase() ?: return@firstOrNull false
-        url.endsWith(".apk") || asset.contentType?.equals(
-            "application/vnd.android.package-archive",
-            ignoreCase = true
-        ) == true
-    }
-}
-
-private fun startUpdateDownload(context: Context, release: LatestRelease): Boolean {
-    val asset = findApkAsset(release) ?: return false
-    val downloadUrl = asset.browserDownloadUrl ?: return false
-
-    val request = DownloadManager.Request(Uri.parse(downloadUrl))
-        .setTitle("ShibaMusic ${release.tagName ?: release.name ?: ""}".trim())
-        .setDescription(
-            context.getString(com.shirou.shibamusic.R.string.settings_update_download_description)
-        )
-        .setMimeType("application/vnd.android.package-archive")
-        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        .setAllowedOverMetered(true)
-        .setAllowedOverRoaming(true)
-
-    val fileName = sanitizeFileName(asset.name ?: "ShibaMusic-${release.tagName ?: release.name ?: "update"}.apk")
-    request.setDestinationInExternalFilesDir(
-        context,
-        Environment.DIRECTORY_DOWNLOADS,
-        fileName
-    )
-
-    val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as? DownloadManager ?: return false
-    return runCatching { manager.enqueue(request); true }.getOrDefault(false)
-}
-
-private fun sanitizeFileName(raw: String): String {
-    return raw.replace(Regex("[^A-Za-z0-9._-]"), "_")
 }

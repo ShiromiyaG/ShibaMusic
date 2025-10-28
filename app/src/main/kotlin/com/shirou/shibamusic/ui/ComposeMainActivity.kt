@@ -13,16 +13,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.shirou.shibamusic.github.utils.UpdateUtil
+import com.shirou.shibamusic.ui.components.UpdateAvailableDialog
 import com.shirou.shibamusic.ui.navigation.*
 import com.shirou.shibamusic.ui.player.MiniPlayer
 import com.shirou.shibamusic.ui.theme.ShibaMusicTheme
+import com.shirou.shibamusic.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -49,6 +54,20 @@ class ComposeMainActivity : ComponentActivity() {
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ShibaMusicApp() {
+	val mainViewModel: MainViewModel = viewModel()
+	val latestReleaseLiveData = remember(mainViewModel) { mainViewModel.checkShibaMusicUpdate() }
+	val latestRelease by latestReleaseLiveData.observeAsState()
+	val updateAvailable = remember(latestRelease) {
+		latestRelease?.let { UpdateUtil.showUpdateDialog(it) } == true
+	}
+	var showUpdateDialog by remember { mutableStateOf(false) }
+
+	LaunchedEffect(updateAvailable, latestRelease?.id) {
+		if (updateAvailable) {
+			showUpdateDialog = true
+		}
+	}
+
 	val navController = rememberNavController()
 	val navBackStackEntry by navController.currentBackStackEntryAsState()
 	val currentDestination = navBackStackEntry?.destination
@@ -179,6 +198,13 @@ fun ShibaMusicApp() {
 								sharedTransitionScope = this@SharedTransitionLayout
 							)
 						}
+					}
+
+					if (updateAvailable && showUpdateDialog && latestRelease != null) {
+						UpdateAvailableDialog(
+							release = latestRelease!!,
+							onDismiss = { showUpdateDialog = false }
+						)
 					}
 				}
 			}
