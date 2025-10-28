@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.math.min
@@ -33,12 +34,31 @@ fun SeekBarM3(
     onValueChangeFinished: () -> Unit,
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    valueRange: ClosedFloatingPointRange<Float> = 0f..1f
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    activeColor: Color = Color.Unspecified,
+    inactiveColor: Color = Color.Unspecified,
+    thumbColor: Color = Color.Unspecified
 ) {
     var sliderValue by remember { mutableFloatStateOf(value) }
     
     LaunchedEffect(value) {
         sliderValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
+    }
+
+    val resolvedActive = if (activeColor != Color.Unspecified) {
+        activeColor
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+    val resolvedInactive = if (inactiveColor != Color.Unspecified) {
+        inactiveColor
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val resolvedThumb = if (thumbColor != Color.Unspecified) {
+        thumbColor
+    } else {
+        resolvedActive
     }
     
     Slider(
@@ -53,9 +73,12 @@ fun SeekBarM3(
         modifier = modifier,
         // Usa as cores padrão do Material 3
         colors = SliderDefaults.colors(
-            thumbColor = MaterialTheme.colorScheme.primary,
-            activeTrackColor = MaterialTheme.colorScheme.primary,
-            inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+            thumbColor = resolvedThumb,
+            activeTrackColor = resolvedActive,
+            inactiveTrackColor = resolvedInactive,
+            disabledThumbColor = resolvedThumb.copy(alpha = 0.38f),
+            disabledActiveTrackColor = resolvedActive.copy(alpha = 0.38f),
+            disabledInactiveTrackColor = resolvedInactive.copy(alpha = 0.24f)
         )
     )
 }
@@ -76,7 +99,10 @@ private fun SeekBarM3Preview() {
                 onValueChange = { sliderPosition = it },
                 onValueChangeFinished = {},
                 enabled = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                activeColor = MaterialTheme.colorScheme.primary,
+                inactiveColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                thumbColor = MaterialTheme.colorScheme.primary
             )
         }
     }

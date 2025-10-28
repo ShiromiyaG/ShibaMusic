@@ -655,7 +655,10 @@ private fun PlayerScreenContent(
                     isDragging = false
                 },
                 enabled = duration > 0,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                activeColor = accent,
+                inactiveColor = accent.copy(alpha = 0.35f),
+                thumbColor = accent
             )
 
             
