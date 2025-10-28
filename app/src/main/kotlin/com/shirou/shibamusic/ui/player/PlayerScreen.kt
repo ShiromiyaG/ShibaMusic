@@ -74,6 +74,7 @@ import com.shirou.shibamusic.ui.model.getPlayerArtworkUrl
 import com.shirou.shibamusic.ui.theme.rememberPlayerColors
 import com.shirou.shibamusic.ui.utils.TimeUtils
 
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -363,6 +364,7 @@ private fun PlayerScreenContent(
     var sliderPosition by remember { mutableStateOf<Float?>(null) }
     var isDragging by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableStateOf(position) }
+    var pendingSeek by remember { mutableStateOf<Long?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
     var resetJob by remember { mutableStateOf<Job?>(null) }
     val coroutineScope = rememberCoroutineScope()
@@ -373,28 +375,31 @@ private fun PlayerScreenContent(
     // Atualiza a posição periodicamente quando está tocando
     LaunchedEffect(isPlaying, position) {
         currentPosition = position
-        if (isPlaying && !isDragging) {
-            while (isPlaying && !isDragging) {
+        pendingSeek?.let { target ->
+            if (abs(position - target) <= 500L) {
+                pendingSeek = null
+            }
+        }
+        if (isPlaying && !isDragging && pendingSeek == null) {
+            while (isPlaying && !isDragging && pendingSeek == null) {
                 kotlinx.coroutines.delay(100)
                 currentPosition += 100
             }
         }
     }
-
-    val rawSliderValue = currentPosition.toFloat()
-
-    val sliderValue = when {
-        isDragging -> sliderPosition ?: rawSliderValue
-        else -> rawSliderValue
+    val effectivePosition = when {
+        isDragging -> sliderPosition?.toLong() ?: currentPosition
+        pendingSeek != null -> pendingSeek!!
+        else -> currentPosition
     }
 
-    val displayPosition = if (isDragging) {
-        sliderPosition?.toLong() ?: currentPosition
-    } else currentPosition
-    
+    val sliderValue = effectivePosition.toFloat()
+
+    val displayPosition = effectivePosition
+
     val sliderBufferedValue = if (duration > 0) {
-        max(rawSliderValue, bufferedPosition.toFloat())
-    } else rawSliderValue
+        max(sliderValue, bufferedPosition.toFloat())
+    } else sliderValue
 
     val accent = playerColors.accent
     val chipContainer = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
@@ -616,53 +621,60 @@ private fun PlayerScreenContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                val valueRange = if (duration > 0) {
-                    0f..duration.toFloat()
-                } else {
-                    0f..1f
-                }
-                val clampedBuffered = min(valueRange.endInclusive, sliderBufferedValue)
-                SeekBarM3(
-                    value = sliderValue.coerceIn(valueRange.start, valueRange.endInclusive),
-                    bufferedValue = clampedBuffered,
-                    valueRange = valueRange,
-                    onValueChange = {
-                        isDragging = true
-                        sliderPosition = it
-                    },
-                    onValueChangeFinished = {
-                        sliderPosition?.let { value ->
-                            onSeekTo(value.toLong())
-                        }
-                        sliderPosition = null
-                        isDragging = false
-                    },
-                    enabled = duration > 0,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = TimeUtils.formatDuration(displayPosition),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = TimeUtils.formatDuration(duration),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val valueRange = if (duration > 0) {
+                0f..duration.toFloat()
+            } else {
+                0f..1f
             }
+            
+            val clampedBuffered = min(valueRange.endInclusive, sliderBufferedValue)
+            
+            SeekBarM3(
+                value = sliderValue.coerceIn(valueRange.start, valueRange.endInclusive),
+                bufferedValue = clampedBuffered,
+                valueRange = valueRange,
+                onValueChange = {
+                    isDragging = true
+                    pendingSeek = null
+                    sliderPosition = it
+                },
+                onValueChangeFinished = {
+                    sliderPosition?.let { value ->
+                        val target = value.toLong()
+                        pendingSeek = target
+                        currentPosition = target
+                        onSeekTo(target)
+                    }
+                    sliderPosition = null
+                    isDragging = false
+                },
+                enabled = duration > 0,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = TimeUtils.formatDuration(displayPosition),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = TimeUtils.formatDuration(duration),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
             Row(
                 modifier = Modifier

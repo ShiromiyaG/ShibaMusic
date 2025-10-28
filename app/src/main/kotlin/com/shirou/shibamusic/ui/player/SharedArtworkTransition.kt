@@ -124,7 +124,7 @@ internal fun SharedAlbumArtwork(
         Surface(
             modifier = modifier
                 .sharedElement(
-                    state = sharedContentState,
+                    sharedContentState = sharedContentState, // Mudou de 'state' para 'sharedContentState'
                     animatedVisibilityScope = animatedVisibilityScope,
                     boundsTransform = { _, _ ->
                         tween(durationMillis = 400, easing = FastOutSlowInEasing)
