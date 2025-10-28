@@ -316,13 +316,23 @@ fun ShibaMusicNavGraph(
                                 }
                             },
                             onSongClick = { song -> playerViewModel.playSong(song) },
-                            onEditPlaylist = { /* TODO: Navigate to edit playlist */ },
+                            onUpdatePlaylist = { name, description ->
+                                if (!uiState.isProcessing) {
+                                    playlistViewModel.updatePlaylist(name, description)
+                                }
+                            },
                             onDeletePlaylist = {
                                 if (!uiState.isProcessing) {
                                     playlistViewModel.deletePlaylist()
                                 }
                             },
                             onAddSongs = { /* TODO: Navigate to add songs */ },
+                            onRemoveSongFromPlaylist = { song ->
+                                playlistViewModel.removeSong(song.id)
+                            },
+                            onReorderSongs = { updatedOrder ->
+                                playlistViewModel.reorderSongs(updatedOrder)
+                            },
                             onSongGoToAlbum = { albumId ->
                                 navController.navigate(Screen.Album.createRoute(albumId))
                             },

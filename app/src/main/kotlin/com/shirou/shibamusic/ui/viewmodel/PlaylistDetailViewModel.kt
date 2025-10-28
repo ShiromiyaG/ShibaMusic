@@ -61,6 +61,56 @@ class PlaylistDetailViewModel @Inject constructor(
         }
     }
 
+    fun updatePlaylist(name: String, description: String) {
+        val current = _uiState.value.playlist ?: return
+        val trimmedName = name.trim()
+        if (trimmedName.isBlank()) {
+            _uiState.update { it.copy(error = "Playlist name cannot be empty") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessing = true, error = null) }
+            try {
+                val updated = current.copy(
+                    name = trimmedName,
+                    description = description.trim().ifBlank { null },
+                    updatedAt = System.currentTimeMillis()
+                )
+                repository.updatePlaylist(updated)
+                _uiState.update {
+                    it.copy(
+                        playlist = updated,
+                        isProcessing = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isProcessing = false,
+                        error = e.message ?: "Failed to update playlist"
+                    )
+                }
+            }
+        }
+    }
+
+    fun reorderSongs(newOrder: List<SongItem>) {
+        if (playlistId.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(songs = newOrder) }
+            try {
+                repository.reorderPlaylistSongs(playlistId, newOrder.map { it.id })
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(error = e.message ?: "Failed to reorder playlist")
+                }
+                loadPlaylist()
+            }
+        }
+    }
+
     fun deletePlaylist() {
         if (playlistId.isBlank()) return
 

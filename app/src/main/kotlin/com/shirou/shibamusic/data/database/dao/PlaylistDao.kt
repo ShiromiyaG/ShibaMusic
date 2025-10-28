@@ -94,6 +94,27 @@ interface PlaylistDao {
         }
     }
 
+    @Transaction
+    suspend fun reorderPlaylistSongs(playlistId: String, orderedSongIds: List<String>) {
+        if (orderedSongIds.isEmpty()) return
+        val existingRefs = getPlaylistSongRefs(playlistId)
+        if (existingRefs.isEmpty()) return
+
+        val existing = existingRefs.associateBy { it.songId }
+        val orderedSet = orderedSongIds.toSet()
+        val reordered = orderedSongIds.mapIndexedNotNull { index, songId ->
+            existing[songId]?.copy(position = index)
+        }
+        val remaining = existingRefs.filter { it.songId !in orderedSet }
+            .mapIndexed { idx, entity ->
+                entity.copy(position = reordered.size + idx)
+            }
+        val finalOrder = reordered + remaining
+        if (finalOrder.isNotEmpty()) {
+            updatePlaylistSongRefs(finalOrder)
+        }
+    }
+
     @RawQuery(observedEntities = [PlaylistEntity::class])
     fun pagingPlaylists(query: SupportSQLiteQuery): PagingSource<Int, PlaylistEntity>
 }

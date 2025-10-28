@@ -66,6 +66,7 @@ fun LibraryScreen(
     var showAlbumBottomSheet by remember { mutableStateOf(false) }
     var selectedPlaylist by remember { mutableStateOf<PlaylistItem?>(null) }
     var showPlaylistBottomSheet by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     LaunchedEffect(selectedTab) {
@@ -258,7 +259,7 @@ fun LibraryScreen(
                         onPlaylistClick = { playlist ->
                             onNavigateToPlaylist(playlist.id)
                         },
-                        onCreatePlaylist = { /* TODO: Show create dialog */ },
+                        onCreatePlaylist = { showCreatePlaylistDialog = true },
                         onPlaylistPlay = { playlist ->
                             playbackViewModel.playPlaylist(playlist.id)
                         },
@@ -369,6 +370,18 @@ fun LibraryScreen(
                 onNavigateToPlaylist = { onNavigateToPlaylist(playlist.id) }
             )
         }
+
+        if (showCreatePlaylistDialog) {
+            playlistsViewModel?.let { vm ->
+                CreatePlaylistDialog(
+                    onDismiss = { showCreatePlaylistDialog = false },
+                    onConfirm = { name, description ->
+                        vm.createPlaylist(name.trim(), description.trim())
+                        showCreatePlaylistDialog = false
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -376,6 +389,52 @@ private fun AudioQuality.toDownloadLabel(): String = when (this) {
     AudioQuality.LOW -> "128 kbps (Opus)"
     AudioQuality.MEDIUM -> "320 kbps (Opus)"
     AudioQuality.HIGH -> "Lossless (FLAC)"
+}
+
+@Composable
+private fun CreatePlaylistDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Playlist") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(name, description)
+                },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 /**

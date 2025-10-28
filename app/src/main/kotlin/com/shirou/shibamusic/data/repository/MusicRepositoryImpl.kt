@@ -366,6 +366,10 @@ class MusicRepositoryImpl @Inject constructor(
     override suspend fun removeSongFromPlaylist(playlistId: String, songId: String) = withContext(ioDispatcher) {
         playlistDao.removeSongFromPlaylistAndReorder(playlistId, songId)
     }
+
+    override suspend fun reorderPlaylistSongs(playlistId: String, orderedSongIds: List<String>) = withContext(ioDispatcher) {
+        playlistDao.reorderPlaylistSongs(playlistId, orderedSongIds)
+    }
     
     override fun observePlaylists(): Flow<List<PlaylistItem>> {
         return playlistDao.observeAllPlaylists()

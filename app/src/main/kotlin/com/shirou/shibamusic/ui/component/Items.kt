@@ -33,7 +33,7 @@ fun SongListItem(
     title: String,
     artist: String,
     album: String? = null,
-    thumbnailUrl: String?,
+    thumbnailUrl: String? = null,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     onMoreClick: (() -> Unit)? = null,
@@ -41,7 +41,8 @@ fun SongListItem(
     isPlaying: Boolean = false,
     isDownloaded: Boolean = false,
     downloadInfo: com.shirou.shibamusic.data.model.DownloadProgress? = null,
-    trailingContent: (@Composable RowScope.() -> Unit)? = null
+    trailingContent: (@Composable RowScope.() -> Unit)? = null,
+    dragHandle: (@Composable (Modifier) -> Unit)? = null
 ) {
     Surface(
         modifier = modifier
@@ -55,6 +56,9 @@ fun SongListItem(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Drag handle
+            dragHandle?.let { it(Modifier.padding(end = 8.dp)) }
+
             // Thumbnail
             AsyncImage(
                 model = thumbnailUrl,

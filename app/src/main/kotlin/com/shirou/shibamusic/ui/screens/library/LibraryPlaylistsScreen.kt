@@ -78,7 +78,8 @@ fun LibraryPlaylistsContent(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onCreatePlaylist,
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.padding(bottom = contentBottomPadding)
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,

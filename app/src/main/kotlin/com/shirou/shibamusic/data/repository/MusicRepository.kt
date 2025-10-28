@@ -43,6 +43,7 @@ interface MusicRepository {
     suspend fun deletePlaylist(playlistId: String)
     suspend fun addSongToPlaylist(playlistId: String, songId: String)
     suspend fun removeSongFromPlaylist(playlistId: String, songId: String)
+    suspend fun reorderPlaylistSongs(playlistId: String, orderedSongIds: List<String>)
     fun observePlaylists(): Flow<List<PlaylistItem>>
     fun observePlaylistSongs(playlistId: String): Flow<List<SongItem>>
     fun observePlaylistsPaged(orderClause: String): Flow<PagingData<PlaylistItem>>

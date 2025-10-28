@@ -4,7 +4,8 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -12,16 +13,16 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.draw.clip
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -32,12 +33,15 @@ import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import com.shirou.shibamusic.util.Preferences
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+
 
 /**
  * Playlist Detail Screen
  * Shows playlist cover, songs, and actions
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PlaylistDetailScreen(
     playlist: PlaylistItem,
@@ -48,9 +52,11 @@ fun PlaylistDetailScreen(
     onPlayClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
-    onEditPlaylist: () -> Unit,
+    onUpdatePlaylist: (String, String) -> Unit,
     onDeletePlaylist: () -> Unit,
     onAddSongs: () -> Unit,
+    onRemoveSongFromPlaylist: (SongItem) -> Unit,
+    onReorderSongs: (List<SongItem>) -> Unit,
     onSongGoToAlbum: (String) -> Unit = {},
     onSongGoToArtist: (String) -> Unit = {},
     onDownloadClick: () -> Unit,
@@ -63,6 +69,7 @@ fun PlaylistDetailScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showAddSongsDialog by remember { mutableStateOf(false) }
+
     val playbackViewModel: PlaybackViewModel = hiltViewModel()
     val offlineViewModel: OfflineViewModel = hiltViewModel()
     val offlineTracks by offlineViewModel.offlineTracks.collectAsStateWithLifecycle()
@@ -70,7 +77,51 @@ fun PlaylistDetailScreen(
     val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
     val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
     val context = LocalContext.current
-    
+
+    val localSongs = remember(playlist.id) { mutableStateListOf<SongItem>() }
+    var pendingReorderDispatch by remember { mutableStateOf(false) }
+
+    LaunchedEffect(playlist.id, songs) {
+        pendingReorderDispatch = false
+        localSongs.clear()
+        localSongs.addAll(songs)
+    }
+
+    val listState = rememberLazyListState()
+
+    // ⚠️ A sua versão usa 'lazyListState' e NÃO tem 'onDragEnd'
+    val reorderableState = rememberReorderableLazyListState(
+        lazyListState = listState,
+        onMove = { from, to ->
+            var moved = false
+            localSongs.apply {
+                val currentFromIndex = indexOfFirst { it.id == from.key }
+                val currentToIndex = indexOfFirst { it.id == to.key }
+                if (currentFromIndex == -1 || currentToIndex == -1 || currentFromIndex == currentToIndex) {
+                    return@apply
+                }
+                val item = removeAt(currentFromIndex)
+                val insertionIndex = if (currentFromIndex < currentToIndex) {
+                    currentToIndex.coerceAtMost(size)
+                } else {
+                    currentToIndex.coerceIn(0, size)
+                }
+                add(insertionIndex, item)
+                moved = true
+            }
+            if (moved) {
+                pendingReorderDispatch = true
+            }
+        }
+    )
+
+    LaunchedEffect(reorderableState.isAnyItemDragging) {
+        if (!reorderableState.isAnyItemDragging && pendingReorderDispatch) {
+            pendingReorderDispatch = false
+            onReorderSongs(localSongs.toList())
+        }
+    }
+
     Scaffold(
         topBar = {
             Surface(
@@ -97,7 +148,6 @@ fun PlaylistDetailScreen(
                                 contentDescription = "More"
                             )
                         }
-                        
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
@@ -122,7 +172,7 @@ fun PlaylistDetailScreen(
                                     Icon(Icons.Rounded.Add, contentDescription = null)
                                 }
                             )
-                            Divider()
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text("Delete playlist") },
                                 onClick = {
@@ -148,79 +198,78 @@ fun PlaylistDetailScreen(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
-        val layoutDirection = LocalLayoutDirection.current
-        val horizontalPadding = PaddingValues(
-            start = paddingValues.calculateStartPadding(layoutDirection),
-            end = paddingValues.calculateEndPadding(layoutDirection)
-        )
-        val topPadding = paddingValues.calculateTopPadding()
-        if (songs.isEmpty()) {
+        if (localSongs.isEmpty()) {
             EmptyPlaylistContent(
                 playlist = playlist,
                 onAddSongs = onAddSongs,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontalPadding)
-                    .padding(top = topPadding)
+                    .padding(paddingValues)
             )
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontalPadding)
-                    .padding(top = topPadding),
+                    .padding(paddingValues),
+                state = listState,
                 contentPadding = PaddingValues(bottom = contentBottomPadding)
             ) {
-                // Playlist Header
-                item {
-                    PlaylistHeader(
-                        playlist = playlist,
-                        songCount = songs.size,
-                        onPlayClick = onPlayClick,
-                        onShuffleClick = onShuffleClick,
-                        onDownloadClick = onDownloadClick,
-                        onEditClick = { /* TODO */ }
-                    )
-                }
-                
-                // Songs List
-                items(songs, key = { it.id }) { song ->
-                    val isDownloaded = downloadedSongIds.contains(song.id)
-                    val downloadInfo = activeDownloadMap[song.id]
+    // Header
+    item {
+        PlaylistHeader(
+            playlist = playlist,
+            songCount = localSongs.size,
+            onPlayClick = onPlayClick,
+            onShuffleClick = onShuffleClick,
+            onDownloadClick = onDownloadClick
+        )
+    }
 
-                    SongListItem(
-                        title = song.title,
-                        artist = song.artistName,
-                        album = song.albumName,
-                        thumbnailUrl = song.getThumbnailUrl(),
-                        isPlaying = currentSongId == song.id && isPlaying,
-                        onClick = { onSongClick(song) },
-                        onMoreClick = {
-                            selectedSong = song
-                            showBottomSheet = true
-                        },
-                        isDownloaded = isDownloaded,
-                        downloadInfo = downloadInfo
+    itemsIndexed(
+        items = localSongs,
+        key = { _, song -> song.id }
+    ) { _, song ->
+        ReorderableItem(
+            state = reorderableState,
+            key = song.id
+        ) { _ ->
+            SongListItem(
+                title = song.title,
+                artist = song.artistName,
+                album = song.albumName,
+                thumbnailUrl = song.albumArtUrl,
+                isPlaying = currentSongId == song.id && isPlaying,
+                onClick = { onSongClick(song) },
+                onMoreClick = { selectedSong = song; showBottomSheet = true },
+                isDownloaded = downloadedSongIds.contains(song.id),
+                downloadInfo = activeDownloadMap[song.id],
+                dragHandle = { iconModifier ->
+                    Icon(
+                        imageVector = Icons.Rounded.DragHandle,
+                        contentDescription = null,
+                        modifier = iconModifier.draggableHandle()
                     )
-                }
-                
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
-            }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    // .animateItemPlacement() // Commented as per code
+            )
         }
     }
-    
+
+    item(key = "bottom_spacer") { Spacer(Modifier.height(80.dp)) }
+}
+
+
     // Bottom Sheet for Song Menu
     if (showBottomSheet && selectedSong != null) {
         val song = selectedSong!!
         val isDownloaded = downloadedSongIds.contains(song.id)
         val downloadInfo = activeDownloadMap[song.id]
         val isDownloading = downloadInfo != null
-
         val selectedQuality = Preferences.getOfflineDownloadQuality()
-        val downloadAction: (() -> Unit)? =
+
+        val downloadAction: (() -> Unit)? = 
             if (!isDownloaded && !isDownloading) {
                 {
                     offlineViewModel.downloadTrack(
@@ -235,12 +284,12 @@ fun PlaylistDetailScreen(
                 }
             } else null
 
-        val removeDownloadCallback: (() -> Unit)? =
+        val removeDownloadCallback: (() -> Unit)? = 
             if (isDownloaded) {
                 { offlineViewModel.removeOfflineTrack(song.id) }
             } else null
 
-        val cancelDownloadCallback: (() -> Unit)? =
+        val cancelDownloadCallback: (() -> Unit)? = 
             if (isDownloading) {
                 { offlineViewModel.cancelDownload(song.id) }
             } else null
@@ -270,11 +319,15 @@ fun PlaylistDetailScreen(
                 }
             },
             onDownloadClick = downloadAction,
-            downloadLabel = "Download offline (${selectedQuality.toDownloadLabel()})",
+            downloadLabel = "Download offline (${"$"}{selectedQuality.toDownloadLabel()})",
             onCancelDownload = cancelDownloadCallback,
             onRemoveDownload = removeDownloadCallback,
             showRemoveFromPlaylist = true,
-            onRemoveFromPlaylist = { /* TODO */ }
+            onRemoveFromPlaylist = {
+                onRemoveSongFromPlaylist(song)
+                showBottomSheet = false
+                selectedSong = null
+            }
         )
     }
 
@@ -283,17 +336,17 @@ fun PlaylistDetailScreen(
             playlist = playlist,
             onDismiss = { showEditDialog = false },
             onConfirm = { name, description ->
-                onEditPlaylist()
+                onUpdatePlaylist(name.trim(), description.trim())
                 showEditDialog = false
             }
         )
     }
-    
+
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("Delete Playlist") },
-            text = { Text("Are you sure you want to delete \"${playlist.name}\"?") },
+            text = { Text("Are you sure you want to delete \"${"$"}{playlist.name}\"?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -314,7 +367,7 @@ fun PlaylistDetailScreen(
             }
         )
     }
-    
+
     if (showAddSongsDialog) {
         AddSongsDialog(
             onDismiss = { showAddSongsDialog = false },
@@ -324,10 +377,11 @@ fun PlaylistDetailScreen(
             }
         )
     }
+    }
+}
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun AddSongsDialog(
     onDismiss: () -> Unit,
@@ -336,7 +390,6 @@ private fun AddSongsDialog(
     val viewModel: com.shirou.shibamusic.ui.viewmodel.LibrarySongsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
     val songs: LazyPagingItems<SongItem> = viewModel.songs.collectAsLazyPagingItems()
     val selectedSongs = remember { mutableStateListOf<SongItem>() }
-
     val refreshState = songs.loadState.refresh
     val initialLoading = refreshState is LoadState.Loading && songs.itemCount == 0
     val initialError = refreshState as? LoadState.Error
@@ -362,7 +415,7 @@ private fun AddSongsDialog(
                             onClick = onConfirm,
                             enabled = selectedSongs.isNotEmpty()
                         ) {
-                            Text("Add (${selectedSongs.size})")
+                            Text("Add (${"$"}{selectedSongs.size})")
                         }
                     }
                 )
@@ -376,7 +429,6 @@ private fun AddSongsDialog(
                             CircularProgressIndicator()
                         }
                     }
-
                     initialError != null && songs.itemCount == 0 -> {
                         Column(
                             modifier = Modifier
@@ -398,7 +450,6 @@ private fun AddSongsDialog(
                             }
                         }
                     }
-
                     else -> {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize()
@@ -458,7 +509,6 @@ private fun AudioQuality.toDownloadLabel(): String = when (this) {
     AudioQuality.HIGH -> "Lossless (FLAC)"
 }
 
-
 @Composable
 private fun EditPlaylistDialog(
     playlist: PlaylistItem,
@@ -467,7 +517,7 @@ private fun EditPlaylistDialog(
 ) {
     var name by remember { mutableStateOf(playlist.name) }
     var description by remember { mutableStateOf(playlist.description ?: "") }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit Playlist") },
@@ -541,23 +591,21 @@ private fun PlaylistHeader(
                     .clip(MaterialTheme.shapes.extraLarge),
                 contentScale = ContentScale.Crop
             )
-
             Spacer(modifier = Modifier.height(16.dp))
         }
 
         if (playlist.thumbnailUrl == null) {
             Spacer(modifier = Modifier.height(8.dp))
         }
-        
+
         // Playlist Name
         Text(
             text = playlist.name,
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
-        
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Description (if available)
         if (!playlist.description.isNullOrBlank()) {
             Text(
@@ -568,16 +616,15 @@ private fun PlaylistHeader(
             )
             Spacer(modifier = Modifier.height(8.dp))
         }
-        
+
         // Song count
         Text(
             text = "$songCount songs",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // Action Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -593,7 +640,6 @@ private fun PlaylistHeader(
                     contentDescription = "Play playlist"
                 )
             }
-
             OutlinedIconButton(
                 onClick = onShuffleClick,
                 modifier = Modifier.size(48.dp)
@@ -603,7 +649,6 @@ private fun PlaylistHeader(
                     contentDescription = "Shuffle playlist"
                 )
             }
-
             OutlinedIconButton(
                 onClick = onDownloadClick,
                 modifier = Modifier.size(48.dp)
@@ -611,6 +656,15 @@ private fun PlaylistHeader(
                 Icon(
                     imageVector = Icons.Rounded.Download,
                     contentDescription = "Download playlist"
+                )
+            }
+            OutlinedIconButton(
+                onClick = onEditClick,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Edit,
+                    contentDescription = "Edit playlist"
                 )
             }
         }
@@ -654,17 +708,16 @@ private fun EmptyPlaylistContent(
                         .clip(MaterialTheme.shapes.large),
                     contentScale = ContentScale.Crop
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
+
             Text(
                 text = playlist.name,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
         }
-        
+
         // Empty state
         Column(
             modifier = Modifier
@@ -679,23 +732,18 @@ private fun EmptyPlaylistContent(
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Spacer(modifier = Modifier.height(16.dp))
-            
             Text(
                 text = "No songs in this playlist",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Text(
                 text = "Add songs to get started",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Spacer(modifier = Modifier.height(24.dp))
-            
             Button(onClick = onAddSongs) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
@@ -708,3 +756,6 @@ private fun EmptyPlaylistContent(
         }
     }
 }
+
+
+
