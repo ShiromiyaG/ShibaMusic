@@ -1,10 +1,12 @@
 package com.shirou.shibamusic.ui.viewmodel
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.ui.model.PlaylistItem
 import com.shirou.shibamusic.util.Preferences
@@ -22,12 +24,30 @@ data class LibraryPlaylistsUiState(
     val error: String? = null
 )
 
-enum class PlaylistSortOption(val displayName: String) {
-    NAME_ASC("Name A-Z"),
-    NAME_DESC("Name Z-A"),
-    SONG_COUNT_DESC("Most Songs"),
-    SONG_COUNT_ASC("Fewest Songs"),
-    RECENTLY_ADDED("Recently Added")
+enum class PlaylistSortOption(
+    @StringRes val labelResId: Int,
+    val orderClause: String
+) {
+    NAME_ASC(
+        R.string.sort_name_asc,
+        "ORDER BY name COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
+    ),
+    NAME_DESC(
+        R.string.sort_name_desc,
+        "ORDER BY name COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
+    ),
+    SONG_COUNT_DESC(
+        R.string.sort_most_songs,
+        "ORDER BY song_count DESC, name COLLATE NOCASE ASC"
+    ),
+    SONG_COUNT_ASC(
+        R.string.sort_fewest_songs,
+        "ORDER BY song_count ASC, name COLLATE NOCASE ASC"
+    ),
+    RECENTLY_ADDED(
+        R.string.sort_recently_added,
+        "ORDER BY date_modified DESC, name COLLATE NOCASE ASC"
+    )
 }
 
 @HiltViewModel
@@ -46,8 +66,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
 
     val playlists: Flow<PagingData<PlaylistItem>> = sortOptionFlow
         .flatMapLatest { option ->
-            val orderClause = buildOrderClause(option)
-            musicRepository.observePlaylistsPaged(orderClause)
+            musicRepository.observePlaylistsPaged(option.orderClause)
         }
         .cachedIn(viewModelScope)
     
@@ -88,13 +107,4 @@ class LibraryPlaylistsViewModel @Inject constructor(
         }
     }
     
-    private fun buildOrderClause(option: PlaylistSortOption): String {
-        return when (option) {
-            PlaylistSortOption.NAME_ASC -> "ORDER BY name COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
-            PlaylistSortOption.NAME_DESC -> "ORDER BY name COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
-            PlaylistSortOption.SONG_COUNT_DESC -> "ORDER BY song_count DESC, name COLLATE NOCASE ASC"
-            PlaylistSortOption.SONG_COUNT_ASC -> "ORDER BY song_count ASC, name COLLATE NOCASE ASC"
-            PlaylistSortOption.RECENTLY_ADDED -> "ORDER BY date_modified DESC, name COLLATE NOCASE ASC"
-        }
-    }
 }

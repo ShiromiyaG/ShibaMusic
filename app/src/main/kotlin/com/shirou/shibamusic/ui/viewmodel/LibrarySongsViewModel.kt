@@ -1,10 +1,12 @@
 package com.shirou.shibamusic.ui.viewmodel
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.ui.model.SongItem
 import com.shirou.shibamusic.util.Preferences
@@ -28,16 +30,46 @@ data class LibrarySongsUiState(
     val error: String? = null
 )
 
-enum class SongSortOption(val displayName: String) {
-    TITLE_ASC("Title A-Z"),
-    TITLE_DESC("Title Z-A"),
-    ARTIST_ASC("Artist A-Z"),
-    ARTIST_DESC("Artist Z-A"),
-    ALBUM_ASC("Album A-Z"),
-    ALBUM_DESC("Album Z-A"),
-    DURATION_ASC("Shortest First"),
-    DURATION_DESC("Longest First"),
-    RECENTLY_ADDED("Recently Added")
+enum class SongSortOption(
+    @StringRes val labelResId: Int,
+    val orderClause: String
+) {
+    TITLE_ASC(
+        R.string.sort_title_asc,
+        "ORDER BY title COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
+    ),
+    TITLE_DESC(
+        R.string.sort_title_desc,
+        "ORDER BY title COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
+    ),
+    ARTIST_ASC(
+        R.string.sort_artist_asc,
+        "ORDER BY artist_name COLLATE NOCASE ASC, title COLLATE NOCASE ASC"
+    ),
+    ARTIST_DESC(
+        R.string.sort_artist_desc,
+        "ORDER BY artist_name COLLATE NOCASE DESC, title COLLATE NOCASE ASC"
+    ),
+    ALBUM_ASC(
+        R.string.sort_album_asc,
+        "ORDER BY COALESCE(album_name, '') COLLATE NOCASE ASC, title COLLATE NOCASE ASC"
+    ),
+    ALBUM_DESC(
+        R.string.sort_album_desc,
+        "ORDER BY COALESCE(album_name, '') COLLATE NOCASE DESC, title COLLATE NOCASE ASC"
+    ),
+    DURATION_ASC(
+        R.string.sort_duration_asc,
+        "ORDER BY duration_ms ASC, title COLLATE NOCASE ASC"
+    ),
+    DURATION_DESC(
+        R.string.sort_duration_desc,
+        "ORDER BY duration_ms DESC, title COLLATE NOCASE ASC"
+    ),
+    RECENTLY_ADDED(
+        R.string.sort_recently_added,
+        "ORDER BY date_added DESC, title COLLATE NOCASE ASC"
+    )
 }
 
 @HiltViewModel
@@ -58,8 +90,7 @@ class LibrarySongsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val songs: Flow<PagingData<SongItem>> = sortOptionFlow
         .flatMapLatest { option ->
-            val orderClause = buildOrderClause(option)
-            musicRepository.observeSongsPaged(orderClause)
+            musicRepository.observeSongsPaged(option.orderClause)
         }
         .cachedIn(viewModelScope)
     
@@ -122,17 +153,4 @@ class LibrarySongsViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun buildOrderClause(option: SongSortOption): String {
-        return when (option) {
-            SongSortOption.TITLE_ASC -> "ORDER BY title COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
-            SongSortOption.TITLE_DESC -> "ORDER BY title COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
-            SongSortOption.ARTIST_ASC -> "ORDER BY artist_name COLLATE NOCASE ASC, title COLLATE NOCASE ASC"
-            SongSortOption.ARTIST_DESC -> "ORDER BY artist_name COLLATE NOCASE DESC, title COLLATE NOCASE ASC"
-            SongSortOption.ALBUM_ASC -> "ORDER BY COALESCE(album_name, '') COLLATE NOCASE ASC, title COLLATE NOCASE ASC"
-            SongSortOption.ALBUM_DESC -> "ORDER BY COALESCE(album_name, '') COLLATE NOCASE DESC, title COLLATE NOCASE ASC"
-            SongSortOption.DURATION_ASC -> "ORDER BY duration_ms ASC, title COLLATE NOCASE ASC"
-            SongSortOption.DURATION_DESC -> "ORDER BY duration_ms DESC, title COLLATE NOCASE ASC"
-            SongSortOption.RECENTLY_ADDED -> "ORDER BY date_added DESC, title COLLATE NOCASE ASC"
-        }
-    }
 }

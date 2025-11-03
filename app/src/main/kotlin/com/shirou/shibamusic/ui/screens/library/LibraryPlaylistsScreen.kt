@@ -138,10 +138,11 @@ fun LibraryPlaylistsContent(
                 )
             }
 
+            val sortLabel = stringResource(selectedSortOption.labelResId)
             AssistChip(
                 onClick = {},
                 enabled = false,
-                label = { Text(stringResource(R.string.library_sorted_by, selectedSortOption.displayName)) },
+                label = { Text(stringResource(R.string.library_sorted_by, sortLabel)) },
                 leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null) },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )

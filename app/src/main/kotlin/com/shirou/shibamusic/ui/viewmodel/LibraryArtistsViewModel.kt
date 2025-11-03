@@ -1,10 +1,12 @@
 package com.shirou.shibamusic.ui.viewmodel
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.ui.model.ArtistItem
 import com.shirou.shibamusic.util.Preferences
@@ -26,13 +28,34 @@ data class LibraryArtistsUiState(
     val error: String? = null
 )
 
-enum class ArtistSortOption(val displayName: String) {
-    NAME_ASC("Name A-Z"),
-    NAME_DESC("Name Z-A"),
-    ALBUM_COUNT_DESC("Most Albums"),
-    ALBUM_COUNT_ASC("Fewest Albums"),
-    SONG_COUNT_DESC("Most Songs"),
-    SONG_COUNT_ASC("Fewest Songs")
+enum class ArtistSortOption(
+    @StringRes val labelResId: Int,
+    val orderClause: String
+) {
+    NAME_ASC(
+        R.string.sort_name_asc,
+        "ORDER BY name COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
+    ),
+    NAME_DESC(
+        R.string.sort_name_desc,
+        "ORDER BY name COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
+    ),
+    ALBUM_COUNT_DESC(
+        R.string.sort_most_albums,
+        "ORDER BY album_count DESC, name COLLATE NOCASE ASC"
+    ),
+    ALBUM_COUNT_ASC(
+        R.string.sort_fewest_albums,
+        "ORDER BY album_count ASC, name COLLATE NOCASE ASC"
+    ),
+    SONG_COUNT_DESC(
+        R.string.sort_most_songs,
+        "ORDER BY song_count DESC, name COLLATE NOCASE ASC"
+    ),
+    SONG_COUNT_ASC(
+        R.string.sort_fewest_songs,
+        "ORDER BY song_count ASC, name COLLATE NOCASE ASC"
+    )
 }
 
 @HiltViewModel
@@ -56,8 +79,7 @@ class LibraryArtistsViewModel @Inject constructor(
 
     val artists: Flow<PagingData<ArtistItem>> = sortOptionFlow
         .flatMapLatest { option ->
-            val orderClause = buildOrderClause(option)
-            musicRepository.observeArtistsPaged(orderClause)
+            musicRepository.observeArtistsPaged(option.orderClause)
         }
         .cachedIn(viewModelScope)
 
@@ -114,14 +136,4 @@ class LibraryArtistsViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun buildOrderClause(option: ArtistSortOption): String {
-        return when (option) {
-            ArtistSortOption.NAME_ASC -> "ORDER BY name COLLATE NOCASE ASC, id COLLATE NOCASE ASC"
-            ArtistSortOption.NAME_DESC -> "ORDER BY name COLLATE NOCASE DESC, id COLLATE NOCASE ASC"
-            ArtistSortOption.ALBUM_COUNT_DESC -> "ORDER BY album_count DESC, name COLLATE NOCASE ASC"
-            ArtistSortOption.ALBUM_COUNT_ASC -> "ORDER BY album_count ASC, name COLLATE NOCASE ASC"
-            ArtistSortOption.SONG_COUNT_DESC -> "ORDER BY song_count DESC, name COLLATE NOCASE ASC"
-            ArtistSortOption.SONG_COUNT_ASC -> "ORDER BY song_count ASC, name COLLATE NOCASE ASC"
-        }
-    }
 }

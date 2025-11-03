@@ -114,8 +114,9 @@ fun LibraryScreen(
                             LibraryTab.SONGS -> songsViewModel?.let { vm ->
                                 val songsState by vm.uiState.collectAsStateWithLifecycle()
                                 SongSortOption.values().forEach { option ->
+                                    val optionLabel = stringResource(option.labelResId)
                                     DropdownMenuItem(
-                                        text = { Text(option.displayName) },
+                                        text = { Text(optionLabel) },
                                         onClick = {
                                             vm.changeSortOption(option)
                                             showSortMenu = false
@@ -129,8 +130,9 @@ fun LibraryScreen(
                             LibraryTab.ALBUMS -> albumsViewModel?.let { vm ->
                                 val albumsState by vm.uiState.collectAsStateWithLifecycle()
                                 AlbumSortOption.values().forEach { option ->
+                                    val optionLabel = stringResource(option.labelResId)
                                     DropdownMenuItem(
-                                        text = { Text(option.displayName) },
+                                        text = { Text(optionLabel) },
                                         onClick = {
                                             vm.changeSortOption(option)
                                             showSortMenu = false
@@ -144,8 +146,9 @@ fun LibraryScreen(
                             LibraryTab.ARTISTS -> artistsViewModel?.let { vm ->
                                 val artistsState by vm.uiState.collectAsStateWithLifecycle()
                                 ArtistSortOption.values().forEach { option ->
+                                    val optionLabel = stringResource(option.labelResId)
                                     DropdownMenuItem(
-                                        text = { Text(option.displayName) },
+                                        text = { Text(optionLabel) },
                                         onClick = {
                                             vm.changeSortOption(option)
                                             showSortMenu = false
@@ -159,8 +162,9 @@ fun LibraryScreen(
                             LibraryTab.PLAYLISTS -> playlistsViewModel?.let { vm ->
                                 val playlistsState by vm.uiState.collectAsStateWithLifecycle()
                                 PlaylistSortOption.values().forEach { option ->
+                                    val optionLabel = stringResource(option.labelResId)
                                     DropdownMenuItem(
-                                        text = { Text(option.displayName) },
+                                        text = { Text(optionLabel) },
                                         onClick = {
                                             vm.changeSortOption(option)
                                             showSortMenu = false
