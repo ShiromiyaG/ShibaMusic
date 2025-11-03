@@ -9,12 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.model.DownloadProgress
 import com.shirou.shibamusic.data.model.DownloadStatus
 import com.shirou.shibamusic.data.model.OfflineTrack
@@ -60,7 +62,7 @@ fun OfflineScreen(
         // Downloads ativos
         if (activeDownloads.isNotEmpty()) {
             Text(
-                text = "Downloads em andamento",
+                text = stringResource(R.string.offline_downloads_in_progress),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -80,7 +82,7 @@ fun OfflineScreen(
         
         // Lista de músicas offline
         Text(
-            text = "Músicas Offline (${offlineTracks.size})",
+            text = stringResource(R.string.offline_tracks_count, offlineTracks.size),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -144,7 +146,7 @@ fun OfflineStorageCard(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "Armazenamento Offline",
+                text = stringResource(R.string.offline_storage_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -156,14 +158,14 @@ fun OfflineStorageCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Músicas: ${info.trackCount}")
-                    Text("Tamanho: ${info.totalSizeMB.roundToInt()} MB")
+                    Text(stringResource(R.string.offline_storage_info, info.trackCount))
+                    Text(stringResource(R.string.offline_storage_size, info.totalSizeMB.roundToInt()))
                 }
                 
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 Text(
-                    text = "Espaço disponível: ${info.availableSpaceMB.roundToInt()} MB",
+                    text = stringResource(R.string.offline_available_space, info.availableSpaceMB.roundToInt()),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -179,7 +181,7 @@ fun OfflineStorageCard(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Tocar Todas")
+                    Text(stringResource(R.string.offline_play_all))
                 }
                 
                 OutlinedButton(
@@ -215,7 +217,7 @@ fun DownloadProgressCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Track ID: ${downloadProgress.trackId}",
+                    text = stringResource(R.string.offline_track_id, downloadProgress.trackId),
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -294,7 +296,7 @@ fun OfflineTrackItem(
                 )
                 
                 Text(
-                    text = "${track.artist} • ${track.album}",
+                    text = stringResource(R.string.offline_track_subtitle, track.artist, track.album),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -313,7 +315,7 @@ fun OfflineTrackItem(
             ) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Remover",
+                    contentDescription = stringResource(R.string.cd_remove),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -341,7 +343,7 @@ fun EmptyOfflineState(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "Nenhuma música offline",
+            text = stringResource(R.string.empty_no_offline_music),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -349,7 +351,7 @@ fun EmptyOfflineState(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Baixe suas músicas favoritas para ouvir offline",
+            text = stringResource(R.string.empty_offline_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

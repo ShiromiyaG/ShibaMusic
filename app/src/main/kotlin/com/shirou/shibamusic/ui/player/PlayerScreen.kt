@@ -61,6 +61,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -133,13 +135,13 @@ fun PlayerScreen(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "No song playing",
+                    text = stringResource(R.string.player_no_song_playing),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Select a song to start playing",
+                    text = stringResource(R.string.player_select_song),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
@@ -405,6 +407,9 @@ private fun PlayerScreenContent(
     val chipContainer = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
+    
+    val copyTitleToast = stringResource(R.string.player_copy_title_toast)
+    val copyArtistToast = stringResource(R.string.player_copy_artist_toast)
 
     val showCopiedToast: (String) -> Unit = { message ->
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -565,7 +570,7 @@ private fun PlayerScreenContent(
                                 onClick = {},
                                 onLongClick = {
                                     clipboardManager.setText(AnnotatedString(animatedTitle))
-                                    showCopiedToast("Título copiado")
+                                    showCopiedToast(copyTitleToast)
                                 }
                             )
                     )
@@ -594,7 +599,7 @@ private fun PlayerScreenContent(
                                 },
                                 onLongClick = {
                                     clipboardManager.setText(AnnotatedString(animatedArtist))
-                                    showCopiedToast("Artista copiado")
+                                    showCopiedToast(copyArtistToast)
                                 }
                             )
                     )
@@ -692,7 +697,7 @@ private fun PlayerScreenContent(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.SkipPrevious,
-                        contentDescription = "Previous",
+                        contentDescription = stringResource(R.string.cd_previous),
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
@@ -740,7 +745,7 @@ private fun PlayerScreenContent(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.QueueMusic,
-                        contentDescription = "Queue",
+                        contentDescription = stringResource(R.string.cd_queue),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -750,7 +755,7 @@ private fun PlayerScreenContent(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Shuffle,
-                        contentDescription = "Shuffle",
+                        contentDescription = stringResource(R.string.cd_shuffle),
                         tint = if (isShuffle) accent else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -764,7 +769,7 @@ private fun PlayerScreenContent(
                             RepeatMode.ALL -> Icons.Rounded.Repeat
                             RepeatMode.OFF -> Icons.Rounded.Repeat
                         },
-                        contentDescription = "Repeat",
+                        contentDescription = stringResource(R.string.cd_repeat),
                         tint = if (repeatMode != RepeatMode.OFF) accent else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

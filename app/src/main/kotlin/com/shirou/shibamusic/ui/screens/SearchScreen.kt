@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.ListItemPlaceholder
 import com.shirou.shibamusic.ui.model.*
@@ -49,13 +51,13 @@ fun SearchScreen(
         // TopBar
         TopAppBar(
             title = {
-                Text("Search")
+                Text(stringResource(R.string.search_title))
             },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
                         imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = stringResource(R.string.settings_back)
                     )
                 }
             },
@@ -70,7 +72,7 @@ fun SearchScreen(
             query = query,
             onQueryChange = onQueryChange,
             onSearch = { /* Search triggered on text change */ },
-            placeholder = "Search songs, albums, artists...",
+            placeholder = stringResource(R.string.search_placeholder),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -105,7 +107,7 @@ fun SearchScreen(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
                         text = {
-                            Text("${tab.displayName} ($count)")
+                            Text(stringResource(R.string.search_tab_count, tab.displayName, count))
                         }
                     )
                 }
@@ -131,7 +133,7 @@ fun SearchScreen(
             searchResults.isEmpty() -> {
                 EmptyPlaceholder(
                     icon = Icons.Rounded.SearchOff,
-                    text = "No results found for \"$query\"",
+                    text = stringResource(R.string.empty_no_results, query),
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -187,7 +189,7 @@ private fun SearchErrorBanner(
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Rounded.Close,
-                    contentDescription = "Dismiss"
+                    contentDescription = stringResource(R.string.cd_dismiss)
                 )
             }
         }
@@ -220,7 +222,7 @@ private fun SearchResultsList(
                 if (searchResults.songs.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Songs",
+                            title = stringResource(R.string.search_section_songs),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
@@ -247,7 +249,7 @@ private fun SearchResultsList(
                 if (searchResults.albums.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Albums",
+                            title = stringResource(R.string.search_section_albums),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
@@ -267,7 +269,7 @@ private fun SearchResultsList(
                 if (searchResults.artists.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Artists",
+                            title = stringResource(R.string.search_section_artists),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
@@ -356,12 +358,12 @@ private fun SearchEmptyState(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Search your music library",
+            text = stringResource(R.string.search_library_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            text = "Songs, albums, and artists",
+            text = stringResource(R.string.search_library_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -415,7 +417,7 @@ private fun AlbumListItem(
                 IconButton(onClick = onPlayClick) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Play album"
+                        contentDescription = stringResource(R.string.cd_play_album)
                     )
                 }
             }
@@ -463,7 +465,7 @@ private fun ArtistListItem(
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = "${artist.albumCount} albums",
+                    text = stringResource(R.string.label_albums_count, artist.albumCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -473,7 +475,7 @@ private fun ArtistListItem(
                 IconButton(onClick = onPlayClick) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Play artist"
+                        contentDescription = stringResource(R.string.cd_play_artist)
                     )
                 }
             }

@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 
 /**
  * Dialog for creating a new playlist
@@ -32,7 +34,7 @@ fun CreatePlaylistDialog(
             ) {
                 // Title
                 Text(
-                    text = "Create Playlist",
+                    text = stringResource(R.string.dialog_create_playlist),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 
@@ -45,12 +47,12 @@ fun CreatePlaylistDialog(
                         playlistName = it
                         isNameError = it.isBlank()
                     },
-                    label = { Text("Playlist Name") },
-                    placeholder = { Text("Enter playlist name") },
+                    label = { Text(stringResource(R.string.playlist_name)) },
+                    placeholder = { Text(stringResource(R.string.playlist_enter_name)) },
                     isError = isNameError,
                     supportingText = {
                         if (isNameError) {
-                            Text("Playlist name cannot be empty")
+                            Text(stringResource(R.string.playlist_name_empty))
                         }
                     },
                     singleLine = true,
@@ -63,8 +65,8 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = playlistDescription,
                     onValueChange = { playlistDescription = it },
-                    label = { Text("Description (Optional)") },
-                    placeholder = { Text("Add a description") },
+                    label = { Text(stringResource(R.string.playlist_description)) },
+                    placeholder = { Text(stringResource(R.string.playlist_add_description)) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -77,7 +79,7 @@ fun CreatePlaylistDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.settings_cancel))
                     }
                     
                     Spacer(modifier = Modifier.width(8.dp))
@@ -92,7 +94,7 @@ fun CreatePlaylistDialog(
                             }
                         }
                     ) {
-                        Text("Create")
+                        Text(stringResource(R.string.playlist_create))
                     }
                 }
             }
@@ -113,13 +115,13 @@ fun SimpleCreatePlaylistDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Playlist") },
+        title = { Text(stringResource(R.string.dialog_create_playlist)) },
         text = {
             OutlinedTextField(
                 value = playlistName,
                 onValueChange = { playlistName = it },
-                label = { Text("Playlist Name") },
-                placeholder = { Text("Enter playlist name") },
+                label = { Text(stringResource(R.string.playlist_name)) },
+                placeholder = { Text(stringResource(R.string.playlist_enter_name)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -134,12 +136,12 @@ fun SimpleCreatePlaylistDialog(
                 },
                 enabled = playlistName.isNotBlank()
             ) {
-                Text("Create")
+                Text(stringResource(R.string.playlist_create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.settings_cancel))
             }
         },
         modifier = modifier

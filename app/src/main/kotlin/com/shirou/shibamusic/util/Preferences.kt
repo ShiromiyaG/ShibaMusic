@@ -80,6 +80,7 @@ object Preferences {
     private const val LIBRARY_ALBUM_SORT = "library_album_sort"
     private const val LIBRARY_ARTIST_SORT = "library_artist_sort"
     private const val LIBRARY_PLAYLIST_SORT = "library_playlist_sort"
+    private const val APP_LANGUAGE = "app_language"
 
 
     @JvmStatic
@@ -670,5 +671,15 @@ object Preferences {
     @JvmStatic
     fun setLibraryPlaylistSort(option: String) {
         App.getInstance().preferences.edit().putString(LIBRARY_PLAYLIST_SORT, option).apply()
+    }
+
+    @JvmStatic
+    fun getAppLanguage(): String? {
+        return App.getInstance().preferences.getString(APP_LANGUAGE, null)
+    }
+
+    @JvmStatic
+    fun setAppLanguage(language: String?) {
+        App.getInstance().preferences.edit().putString(APP_LANGUAGE, language).apply()
     }
 }

@@ -13,9 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 
 /**
  * Search bar component
@@ -27,11 +30,13 @@ fun SearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search",
+    placeholder: String? = null,
     onNavigateBack: (() -> Unit)? = null,
     active: Boolean = true,
     onActiveChange: (Boolean) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val actualPlaceholder = placeholder ?: context.getString(R.string.label_search)
     val focusManager = LocalFocusManager.current
     
     Surface(
@@ -55,7 +60,7 @@ fun SearchBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.cd_back),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -93,7 +98,7 @@ fun SearchBar(
                 decorationBox = { innerTextField ->
                     if (query.isEmpty()) {
                         Text(
-                            text = placeholder,
+                            text = actualPlaceholder,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
@@ -110,7 +115,7 @@ fun SearchBar(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Clear,
-                        contentDescription = "Clear",
+                        contentDescription = stringResource(R.string.cd_clear),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

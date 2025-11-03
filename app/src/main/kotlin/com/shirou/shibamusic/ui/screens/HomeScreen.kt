@@ -91,13 +91,13 @@ fun HomeScreen(
         // TopBar personalizada integrada
         TopAppBar(
             title = {
-                NavigationTitle(title = "Shiba Music")
+                NavigationTitle(title = stringResource(R.string.home_title))
             },
             actions = {
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
-                        contentDescription = "Settings"
+                        contentDescription = stringResource(R.string.cd_settings)
                     )
                 }
             },

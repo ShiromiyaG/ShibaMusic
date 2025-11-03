@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.databinding.ItemHorizontalArtistBinding
 import com.shirou.shibamusic.glide.CustomGlideRequest
 import com.shirou.shibamusic.interfaces.ClickCallback
@@ -65,7 +66,7 @@ class ArtistHorizontalAdapter(private val click: ClickCallback) :
 
         if (artist.albumCount > 0) {
             holder.item.artistInfoTextView.visibility = View.VISIBLE
-            holder.item.artistInfoTextView.text = "Album count: ${artist.albumCount}"
+            holder.item.artistInfoTextView.text = holder.itemView.context.getString(R.string.label_album_count, artist.albumCount)
         } else {
             holder.item.artistInfoTextView.visibility = View.GONE
         }

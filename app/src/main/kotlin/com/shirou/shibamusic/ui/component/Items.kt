@@ -21,9 +21,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.shirou.shibamusic.R
 
 /**
  * Song/Track item
@@ -134,7 +136,7 @@ fun SongListItem(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.DownloadDone,
-                                    contentDescription = "Disponível offline",
+                                    contentDescription = stringResource(R.string.cd_available_offline),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -150,7 +152,7 @@ fun SongListItem(
                         IconButton(onClick = onMoreClick) {
                             Icon(
                                 imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "More options",
+                                contentDescription = stringResource(R.string.cd_more_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -219,7 +221,7 @@ fun GridItem(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "More options",
+                        contentDescription = stringResource(R.string.cd_more_options),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }

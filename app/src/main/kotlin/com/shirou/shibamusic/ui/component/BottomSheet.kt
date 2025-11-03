@@ -8,7 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.model.*
 
 /**
@@ -84,7 +87,7 @@ fun BottomSheetHeader(
         IconButton(onClick = onDismiss) {
             Icon(
                 imageVector = Icons.Rounded.Close,
-                contentDescription = "Close",
+                contentDescription = stringResource(R.string.cd_close),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -105,13 +108,15 @@ fun SongBottomSheet(
     onGoToAlbum: () -> Unit,
     onGoToArtist: () -> Unit,
     onDownloadClick: (() -> Unit)? = null,
-    downloadLabel: String = "Salvar offline",
+    downloadLabel: String? = null,
     onCancelDownload: (() -> Unit)? = null,
     onRemoveDownload: (() -> Unit)? = null,
     showRemoveFromPlaylist: Boolean = false,
     onRemoveFromPlaylist: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val actualDownloadLabel = downloadLabel ?: context.getString(R.string.label_save_offline)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
@@ -134,7 +139,7 @@ fun SongBottomSheet(
             // Menu items
             BottomSheetMenuItem(
                 icon = Icons.Rounded.PlayArrow,
-                text = "Play next",
+                text = stringResource(R.string.bottom_sheet_play_next),
                 onClick = {
                     onPlayNext()
                     onDismiss()
@@ -143,7 +148,7 @@ fun SongBottomSheet(
             
             BottomSheetMenuItem(
                 icon = Icons.Rounded.AddCircleOutline,
-                text = "Add to queue",
+                text = stringResource(R.string.bottom_sheet_add_to_queue),
                 onClick = {
                     onAddToQueue()
                     onDismiss()
@@ -154,7 +159,7 @@ fun SongBottomSheet(
             
             BottomSheetMenuItem(
                 icon = Icons.Rounded.Album,
-                text = "Go to album",
+                text = stringResource(R.string.bottom_sheet_go_to_album),
                 onClick = {
                     onGoToAlbum()
                     onDismiss()
@@ -163,7 +168,7 @@ fun SongBottomSheet(
             
             BottomSheetMenuItem(
                 icon = Icons.Rounded.Person,
-                text = "Go to artist",
+                text = stringResource(R.string.bottom_sheet_go_to_artist),
                 onClick = {
                     onGoToArtist()
                     onDismiss()
@@ -176,7 +181,7 @@ fun SongBottomSheet(
                 if (onDownloadClick != null) {
                     BottomSheetMenuItem(
                         icon = Icons.Rounded.Download,
-                        text = downloadLabel,
+                        text = actualDownloadLabel,
                         onClick = {
                             onDownloadClick()
                             onDismiss()
@@ -187,7 +192,7 @@ fun SongBottomSheet(
                 if (onCancelDownload != null) {
                     BottomSheetMenuItem(
                         icon = Icons.Rounded.Cancel,
-                        text = "Cancel download",
+                        text = stringResource(R.string.bottom_sheet_cancel_download),
                         onClick = {
                             onCancelDownload()
                             onDismiss()
@@ -198,7 +203,7 @@ fun SongBottomSheet(
                 if (onRemoveDownload != null) {
                     BottomSheetMenuItem(
                         icon = Icons.Rounded.Delete,
-                        text = "Remove download",
+                        text = stringResource(R.string.bottom_sheet_remove_download),
                         onClick = {
                             onRemoveDownload()
                             onDismiss()
@@ -212,7 +217,7 @@ fun SongBottomSheet(
                 
                 BottomSheetMenuItem(
                     icon = Icons.Rounded.RemoveCircleOutline,
-                    text = "Remove from playlist",
+                    text = stringResource(R.string.bottom_sheet_remove_from_playlist),
                     onClick = {
                         onRemoveFromPlaylist()
                         onDismiss()
@@ -256,7 +261,7 @@ fun AlbumBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.PlayArrow,
-                text = "Play album",
+                text = stringResource(R.string.bottom_sheet_play_album),
                 onClick = {
                     onPlay()
                     onDismiss()
@@ -265,7 +270,7 @@ fun AlbumBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.PlaylistPlay,
-                text = "Play next",
+                text = stringResource(R.string.bottom_sheet_play_next),
                 onClick = {
                     onPlayNext()
                     onDismiss()
@@ -274,7 +279,7 @@ fun AlbumBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.QueueMusic,
-                text = "Add to queue",
+                text = stringResource(R.string.bottom_sheet_add_to_queue),
                 onClick = {
                     onAddToQueue()
                     onDismiss()
@@ -285,7 +290,7 @@ fun AlbumBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.Album,
-                text = "Open album",
+                text = stringResource(R.string.bottom_sheet_open_album),
                 onClick = {
                     onNavigateToAlbum()
                     onDismiss()
@@ -295,7 +300,7 @@ fun AlbumBottomSheet(
             if (onNavigateToArtist != null) {
                 BottomSheetMenuItem(
                     icon = Icons.Rounded.Person,
-                    text = "Go to artist",
+                    text = stringResource(R.string.bottom_sheet_go_to_artist),
                     onClick = {
                         onNavigateToArtist()
                         onDismiss()
@@ -337,7 +342,7 @@ fun PlaylistBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.PlayArrow,
-                text = "Play playlist",
+                text = stringResource(R.string.bottom_sheet_play_playlist),
                 onClick = {
                     onPlay()
                     onDismiss()
@@ -346,7 +351,7 @@ fun PlaylistBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.PlaylistPlay,
-                text = "Play next",
+                text = stringResource(R.string.bottom_sheet_play_next),
                 onClick = {
                     onPlayNext()
                     onDismiss()
@@ -355,7 +360,7 @@ fun PlaylistBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.QueueMusic,
-                text = "Add to queue",
+                text = stringResource(R.string.bottom_sheet_add_to_queue),
                 onClick = {
                     onAddToQueue()
                     onDismiss()
@@ -366,7 +371,7 @@ fun PlaylistBottomSheet(
 
             BottomSheetMenuItem(
                 icon = Icons.Rounded.List,
-                text = "Open playlist",
+                text = stringResource(R.string.bottom_sheet_open_playlist),
                 onClick = {
                     onNavigateToPlaylist()
                     onDismiss()

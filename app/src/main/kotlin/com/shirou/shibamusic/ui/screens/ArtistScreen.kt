@@ -19,7 +19,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -117,14 +120,14 @@ fun ArtistScreen(
                         IconButton(onClick = onBackClick) {
                             Icon(
                                 imageVector = Icons.Rounded.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.cd_back)
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         IconButton(onClick = onMenuClick) {
                             Icon(
                                 imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "More"
+                                contentDescription = stringResource(R.string.cd_more_options)
                             )
                         }
                     }
@@ -192,17 +195,17 @@ fun ArtistScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                text = "${artist.albumCount} albums",
+                                text = stringResource(R.string.label_albums_count, artist.albumCount),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "•",
+                                text = stringResource(R.string.label_separator),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "${artist.songCount} songs",
+                                text = stringResource(R.string.label_songs_count, artist.songCount),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -222,7 +225,7 @@ fun ArtistScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.PlayArrow,
-                                    contentDescription = "Play"
+                                    contentDescription = stringResource(R.string.cd_play)
                                 )
                             }
 
@@ -232,7 +235,7 @@ fun ArtistScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Shuffle,
-                                    contentDescription = "Shuffle"
+                                    contentDescription = stringResource(R.string.cd_shuffle)
                                 )
                             }
 
@@ -242,7 +245,7 @@ fun ArtistScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Download,
-                                    contentDescription = "Download"
+                                    contentDescription = stringResource(R.string.cd_download)
                                 )
                             }
                         }
@@ -253,7 +256,7 @@ fun ArtistScreen(
                 if (popularSongs.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Popular Songs",
+                            title = stringResource(R.string.artist_popular_songs),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
@@ -283,7 +286,7 @@ fun ArtistScreen(
                 if (albums.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Albums",
+                            title = stringResource(R.string.artist_albums),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                         )
                     }
@@ -357,7 +360,7 @@ fun ArtistScreen(
                 Toast.makeText(context, "Already viewing this artist", Toast.LENGTH_SHORT).show()
             },
             onDownloadClick = downloadAction,
-            downloadLabel = "Download offline (${selectedQuality.toDownloadLabel()})",
+            downloadLabel = stringResource(R.string.artist_download_offline, selectedQuality.toDownloadLabel()),
             onCancelDownload = cancelDownloadCallback,
             onRemoveDownload = removeDownloadCallback
         )
@@ -421,7 +424,7 @@ private fun AlbumListItem(
             
             // Song Count
             Text(
-                text = "${album.songCount} songs",
+                text = stringResource(R.string.label_songs_count, album.songCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

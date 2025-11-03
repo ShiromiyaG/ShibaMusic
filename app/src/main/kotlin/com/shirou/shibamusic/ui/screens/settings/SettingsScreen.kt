@@ -40,12 +40,12 @@ fun SettingsScreen(
     onSyncFromServer: () -> Unit = {},
     offlineViewModel: OfflineViewModel = hiltViewModel()
 ) {
-    val serverUrl = remember { Preferences.getServer() ?: "Not configured" }
-    val username = remember { Preferences.getUser() ?: "Not logged in" }
+    val context = LocalContext.current
+    val serverUrl = remember { Preferences.getServer() ?: context.getString(com.shirou.shibamusic.R.string.settings_not_configured) }
+    val username = remember { Preferences.getUser() ?: context.getString(com.shirou.shibamusic.R.string.settings_not_logged_in) }
     var showClearOfflineDialog by remember { mutableStateOf(false) }
     var selectedDownloadQuality by remember { mutableStateOf(Preferences.getOfflineDownloadQuality()) }
     var showDownloadQualityDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val systemRepository = remember { SystemRepository() }
     val latestReleaseLiveData = remember(systemRepository) { systemRepository.checkShibaMusicUpdate(context) }
@@ -58,12 +58,12 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(com.shirou.shibamusic.R.string.settings_back)
                         )
                     }
                 },
@@ -124,26 +124,26 @@ fun SettingsScreen(
                 
                 SettingsItem(
                     icon = Icons.Rounded.Palette,
-                    title = "Theme",
+                    title = stringResource(com.shirou.shibamusic.R.string.settings_theme_title),
                     subtitle = when(currentTheme) {
-                        ThemeHelper.LIGHT_MODE -> "Claro"
-                        ThemeHelper.DARK_MODE -> "Escuro"
-                        else -> "Mesmo do dispositivo"
+                        ThemeHelper.LIGHT_MODE -> stringResource(com.shirou.shibamusic.R.string.settings_theme_light)
+                        ThemeHelper.DARK_MODE -> stringResource(com.shirou.shibamusic.R.string.settings_theme_dark)
+                        else -> stringResource(com.shirou.shibamusic.R.string.settings_theme_system)
                     },
                     onClick = { showThemeDialog = true }
                 )
                 
                 if (showThemeDialog) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val themeContext = androidx.compose.ui.platform.LocalContext.current
                     AlertDialog(
                         onDismissRequest = { showThemeDialog = false },
-                        title = { Text("Tema") },
+                        title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_theme_dialog_title)) },
                         text = {
                             Column {
                                 listOf(
-                                    ThemeHelper.DEFAULT_MODE to "Mesmo do dispositivo",
-                                    ThemeHelper.LIGHT_MODE to "Claro",
-                                    ThemeHelper.DARK_MODE to "Escuro"
+                                    ThemeHelper.DEFAULT_MODE to stringResource(com.shirou.shibamusic.R.string.settings_theme_system),
+                                    ThemeHelper.LIGHT_MODE to stringResource(com.shirou.shibamusic.R.string.settings_theme_light),
+                                    ThemeHelper.DARK_MODE to stringResource(com.shirou.shibamusic.R.string.settings_theme_dark)
                                 ).forEach { (value, label) ->
                                     Row(
                                         modifier = Modifier
@@ -153,7 +153,7 @@ fun SettingsScreen(
                                                 Preferences.setTheme(value)
                                                 ThemeHelper.applyTheme(value)
                                                 showThemeDialog = false
-                                                (context as? android.app.Activity)?.recreate()
+                                                (themeContext as? android.app.Activity)?.recreate()
                                             }
                                             .padding(vertical = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically
@@ -165,7 +165,7 @@ fun SettingsScreen(
                                                 Preferences.setTheme(value)
                                                 ThemeHelper.applyTheme(value)
                                                 showThemeDialog = false
-                                                (context as? android.app.Activity)?.recreate()
+                                                (themeContext as? android.app.Activity)?.recreate()
                                             }
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -176,7 +176,77 @@ fun SettingsScreen(
                         },
                         confirmButton = {
                             TextButton(onClick = { showThemeDialog = false }) {
-                                Text("Cancelar")
+                                Text(stringResource(com.shirou.shibamusic.R.string.settings_cancel))
+                            }
+                        }
+                    )
+                }
+            }
+            
+            // Language Section
+            SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_language_title)) {
+                var currentLanguage by remember { 
+                    mutableStateOf(com.shirou.shibamusic.helper.LanguageHelper.getCurrentLanguage())
+                }
+                var showLanguageDialog by remember { mutableStateOf(false) }
+                
+                SettingsItem(
+                    icon = Icons.Rounded.Language,
+                    title = stringResource(com.shirou.shibamusic.R.string.settings_language_title),
+                    subtitle = com.shirou.shibamusic.helper.LanguageHelper.getLanguageDisplayName(currentLanguage, context),
+                    onClick = { showLanguageDialog = true }
+                )
+                
+                if (showLanguageDialog) {
+                    val languageContext = androidx.compose.ui.platform.LocalContext.current
+                    val activity = languageContext as? android.app.Activity
+                    
+                    fun changeLanguage(code: String) {
+                        if (currentLanguage != code) {
+                            showLanguageDialog = false
+                            currentLanguage = code
+                            
+                            // Save language
+                            com.shirou.shibamusic.helper.LanguageHelper.setLanguage(code)
+                            
+                            // Force app restart to apply language change
+                            val intent = activity?.intent
+                            activity?.finish()
+                            activity?.startActivity(intent)
+                            activity?.overridePendingTransition(0, 0)
+                        }
+                    }
+                    
+                    AlertDialog(
+                        onDismissRequest = { showLanguageDialog = false },
+                        title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_language_dialog_title)) },
+                        text = {
+                            Column {
+                                listOf(
+                                    com.shirou.shibamusic.helper.LanguageHelper.SYSTEM_DEFAULT to stringResource(com.shirou.shibamusic.R.string.settings_language_system),
+                                    com.shirou.shibamusic.helper.LanguageHelper.ENGLISH to stringResource(com.shirou.shibamusic.R.string.settings_language_english),
+                                    com.shirou.shibamusic.helper.LanguageHelper.PORTUGUESE to stringResource(com.shirou.shibamusic.R.string.settings_language_portuguese)
+                                ).forEach { (code, label) ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { changeLanguage(code) }
+                                            .padding(vertical = 12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = currentLanguage == code,
+                                            onClick = { changeLanguage(code) }
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(label)
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showLanguageDialog = false }) {
+                                Text(stringResource(com.shirou.shibamusic.R.string.quality_cancel))
                             }
                         }
                     )
@@ -274,7 +344,7 @@ fun SettingsScreen(
             SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_storage_title)) {
                 SettingsItem(
                     icon = Icons.Rounded.LibraryMusic,
-                    title = "Qualidade dos downloads offline",
+                    title = stringResource(com.shirou.shibamusic.R.string.settings_offline_quality_title),
                     subtitle = selectedDownloadQuality.toDownloadLabel(),
                     onClick = { showDownloadQualityDialog = true }
                 )
@@ -283,8 +353,8 @@ fun SettingsScreen(
                 
                 SettingsItem(
                     icon = Icons.Rounded.DeleteForever,
-                    title = "Limpar músicas offline",
-                    subtitle = "Remove todos os arquivos baixados para uso offline",
+                    title = stringResource(com.shirou.shibamusic.R.string.settings_clear_offline_title),
+                    subtitle = stringResource(com.shirou.shibamusic.R.string.settings_clear_offline_subtitle),
                     onClick = { showClearOfflineDialog = true }
                 )
             }
@@ -292,7 +362,7 @@ fun SettingsScreen(
             if (showDownloadQualityDialog) {
                 AlertDialog(
                     onDismissRequest = { showDownloadQualityDialog = false },
-                    title = { Text("Qualidade dos downloads offline") },
+                    title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_offline_quality_dialog_title)) },
                     text = {
                         Column {
                             AudioQuality.values().forEach { quality ->
@@ -323,7 +393,7 @@ fun SettingsScreen(
                     },
                     confirmButton = {
                         TextButton(onClick = { showDownloadQualityDialog = false }) {
-                            Text("Fechar")
+                            Text(stringResource(com.shirou.shibamusic.R.string.settings_close))
                         }
                     }
                 )
@@ -332,22 +402,22 @@ fun SettingsScreen(
             if (showClearOfflineDialog) {
                 AlertDialog(
                     onDismissRequest = { showClearOfflineDialog = false },
-                    title = { Text("Limpar músicas offline?") },
-                    text = { Text("Todos os arquivos baixados serão removidos, incluindo versões antigas e novas do cache.") },
+                    title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_clear_offline_dialog_title)) },
+                    text = { Text(stringResource(com.shirou.shibamusic.R.string.settings_clear_offline_dialog_message)) },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 showClearOfflineDialog = false
                                 offlineViewModel.clearAllOfflineData()
-                                Toast.makeText(context, "Limpando músicas offline…", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(com.shirou.shibamusic.R.string.message_all_offline_cleared), Toast.LENGTH_SHORT).show()
                             }
                         ) {
-                            Text("Limpar")
+                            Text(stringResource(com.shirou.shibamusic.R.string.settings_clear))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showClearOfflineDialog = false }) {
-                            Text("Cancelar")
+                            Text(stringResource(com.shirou.shibamusic.R.string.settings_cancel))
                         }
                     }
                 )
@@ -438,10 +508,11 @@ fun SettingsSection(
     }
 }
 
+@Composable
 private fun AudioQuality.toDownloadLabel(): String = when (this) {
-    AudioQuality.LOW -> "128 kbps (Opus)"
-    AudioQuality.MEDIUM -> "320 kbps (Opus)"
-    AudioQuality.HIGH -> "Lossless (FLAC)"
+    AudioQuality.LOW -> stringResource(com.shirou.shibamusic.R.string.quality_low_label)
+    AudioQuality.MEDIUM -> stringResource(com.shirou.shibamusic.R.string.quality_medium_label)
+    AudioQuality.HIGH -> stringResource(com.shirou.shibamusic.R.string.quality_high_label)
 }
 
 @Composable

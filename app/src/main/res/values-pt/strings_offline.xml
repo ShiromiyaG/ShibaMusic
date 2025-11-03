@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- Offline Music Strings with Opus Support -->
+    <string name="offline_title">Música Offline</string>
+    <string name="offline_subtitle">Músicas disponíveis sem internet</string>
+    <string name="offline_empty_title">Nenhuma música offline</string>
+    <string name="offline_empty_subtitle">Baixe suas músicas favoritas para ouvir offline</string>
+    <string name="offline_storage_title">Armazenamento Offline</string>
+    <string name="offline_play_all">Tocar Todas</string>
+    <string name="offline_verify_integrity">Verificar Integridade</string>
+    <string name="offline_clear_all">Limpar Tudo</string>
+    <string name="offline_downloads_in_progress">Downloads em andamento</string>
+    <string name="offline_tracks_count">Músicas Offline (%1$d)</string>
+    <string name="offline_storage_info">Músicas: %1$d</string>
+    <string name="offline_storage_size">Tamanho: %1$d MB</string>
+    <string name="offline_available_space">Espaço disponível: %1$d MB</string>
+    
+    <!-- Audio Quality with Opus Support -->
+    <string name="quality_low">Baixa - Opus 128kbps</string>
+    <string name="quality_medium">Média - Opus 320kbps</string>
+    <string name="quality_high">Alta - FLAC Lossless</string>
+    
+    <!-- Codec Information -->
+    <string name="codec_opus_description">Opus é um codec de áudio moderno e eficiente, oferecendo melhor qualidade com menor tamanho de arquivo</string>
+    <string name="codec_flac_description">FLAC oferece qualidade lossless, preservando toda a informação de áudio original</string>
+    
+    <!-- Download Progress with Codec Info -->
+    <string name="download_status_pending">Pendente</string>
+    <string name="download_status_downloading_opus">Baixando Opus %1$dkbps... %2$d%%</string>
+    <string name="download_status_downloading_flac">Baixando FLAC... %1$d%%</string>
+    <string name="download_status_completed">Concluído</string>
+    <string name="download_status_failed">Falhou</string>
+    <string name="download_status_paused">Pausado</string>
+    
+    <!-- Offline Actions -->
+    <string name="action_download_opus_128">Baixar Opus 128kbps</string>
+    <string name="action_download_opus_320">Baixar Opus 320kbps</string>
+    <string name="action_download_flac">Baixar FLAC Lossless</string>
+    <string name="action_remove_offline">Remover Offline</string>
+    <string name="action_play_offline">Reproduzir Offline</string>
+    
+    <!-- Quality Selection Dialog -->
+    <string name="dialog_select_quality_title">Selecionar Qualidade</string>
+    <string name="dialog_select_quality_subtitle">Escolha a qualidade de download</string>
+    <string name="dialog_opus_128_option">Opus 128kbps - Boa qualidade, menor tamanho</string>
+    <string name="dialog_opus_320_option">Opus 320kbps - Alta qualidade, tamanho médio</string>
+    <string name="dialog_flac_option">FLAC - Qualidade lossless, maior tamanho</string>
+    
+    <!-- Notifications with Codec Info -->
+    <string name="notification_downloading_opus">Baixando em Opus %1$dkbps</string>
+    <string name="notification_downloading_flac">Baixando em FLAC</string>
+    <string name="notification_downloading_subtitle">Progresso: %1$d%%</string>
+    <string name="notification_download_complete_opus">Download Opus concluído</string>
+    <string name="notification_download_complete_flac">Download FLAC concluído</string>
+    <string name="notification_download_failed">Falha no download</string>
+    <string name="notification_action_cancel">Cancelar</string>
+    
+    <!-- File Size Estimates -->
+    <string name="estimate_opus_128">~%1$d MB (Opus 128kbps)</string>
+    <string name="estimate_opus_320">~%1$d MB (Opus 320kbps)</string>
+    <string name="estimate_flac">~%1$d MB (FLAC Lossless)</string>
+    
+    <!-- Settings -->
+    <string name="settings_default_offline_quality_title">Qualidade Padrão Offline</string>
+    <string name="settings_default_offline_quality_subtitle">Codec usado para novos downloads</string>
+    <string name="settings_opus_optimization_title">Otimização Opus</string>
+    <string name="settings_opus_optimization_subtitle">Usar Opus para melhor compressão</string>
+    
+    <!-- Messages with Codec Info -->
+    <string name="message_download_started_opus">Download Opus iniciado para %1$s</string>
+    <string name="message_download_started_flac">Download FLAC iniciado para %1$s</string>
+    <string name="message_track_removed">Música removida do modo offline</string>
+    <string name="message_all_offline_cleared">Todos os dados offline foram removidos</string>
+    <string name="message_integrity_ok">Todos os arquivos offline estão íntegros</string>
+    <string name="message_integrity_issues">%1$d arquivo(s) corrompido(s) foram removidos</string>
+    <string name="message_no_offline_tracks">Nenhuma música offline disponível</string>
+    
+    <!-- Space Savings Info -->
+    <string name="info_opus_savings">Opus economiza até 40%% de espaço comparado ao MP3</string>
+    <string name="info_quality_comparison">Opus 128kbps ≈ MP3 192kbps em qualidade</string>
+    
+</resources>

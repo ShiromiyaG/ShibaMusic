@@ -62,11 +62,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.shirou.shibamusic.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -391,7 +393,7 @@ fun MiniPlayer(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.SkipNext,
-                        contentDescription = "Next",
+                        contentDescription = stringResource(R.string.cd_next),
                         tint = if (playbackState.hasNext) {
                             MaterialTheme.colorScheme.onSurface
                         } else {
@@ -494,7 +496,7 @@ fun MiniPlayerRounded(
                         } else {
                             Icons.Rounded.FavoriteBorder
                         },
-                        contentDescription = "Favorite",
+                        contentDescription = stringResource(R.string.cd_favorite),
                         tint = if (playerState.isFavorite) {
                             MaterialTheme.colorScheme.primary
                         } else {

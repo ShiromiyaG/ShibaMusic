@@ -1,4 +1,33 @@
 <resources>
+    <string name="home_sync_loading">Sincronizando músicas do servidor...
+Isso pode levar um momento.</string>
+    <string name="home_sync_result">Sincronizados %1$d álbuns, %2$d músicas!</string>
+    <string name="home_sync_error">Falha na sincronização: %1$s</string>
+    <string name="home_sync_in_progress">Sincronizando com o servidor...</string>
+    <string name="home_sync_success">✓ Sincronizados %1$d álbuns, %2$d músicas!</string>
+    <string name="home_load_failed">Falha ao carregar dados.</string>
+    <string name="home_load_failed_with_reason">Falha ao carregar dados: %1$s</string>
+    <string name="home_retry">Tentar novamente</string>
+    <string name="home_no_music">Nenhuma música encontrada.\nCertifique-se de que seu servidor Navidrome tem músicas!</string>
+    <string name="home_recently_played">Tocadas Recentemente</string>
+    <string name="home_see_all">Ver tudo</string>
+    <string name="home_favorite_albums">Álbuns Favoritos</string>
+    <string name="home_last_played">Últimas Músicas Tocadas</string>
+    <string name="home_recently_added">Últimas Adicionadas no Servidor</string>
+    <string name="home_view_library">Ver Biblioteca</string>
+    <string name="home_unknown_artist">Artista Desconhecido</string>
+    
+    <string name="login_setup_title">Configuração do Servidor</string>
+    <string name="login_setup_welcome">Bem-vindo ao ShibaMusic</string>
+    <string name="login_setup_subtitle">Conecte-se ao seu servidor Navidrome ou Subsonic</string>
+    <string name="login_setup_server_url_label">URL do Servidor</string>
+    <string name="login_setup_server_url_placeholder">https://music.exemplo.com</string>
+    <string name="login_setup_username_label">Nome de usuário</string>
+    <string name="login_setup_password_label">Senha</string>
+    <string name="login_setup_hide_password">Ocultar senha</string>
+    <string name="login_setup_show_password">Mostrar senha</string>
+    <string name="login_setup_button_connect">Conectar</string>
+    <string name="login_setup_help_text">Certifique-se de que seu servidor está acessível e você tem as credenciais corretas</string>
     <string name="activity_battery_optimizations_conclusion">Em caso de problemas, visite https://dontkillmyapp.com. Você encontrará instruções detalhadas sobre como desativar quaisquer recursos de economia de energia que possam afetar o desempenho do aplicativo.</string>
     <string name="activity_battery_optimizations_summary">Por favor, desative as otimizações de bateria para a reprodução de mídia enquanto a tela estiver desligada.</string>
     <string name="activity_battery_optimizations_title">Otimizações de bateria</string>
@@ -255,7 +284,6 @@
     <string name="settings_github_title">Github</string>
     <string name="settings_image_size">Definir resolução da imagem</string>
     <string name="settings_language">Idioma</string>
-    <string name="settings_logout_title">Encerrar sessão</string>
     <string name="settings_max_bitrate_download">Taxa de bits para os downloads</string>
     <string name="settings_max_bitrate_mobile">Taxa de bits para a rede móvel</string>
     <string name="settings_max_bitrate_wifi">Bitrate no Wi-Fi</string>
@@ -368,4 +396,251 @@
     <string name="undraw_page">unDraw</string>
     <string name="undraw_thanks">Um agradecimento especial ao unDraw, sem cujas ilustrações não poderíamos ter deixado esta aplicação tão bonita.</string>
     <string name="undraw_url">https://undraw.co/</string>
+    
+    <!-- Player Copy to Clipboard Notifications -->
+    <string name="player_copy_title_toast">Título copiado</string>
+    <string name="player_copy_artist_toast">Artista copiado</string>
+    
+    <!-- Player Screen -->
+    <string name="player_no_song_playing">Nenhuma música tocando</string>
+    <string name="player_select_song">Selecione uma música para começar a tocar</string>
+    
+    <!-- Bottom Sheet Menu Items (Generic) -->
+    <string name="bottom_sheet_play_next">Tocar em seguida</string>
+    <string name="bottom_sheet_add_to_queue">Adicionar à fila</string>
+    <string name="bottom_sheet_go_to_album">Ir para o álbum</string>
+    <string name="bottom_sheet_go_to_artist">Ir para o artista</string>
+    <string name="bottom_sheet_cancel_download">Cancelar download</string>
+    <string name="bottom_sheet_remove_download">Remover download</string>
+    <string name="bottom_sheet_remove_from_playlist">Remover da playlist</string>
+    <string name="bottom_sheet_play_all">Tocar todas</string>
+    <string name="bottom_sheet_shuffle">Aleatório</string>
+    <string name="bottom_sheet_play_album">Tocar álbum</string>
+    <string name="bottom_sheet_open_album">Abrir álbum</string>
+    <string name="bottom_sheet_play_playlist">Tocar playlist</string>
+    <string name="bottom_sheet_open_playlist">Abrir playlist</string>
+    
+    <!-- Quality Selection Dialog -->
+    <string name="quality_selection_title">Selecionar Qualidade</string>
+    <string name="quality_selection_subtitle">Escolha a qualidade de download</string>
+    <string name="quality_opus_info">Opus é um codec de áudio moderno e eficiente, oferecendo melhor qualidade com menor tamanho de arquivo</string>
+    <string name="quality_opus_savings">Opus economiza até 40% de espaço comparado ao MP3</string>
+    <string name="quality_cancel">Cancelar</string>
+    <string name="quality_download">Baixar</string>
+    <string name="quality_low_description">Boa qualidade, menor tamanho. Ideal para economizar espaço.</string>
+    <string name="quality_medium_description">Alta qualidade, tamanho equilibrado. Recomendado para a maioria dos usos.</string>
+    <string name="quality_high_description">Qualidade lossless, arquivo maior. Para audiófilos.</string>
+    <string name="quality_low_label">128 kbps (Opus)</string>
+    <string name="quality_medium_label">320 kbps (Opus)</string>
+    <string name="quality_high_label">Lossless (FLAC)</string>
+    
+    <!-- Offline Screen -->
+    <string name="offline_active_downloads">Downloads em andamento</string>
+    
+    <!-- Menu and Dialog Strings -->
+    <string name="dialog_add_to_playlist">Adicionar à Playlist</string>
+    <string name="dialog_create_new_playlist">Criar nova playlist</string>
+    <string name="dialog_no_playlists_yet">Nenhuma playlist ainda</string>
+    <string name="dialog_create_playlist">Criar Playlist</string>
+    <string name="dialog_no_albums">Nenhum álbum na sua biblioteca</string>
+    <string name="dialog_no_artists">Nenhum artista na sua biblioteca</string>
+    <string name="dialog_no_playlists">Nenhuma playlist ainda</string>
+    <string name="dialog_create_first_playlist">Crie sua primeira playlist</string>
+    
+    <!-- Language Settings -->
+    <string name="settings_language_title">Idioma</string>
+    <string name="settings_language_subtitle">Idioma do aplicativo</string>
+    <string name="settings_language_dialog_title">Selecionar Idioma</string>
+    <string name="settings_language_system">Padrão do sistema</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_portuguese">Português</string>
+    <string name="settings_language_spanish">Español</string>
+    <string name="settings_language_french">Français</string>
+    <string name="settings_language_german">Deutsch</string>
+    <string name="settings_language_italian">Italiano</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_polish">Polski</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_turkish">Türkçe</string>
+    <string name="settings_language_chinese">中文</string>
+    
+    <!-- Settings Common -->
+    <string name="settings_title">Configurações</string>
+    <string name="settings_back">Voltar</string>
+    <string name="settings_cancel">Cancelar</string>
+    <string name="settings_close">Fechar</string>
+    <string name="settings_clear">Limpar</string>
+    <string name="settings_theme_title">Tema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Escuro</string>
+    <string name="settings_theme_system">Seguir o sistema</string>
+    <string name="settings_theme_dialog_title">Tema</string>
+    <string name="settings_not_configured">Não configurado</string>
+    <string name="settings_not_logged_in">Não conectado</string>
+    <string name="settings_logout_title">Desconectar</string>
+    <string name="settings_offline_quality_title">Qualidade dos downloads offline</string>
+    <string name="settings_offline_quality_dialog_title">Qualidade dos downloads offline</string>
+    <string name="settings_clear_offline_title">Limpar músicas offline</string>
+    <string name="settings_clear_offline_subtitle">Remove todos os arquivos baixados para uso offline</string>
+    <string name="settings_clear_offline_dialog_title">Limpar todos os dados offline?</string>
+    <string name="settings_clear_offline_dialog_message">Isso apagará todas as músicas baixadas. Esta ação não pode ser desfeita.</string>
+    
+    <!-- Playlist -->
+    <string name="playlist_name">Nome da Playlist</string>
+    <string name="playlist_enter_name">Digite o nome da playlist</string>
+    <string name="playlist_name_empty">O nome da playlist não pode estar vazio</string>
+    <string name="playlist_description">Descrição (Opcional)</string>
+    <string name="playlist_add_description">Adicione uma descrição</string>
+    <string name="playlist_create">Criar</string>
+    <string name="playlist_save">Salvar</string>
+    <string name="playlist_edit">Editar Playlist</string>
+    <string name="playlist_delete">Excluir Playlist</string>
+    <string name="playlist_delete_confirm">Tem certeza que deseja excluir esta playlist?</string>
+    <string name="playlist_add_songs">Adicionar Músicas</string>
+    <string name="playlist_edit_action">Editar playlist</string>
+    <string name="playlist_delete_action">Excluir playlist</string>
+    <string name="playlist_name_label">Nome</string>
+    <string name="playlist_description_label">Descrição</string>
+    
+    <!-- Common Actions -->
+    <string name="action_retry">Tentar Novamente</string>
+    <string name="action_delete">Excluir</string>
+    <string name="action_save">Salvar</string>
+    <string name="action_create">Criar</string>
+    
+    <!-- Queue -->
+    <string name="queue_title">Fila</string>
+    
+    <!-- Search -->
+    <string name="search_title">Buscar</string>
+    
+    <!-- Library -->
+    <string name="library_sorted_by">Ordenado por %1$s</string>
+    <string name="library_create_playlist">Criar Playlist</string>
+    
+    <!-- Playlist Detail -->
+    <string name="playlist_add_count">Adicionar (%1$d)</string>
+    
+    <!-- Search Tabs -->
+    <string name="search_tab_count">%1$s (%2$d)</string>
+    <string name="search_placeholder">Buscar músicas, álbuns, artistas...</string>
+    <string name="search_section_songs">Músicas</string>
+    <string name="search_section_albums">Álbuns</string>
+    <string name="search_section_artists">Artistas</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Início</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_library">Biblioteca</string>
+    
+    <!-- Home -->
+    <string name="home_title">Shiba Music</string>
+    
+    <!-- Artist -->
+    <string name="artist_popular_songs">Músicas Populares</string>
+    <string name="artist_albums">Álbuns</string>
+    <string name="artist_download_offline">Download offline (%1$s)</string>
+    
+    <!-- Update Download -->
+    <string name="update_download_title">ShibaMusic %1$s</string>
+    
+    <!-- Sort Options -->
+    <string name="sort_title_asc">Título (A-Z)</string>
+    <string name="sort_title_desc">Título (Z-A)</string>
+    <string name="sort_artist_asc">Artista (A-Z)</string>
+    <string name="sort_artist_desc">Artista (Z-A)</string>
+    <string name="sort_album_asc">Álbum (A-Z)</string>
+    <string name="sort_album_desc">Álbum (Z-A)</string>
+    <string name="sort_duration_asc">Duração (Curta-Longa)</string>
+    <string name="sort_duration_desc">Duração (Longa-Curta)</string>
+    <string name="sort_recently_added">Adicionado Recentemente</string>
+    <string name="sort_oldest_first">Mais Antigos Primeiro</string>
+    <string name="sort_most_played">Mais Tocados</string>
+    <string name="sort_least_played">Menos Tocados</string>
+    <string name="sort_name_asc">Nome (A-Z)</string>
+    <string name="sort_name_desc">Nome (Z-A)</string>
+    <string name="sort_year_desc">Ano (Novo-Antigo)</string>
+    <string name="sort_year_asc">Ano (Antigo-Novo)</string>
+    <string name="sort_most_songs">Mais Músicas</string>
+    <string name="sort_fewest_songs">Menos Músicas</string>
+    <string name="sort_most_albums">Mais Álbuns</string>
+    <string name="sort_fewest_albums">Menos Álbuns</string>
+    <string name="sort_date_newest">Data (Mais Recente)</string>
+    <string name="sort_date_oldest">Data (Mais Antigo)</string>
+    <string name="sort_recently_created">Criado Recentemente</string>
+    <string name="sort_least_recently_updated">Menos Atualizado Recentemente</string>
+    <string name="sort_recently_updated">Atualizado Recentemente</string>
+    <string name="sort_by">Ordenar por</string>
+    
+    <!-- Content Descriptions -->
+    <string name="cd_close">Fechar</string>
+    <string name="cd_available_offline">Disponível offline</string>
+    <string name="cd_more_options">Mais opções</string>
+    <string name="cd_back">Voltar</string>
+    <string name="cd_clear">Limpar</string>
+    <string name="cd_sort">Ordenar</string>
+    
+    <!-- UI Labels -->
+    <string name="label_save_offline">Salvar offline</string>
+    <string name="label_search">Buscar</string>
+    <string name="label_album_count">Número de álbuns: %1$d</string>
+    <string name="label_albums">álbuns</string>
+    <string name="label_songs">músicas</string>
+    <string name="label_albums_count">%1$d álbuns</string>
+    <string name="label_songs_count">%1$d músicas</string>
+    <string name="label_estimated_size">~%1$d MB</string>
+    
+    <!-- Library Tabs -->
+    <string name="tab_songs">Músicas</string>
+    <string name="tab_albums">Álbuns</string>
+    <string name="tab_artists">Artistas</string>
+    <string name="tab_playlists">Playlists</string>
+    
+    <!-- Content Descriptions (Extended) -->
+    <string name="cd_next">Próxima</string>
+    <string name="cd_previous">Anterior</string>
+    <string name="cd_favorite">Favorita</string>
+    <string name="cd_queue">Fila</string>
+    <string name="cd_shuffle">Aleatório</string>
+    <string name="cd_repeat">Repetir</string>
+    <string name="cd_play">Tocar</string>
+    <string name="cd_download">Baixar</string>
+    <string name="cd_settings">Configurações</string>
+    <string name="cd_create_playlist">Criar Playlist</string>
+    <string name="cd_play_playlist">Tocar playlist</string>
+    <string name="cd_edit_playlist">Editar playlist</string>
+    <string name="cd_shuffle_playlist">Playlist aleatória</string>
+    <string name="cd_download_playlist">Baixar playlist</string>
+    <string name="cd_dismiss">Dispensar</string>
+    <string name="cd_play_album">Tocar álbum</string>
+    <string name="cd_play_artist">Tocar artista</string>
+    <string name="cd_now_playing">Tocando agora</string>
+    <string name="cd_paused">Pausado</string>
+    <string name="cd_remove_from_queue">Remover da fila</string>
+    <string name="cd_drag_to_reorder">Arraste para reordenar</string>
+    <string name="cd_clear_queue">Limpar fila</string>
+    <string name="cd_remove">Remover</string>
+    
+    <!-- Empty States -->
+    <string name="empty_no_albums">Nenhum álbum na sua biblioteca</string>
+    <string name="empty_no_artists">Nenhum artista na sua biblioteca</string>
+    <string name="empty_no_songs">Nenhuma música na sua biblioteca.\nAdicione músicas para começar</string>
+    <string name="empty_no_playlist_songs">Nenhuma música nesta playlist</string>
+    <string name="empty_add_songs">Adicione músicas para começar</string>
+    <string name="empty_no_queue">Nenhuma música na fila</string>
+    <string name="empty_no_offline_music">Nenhuma música offline</string>
+    <string name="empty_offline_subtitle">Baixe suas músicas favoritas para ouvir offline</string>
+    <string name="empty_no_results">Nenhum resultado encontrado para \"%1$s\"</string>
+    
+    <!-- Search -->
+    <string name="search_library_title">Busque em sua biblioteca de músicas</string>
+    <string name="search_library_subtitle">Músicas, álbuns e artistas</string>
+    
+    <!-- Offline -->
+    <string name="offline_track_id">ID da faixa: %1$s</string>
+    <string name="offline_track_subtitle">%1$s • %2$s</string>
+    <string name="offline_track_size">%1$d MB</string>
+    
+    <!-- Misc Labels -->
+    <string name="label_separator">•</string>
 </resources>

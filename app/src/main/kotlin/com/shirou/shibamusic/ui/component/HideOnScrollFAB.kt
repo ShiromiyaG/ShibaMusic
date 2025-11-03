@@ -12,7 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 
 /**
  * FAB that hides on scroll
@@ -87,7 +89,7 @@ fun PlayAllFAB(
     HideOnScrollFAB(
         onClick = onClick,
         icon = androidx.compose.material.icons.Icons.Rounded.PlayArrow,
-        text = "Play all",
+        text = stringResource(R.string.bottom_sheet_play_all),
         modifier = modifier.padding(16.dp),
         listState = listState,
         extended = true
@@ -103,7 +105,7 @@ fun ShuffleFAB(
     HideOnScrollFAB(
         onClick = onClick,
         icon = androidx.compose.material.icons.Icons.Rounded.Shuffle,
-        text = "Shuffle",
+        text = stringResource(R.string.bottom_sheet_shuffle),
         modifier = modifier.padding(16.dp),
         listState = listState,
         extended = false

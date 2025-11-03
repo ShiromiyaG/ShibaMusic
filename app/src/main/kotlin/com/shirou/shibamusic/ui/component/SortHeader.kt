@@ -7,7 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 
 /**
  * Interface for sort options
@@ -27,9 +30,11 @@ fun <T> SortHeader(
     selectedOption: T,
     onSortChange: (T) -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "Sort by",
+    title: String? = null,
     getDisplayName: (T) -> String
 ) where T : Enum<T> {
+    val context = LocalContext.current
+    val actualTitle = title ?: context.getString(R.string.sort_by)
     var expanded by remember { mutableStateOf(false) }
     
     Surface(
@@ -49,7 +54,7 @@ fun <T> SortHeader(
         ) {
             Column {
                 Text(
-                    text = title,
+                    text = actualTitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -63,7 +68,7 @@ fun <T> SortHeader(
             
             Icon(
                 imageVector = Icons.Rounded.ArrowDropDown,
-                contentDescription = "Sort",
+                contentDescription = stringResource(R.string.cd_sort),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

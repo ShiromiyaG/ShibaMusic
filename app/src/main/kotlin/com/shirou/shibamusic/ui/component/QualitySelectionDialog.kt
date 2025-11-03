@@ -9,9 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.data.model.AudioCodec
 import com.shirou.shibamusic.data.model.AudioQuality
 
@@ -38,13 +40,13 @@ fun QualitySelectionDialog(
             ) {
                 // Cabeçalho
                 Text(
-                    text = "Selecionar Qualidade",
+                    text = stringResource(R.string.quality_selection_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 
                 Text(
-                    text = "Escolha a qualidade de download",
+                    text = stringResource(R.string.quality_selection_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -91,7 +93,7 @@ fun QualitySelectionDialog(
                             
                             Column {
                                 Text(
-                                    text = "Opus é um codec de áudio moderno e eficiente, oferecendo melhor qualidade com menor tamanho de arquivo",
+                                    text = stringResource(R.string.quality_opus_info),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -99,7 +101,7 @@ fun QualitySelectionDialog(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 
                                 Text(
-                                    text = "Opus economiza até 40% de espaço comparado ao MP3",
+                                    text = stringResource(R.string.quality_opus_savings),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary
@@ -117,7 +119,7 @@ fun QualitySelectionDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.quality_cancel))
                     }
                     
                     Spacer(modifier = Modifier.width(8.dp))
@@ -125,7 +127,7 @@ fun QualitySelectionDialog(
                     Button(
                         onClick = { onQualitySelected(selectedQuality) }
                     ) {
-                        Text("Baixar")
+                        Text(stringResource(R.string.quality_download))
                     }
                 }
             }
@@ -222,7 +224,7 @@ fun QualityOption(
                 // Tamanho estimado
                 if (estimatedSizeMB > 0) {
                     Text(
-                        text = "~$estimatedSizeMB MB",
+                        text = stringResource(R.string.label_estimated_size, estimatedSizeMB),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
                         color = if (isSelected) {
@@ -240,20 +242,23 @@ fun QualityOption(
 @Composable
 fun getQualityDisplayName(quality: AudioQuality): String {
     return when (quality) {
-        AudioQuality.LOW -> "Opus 128kbps"
-        AudioQuality.MEDIUM -> "Opus 320kbps"
-        AudioQuality.HIGH -> "FLAC Lossless"
+        AudioQuality.LOW -> stringResource(R.string.quality_low)
+        AudioQuality.MEDIUM -> stringResource(R.string.quality_medium)
+        AudioQuality.HIGH -> stringResource(R.string.quality_high)
     }
 }
 
 @Composable
 fun getQualityDescription(quality: AudioQuality): String {
     return when (quality) {
-        AudioQuality.LOW -> "Boa qualidade, menor tamanho. Ideal para economizar espaço."
-        AudioQuality.MEDIUM -> "Alta qualidade, tamanho equilibrado. Recomendado para a maioria dos usos."
-        AudioQuality.HIGH -> "Qualidade lossless, arquivo maior. Para audiófilos."
+        AudioQuality.LOW -> stringResource(R.string.quality_low_description)
+        AudioQuality.MEDIUM -> stringResource(R.string.quality_medium_description)
+        AudioQuality.HIGH -> stringResource(R.string.quality_high_description)
     }
 }
+
+// Note: quality_low, quality_medium, quality_high are defined in strings_offline.xml
+// quality_low_description, quality_medium_description, quality_high_description are defined in strings.xml
 
 /**
  * Calcula o tamanho estimado do arquivo baseado na qualidade

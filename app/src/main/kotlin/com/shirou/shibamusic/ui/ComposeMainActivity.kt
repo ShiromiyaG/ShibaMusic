@@ -1,5 +1,6 @@
 package com.shirou.shibamusic.ui
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,22 +8,23 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.shirou.shibamusic.github.utils.UpdateUtil
+import com.shirou.shibamusic.helper.LanguageHelper
 import com.shirou.shibamusic.ui.components.UpdateAvailableDialog
 import com.shirou.shibamusic.ui.navigation.*
 import com.shirou.shibamusic.ui.player.MiniPlayer
@@ -38,11 +40,17 @@ val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { nu
  */
 @AndroidEntryPoint
 class ComposeMainActivity : ComponentActivity() {
+
+	override fun attachBaseContext(newBase: Context?) {
+		val wrappedContext = newBase?.let { LanguageHelper.wrapContext(it) }
+		super.attachBaseContext(wrappedContext ?: newBase)
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		actionBar?.hide()
 		enableEdgeToEdge()
-        
+
 		setContent {
 			ShibaMusicTheme {
 				ShibaMusicApp()
@@ -137,10 +145,10 @@ fun ShibaMusicApp() {
 									icon = {
 										Icon(
 											imageVector = item.icon,
-											contentDescription = item.title
+											contentDescription = stringResource(item.titleResId)
 										)
 									},
-									label = { Text(item.title) }
+									label = { Text(stringResource(item.titleResId)) }
 								)
 							}
 						}

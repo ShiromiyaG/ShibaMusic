@@ -22,7 +22,9 @@ import androidx.navigation.navArgument
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.screens.*
 import com.shirou.shibamusic.ui.screens.library.*
@@ -215,7 +217,7 @@ fun ShibaMusicNavGraph(
                             Text(text = uiState.error ?: "Unknown error")
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = { artistViewModel.refresh() }) {
-                                Text("Retry")
+                                Text(stringResource(R.string.action_retry))
                             }
                         }
                     }
@@ -290,7 +292,7 @@ fun ShibaMusicNavGraph(
                             Text(text = uiState.error ?: "Unknown error")
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = { playlistViewModel.refresh() }) {
-                                Text("Retry")
+                                Text(stringResource(R.string.action_retry))
                             }
                         }
                     }

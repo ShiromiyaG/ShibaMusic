@@ -18,7 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,6 +29,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.component.*
 import com.shirou.shibamusic.ui.component.shimmer.ListItemPlaceholder
 import com.shirou.shibamusic.ui.model.*
@@ -83,7 +86,7 @@ fun LibraryPlaylistsContent(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
-                    contentDescription = "Create Playlist"
+                    contentDescription = stringResource(R.string.cd_create_playlist)
                 )
             }
         },
@@ -138,7 +141,7 @@ fun LibraryPlaylistsContent(
             AssistChip(
                 onClick = {},
                 enabled = false,
-                label = { Text("Sorted by ${selectedSortOption.displayName}") },
+                label = { Text(stringResource(R.string.library_sorted_by, selectedSortOption.displayName)) },
                 leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null) },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
@@ -214,7 +217,7 @@ fun LibraryPlaylistsContent(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     OutlinedButton(onClick = playlists::retry) {
-                                        Text("Retry")
+                                        Text(stringResource(R.string.action_retry))
                                     }
                                 }
                             }
@@ -255,7 +258,7 @@ private fun PagingListErrorPlaceholder(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onRetry) {
-            Text("Retry")
+            Text(stringResource(R.string.action_retry))
         }
     }
 }
@@ -283,13 +286,13 @@ private fun EmptyPlaylistsState(
         Spacer(modifier = Modifier.height(16.dp))
         
         Text(
-            text = "No playlists yet",
+            text = stringResource(R.string.dialog_no_playlists),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Text(
-            text = "Create your first playlist",
+            text = stringResource(R.string.dialog_create_first_playlist),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -303,7 +306,7 @@ private fun EmptyPlaylistsState(
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Create Playlist")
+            Text(stringResource(R.string.library_create_playlist))
         }
     }
 }
@@ -350,7 +353,8 @@ private fun PlaylistListItem(
                 )
                 Text(
                     text = buildString {
-                        append("${playlist.songCount} songs")
+                        val ctx = LocalContext.current
+                        append(ctx.getString(R.string.label_songs_count, playlist.songCount))
                         if (!playlist.description.isNullOrBlank()) {
                             append(" • ${playlist.description}")
                         }
@@ -365,7 +369,7 @@ private fun PlaylistListItem(
                 IconButton(onClick = onPlayClick) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Play playlist"
+                        contentDescription = stringResource(R.string.cd_play_playlist)
                     )
                 }
             }
@@ -374,7 +378,7 @@ private fun PlaylistListItem(
                 IconButton(onClick = onMoreClick) {
                     Icon(
                         imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "More options"
+                        contentDescription = stringResource(R.string.cd_more_options)
                     )
                 }
             }

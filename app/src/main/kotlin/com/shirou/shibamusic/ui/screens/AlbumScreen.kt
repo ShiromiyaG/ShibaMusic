@@ -24,6 +24,9 @@ import com.shirou.shibamusic.ui.theme.rememberPlayerColors
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 
 /**
  * Album Detail Screen
@@ -98,7 +101,7 @@ fun AlbumScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.Rounded.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = stringResource(R.string.cd_back)
                             )
                         }
                     }
@@ -175,10 +178,11 @@ fun AlbumScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             // Album info
+                            val ctx = LocalContext.current
                             Text(
                                 text = buildString {
                                     album.year?.let { append("$it • ") }
-                                    append("${songs.size} songs")
+                                    append(ctx.getString(R.string.label_songs_count, songs.size))
                                     if (album.duration > 0) {
                                         append(" • ${album.duration.formatDuration()}")
                                     }
@@ -201,7 +205,7 @@ fun AlbumScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.PlayArrow,
-                                        contentDescription = "Play"
+                                        contentDescription = stringResource(R.string.cd_play)
                                     )
                                 }
 
@@ -211,7 +215,7 @@ fun AlbumScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Shuffle,
-                                        contentDescription = "Shuffle"
+                                        contentDescription = stringResource(R.string.cd_shuffle)
                                     )
                                 }
 
@@ -221,7 +225,7 @@ fun AlbumScreen(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Rounded.Download,
-                                        contentDescription = "Download"
+                                        contentDescription = stringResource(R.string.cd_download)
                                     )
                                 }
                             }

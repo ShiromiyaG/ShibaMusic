@@ -13,7 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -114,7 +117,7 @@ fun LibraryArtistsContent(
             AssistChip(
                 onClick = {},
                 enabled = false,
-                label = { Text("Sorted by ${selectedSortOption.displayName}") },
+                label = { Text(stringResource(R.string.library_sorted_by, selectedSortOption.displayName)) },
                 leadingIcon = { Icon(Icons.Rounded.Sort, contentDescription = null) },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
@@ -147,7 +150,7 @@ fun LibraryArtistsContent(
                 emptyContent -> {
                     EmptyPlaceholder(
                         icon = Icons.Rounded.Person,
-                        text = "No artists in your library",
+                        text = stringResource(R.string.empty_no_artists),
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -167,7 +170,7 @@ fun LibraryArtistsContent(
                             val artist = artists[index] ?: return@items
                             GridItem(
                                 title = artist.name,
-                                subtitle = "${artist.albumCount} albums",
+                                subtitle = stringResource(R.string.label_albums_count, artist.albumCount),
                                 thumbnailUrl = artist.getThumbnailUrl(),
                                 isCircular = true,
                                 onClick = { onArtistClick(artist) },
@@ -204,7 +207,7 @@ fun LibraryArtistsContent(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     OutlinedButton(onClick = artists::retry) {
-                                        Text("Retry")
+                                        Text(stringResource(R.string.action_retry))
                                     }
                                 }
                             }
@@ -241,7 +244,7 @@ private fun PagingErrorPlaceholder(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onRetry) {
-            Text("Retry")
+            Text(stringResource(R.string.action_retry))
         }
     }
 }

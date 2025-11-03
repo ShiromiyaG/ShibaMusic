@@ -67,24 +67,24 @@ object NavArgs {
  */
 sealed class BottomNavItem(
     val screen: Screen,
-    val title: String,
+    val titleResId: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     object Home : BottomNavItem(
         screen = Screen.Home,
-        title = "Home",
+        titleResId = com.shirou.shibamusic.R.string.nav_home,
         icon = androidx.compose.material.icons.Icons.Rounded.Home
     )
     
     object Search : BottomNavItem(
         screen = Screen.Search,
-        title = "Search",
+        titleResId = com.shirou.shibamusic.R.string.nav_search,
         icon = androidx.compose.material.icons.Icons.Rounded.Search
     )
     
     object Library : BottomNavItem(
         screen = Screen.Library,
-        title = "Library",
+        titleResId = com.shirou.shibamusic.R.string.nav_library,
         icon = androidx.compose.material.icons.Icons.Rounded.LibraryMusic
     )
 }

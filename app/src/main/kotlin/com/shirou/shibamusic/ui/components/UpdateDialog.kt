@@ -138,8 +138,11 @@ private fun startUpdateDownload(context: Context, release: LatestRelease): Boole
     val asset = findApkAsset(release) ?: return false
     val downloadUrl = asset.browserDownloadUrl ?: return false
 
+    val versionLabel = "${release.tagName ?: release.name ?: ""}".trim()
+    val title = context.getString(R.string.update_download_title, versionLabel)
+
     val request = DownloadManager.Request(Uri.parse(downloadUrl))
-        .setTitle("ShibaMusic ${release.tagName ?: release.name ?: ""}".trim())
+        .setTitle(title)
         .setDescription(context.getString(R.string.settings_update_download_description))
         .setMimeType("application/vnd.android.package-archive")
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)

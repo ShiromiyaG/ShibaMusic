@@ -31,10 +31,18 @@ class ShibaMusicApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         
-        // Apply theme
+        // Get shared preferences
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        
+        // Apply theme
         val themePref = sharedPreferences.getString(Preferences.THEME, ThemeHelper.DEFAULT_MODE) ?: ThemeHelper.DEFAULT_MODE
         ThemeHelper.applyTheme(themePref)
+        
+        // Apply saved language (read directly from SharedPreferences before App initialization)
+        val savedLanguage = sharedPreferences.getString("app_language", null)
+        if (savedLanguage != null && savedLanguage != com.shirou.shibamusic.helper.LanguageHelper.SYSTEM_DEFAULT) {
+            com.shirou.shibamusic.helper.LanguageHelper.applyLanguage(savedLanguage)
+        }
         
         // Initialize legacy App singleton for backward compatibility
         // This is needed because many parts of the code still use App.getInstance()

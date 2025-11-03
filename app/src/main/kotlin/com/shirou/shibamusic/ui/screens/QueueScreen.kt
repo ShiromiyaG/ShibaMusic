@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.shirou.shibamusic.R
 import com.shirou.shibamusic.ui.component.EmptyPlaceholder
 import com.shirou.shibamusic.ui.model.*
 import com.shirou.shibamusic.ui.utils.TimeUtils
@@ -53,13 +55,13 @@ fun QueueScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Queue") },
+                title = { Text(stringResource(R.string.queue_title)) },
                 windowInsets = WindowInsets(0.dp),
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.settings_back)
                         )
                     }
                 },
@@ -67,7 +69,7 @@ fun QueueScreen(
                     IconButton(onClick = onClearQueue) {
                         Icon(
                             imageVector = Icons.Rounded.Clear,
-                            contentDescription = "Clear queue"
+                            contentDescription = stringResource(R.string.cd_clear_queue)
                         )
                     }
                 }
@@ -77,7 +79,7 @@ fun QueueScreen(
         if (queue.isEmpty()) {
             EmptyPlaceholder(
                 icon = Icons.Rounded.QueueMusic,
-                text = "No songs in queue",
+                text = stringResource(R.string.empty_no_queue),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
@@ -148,7 +150,7 @@ private fun QueueHeader(
         ) {
             Column {
                 Text(
-                    text = "$songCount songs",
+                    text = stringResource(R.string.label_songs_count, songCount),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
@@ -206,14 +208,14 @@ private fun QueueItem(
                 if (isCurrentSong && isPlaying) {
                     Icon(
                         imageVector = Icons.Rounded.PlayArrow,
-                        contentDescription = "Now Playing",
+                        contentDescription = stringResource(R.string.cd_now_playing),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else if (isCurrentSong) {
                     Icon(
                         imageVector = Icons.Rounded.Pause,
-                        contentDescription = "Paused",
+                        contentDescription = stringResource(R.string.cd_paused),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -287,7 +289,7 @@ private fun QueueItem(
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,
-                        contentDescription = "Remove from queue",
+                        contentDescription = stringResource(R.string.cd_remove_from_queue),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -297,7 +299,7 @@ private fun QueueItem(
             if (!isCurrentSong) {
                 Icon(
                     imageVector = Icons.Rounded.DragHandle,
-                    contentDescription = "Drag to reorder",
+                    contentDescription = stringResource(R.string.cd_drag_to_reorder),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.size(24.dp)
                 )

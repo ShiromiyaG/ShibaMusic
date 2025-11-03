@@ -25,6 +25,12 @@ class App : Application() {
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         val themePref = sharedPreferences.getString(Preferences.THEME, ThemeHelper.DEFAULT_MODE)
         ThemeHelper.applyTheme(themePref ?: ThemeHelper.DEFAULT_MODE)
+        
+        // Apply saved language
+        val savedLanguage = Preferences.getAppLanguage()
+        if (savedLanguage != null) {
+            com.shirou.shibamusic.helper.LanguageHelper.applyLanguage(savedLanguage)
+        }
 
         instance = this
         context = applicationContext

@@ -10,7 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -201,7 +204,7 @@ fun LibrarySongsContent(
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Rounded.DownloadDone,
-                                                        contentDescription = "Disponível offline",
+                                                        contentDescription = stringResource(R.string.cd_available_offline),
                                                         tint = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
@@ -214,7 +217,7 @@ fun LibrarySongsContent(
                                         IconButton(onClick = { onSongMenuClick(song) }) {
                                             Icon(
                                                 imageVector = Icons.Rounded.MoreVert,
-                                                contentDescription = "Mais opções",
+                                                contentDescription = stringResource(R.string.cd_more_options),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -251,7 +254,7 @@ fun LibrarySongsContent(
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         OutlinedButton(onClick = songs::retry) {
-                                            Text("Retry")
+                                            Text(stringResource(R.string.action_retry))
                                         }
                                     }
                                 }
@@ -289,7 +292,7 @@ private fun ErrorState(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = onRetry) {
-            Text("Retry")
+            Text(stringResource(R.string.action_retry))
         }
     }
 }

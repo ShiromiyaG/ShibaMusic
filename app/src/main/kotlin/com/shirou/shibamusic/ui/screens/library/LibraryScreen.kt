@@ -10,7 +10,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import com.shirou.shibamusic.R
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -93,14 +96,14 @@ fun LibraryScreen(
         // TopBar
         TopAppBar(
             title = {
-                NavigationTitle(title = "Library")
+                NavigationTitle(title = stringResource(R.string.nav_library))
             },
             actions = {
                 Box {
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(
                             imageVector = Icons.Rounded.Sort,
-                            contentDescription = "Sort"
+                            contentDescription = stringResource(R.string.cd_sort)
                         )
                     }
                     DropdownMenu(
@@ -174,7 +177,7 @@ fun LibraryScreen(
                 IconButton(onClick = onNavigateToSettings) {
                     Icon(
                         imageVector = Icons.Rounded.Settings,
-                        contentDescription = "Settings"
+                        contentDescription = stringResource(R.string.cd_settings)
                     )
                 }
             },
@@ -192,11 +195,11 @@ fun LibraryScreen(
                 Tab(
                     selected = selectedTab == tab,
                     onClick = { selectedTab = tab },
-                    text = { Text(tab.title) },
+                    text = { Text(stringResource(tab.titleResId)) },
                     icon = {
                         Icon(
                             imageVector = tab.icon,
-                            contentDescription = tab.title
+                            contentDescription = stringResource(tab.titleResId)
                         )
                     }
                 )
@@ -401,20 +404,20 @@ private fun CreatePlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Playlist") },
+        title = { Text(stringResource(R.string.dialog_create_playlist)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.playlist_name_label)) },
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.playlist_description_label)) },
                     maxLines = 3
                 )
             }
@@ -426,12 +429,12 @@ private fun CreatePlaylistDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Create")
+                Text(stringResource(R.string.action_create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.settings_cancel))
             }
         }
     )
@@ -441,11 +444,11 @@ private fun CreatePlaylistDialog(
  * Library tabs enum
  */
 enum class LibraryTab(
-    val title: String,
+    val titleResId: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
-    SONGS("Songs", Icons.Rounded.MusicNote),
-    ALBUMS("Albums", Icons.Rounded.Album),
-    ARTISTS("Artists", Icons.Rounded.Person),
-    PLAYLISTS("Playlists", Icons.Rounded.QueueMusic)
+    SONGS(R.string.tab_songs, Icons.Rounded.MusicNote),
+    ALBUMS(R.string.tab_albums, Icons.Rounded.Album),
+    ARTISTS(R.string.tab_artists, Icons.Rounded.Person),
+    PLAYLISTS(R.string.tab_playlists, Icons.Rounded.QueueMusic)
 }

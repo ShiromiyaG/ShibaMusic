@@ -10,8 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.shirou.shibamusic.R
 
 /**
  * Dialog for adding songs to a playlist
@@ -51,7 +53,7 @@ fun AddToPlaylistDialog(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Add to Playlist",
+                            text = stringResource(R.string.dialog_add_to_playlist),
                             style = MaterialTheme.typography.titleLarge
                         )
                         Text(
@@ -89,7 +91,7 @@ fun AddToPlaylistDialog(
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            text = "Create new playlist",
+                            text = stringResource(R.string.dialog_create_new_playlist),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -115,7 +117,7 @@ fun AddToPlaylistDialog(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "No playlists yet",
+                                text = stringResource(R.string.dialog_no_playlists_yet),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -192,7 +194,7 @@ private fun PlaylistListItem(
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = "${playlist.songCount} songs",
+                    text = stringResource(R.string.label_songs_count, playlist.songCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

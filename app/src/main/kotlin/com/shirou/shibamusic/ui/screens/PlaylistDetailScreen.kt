@@ -17,9 +17,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.shirou.shibamusic.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -137,7 +139,7 @@ fun PlaylistDetailScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.cd_back)
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
@@ -145,7 +147,7 @@ fun PlaylistDetailScreen(
                         IconButton(onClick = { showMenu = true }) {
                             Icon(
                                 imageVector = Icons.Rounded.MoreVert,
-                                contentDescription = "More"
+                                contentDescription = stringResource(R.string.cd_more_options)
                             )
                         }
                         DropdownMenu(
@@ -153,7 +155,7 @@ fun PlaylistDetailScreen(
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Edit playlist") },
+                                text = { Text(stringResource(R.string.playlist_edit_action)) },
                                 onClick = {
                                     showMenu = false
                                     showEditDialog = true
@@ -163,7 +165,7 @@ fun PlaylistDetailScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Add songs") },
+                                text = { Text(stringResource(R.string.playlist_add_songs)) },
                                 onClick = {
                                     showMenu = false
                                     showAddSongsDialog = true
@@ -174,7 +176,7 @@ fun PlaylistDetailScreen(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text("Delete playlist") },
+                                text = { Text(stringResource(R.string.playlist_delete_action)) },
                                 onClick = {
                                     showMenu = false
                                     showDeleteDialog = true
@@ -319,7 +321,7 @@ fun PlaylistDetailScreen(
                 }
             },
             onDownloadClick = downloadAction,
-            downloadLabel = "Download offline (${"$"}{selectedQuality.toDownloadLabel()})",
+            downloadLabel = stringResource(R.string.artist_download_offline, selectedQuality.toDownloadLabel()),
             onCancelDownload = cancelDownloadCallback,
             onRemoveDownload = removeDownloadCallback,
             showRemoveFromPlaylist = true,
@@ -345,8 +347,8 @@ fun PlaylistDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Playlist") },
-            text = { Text("Are you sure you want to delete \"${"$"}{playlist.name}\"?") },
+            title = { Text(stringResource(R.string.playlist_delete)) },
+            text = { Text(stringResource(R.string.playlist_delete_confirm)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -357,12 +359,12 @@ fun PlaylistDetailScreen(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.settings_cancel))
                 }
             }
         )
@@ -404,10 +406,10 @@ private fun AddSongsDialog(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 TopAppBar(
-                    title = { Text("Add Songs") },
+                    title = { Text(stringResource(R.string.playlist_add_songs)) },
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Close")
+                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.settings_close))
                         }
                     },
                     actions = {
@@ -415,7 +417,7 @@ private fun AddSongsDialog(
                             onClick = onConfirm,
                             enabled = selectedSongs.isNotEmpty()
                         ) {
-                            Text("Add (${"$"}{selectedSongs.size})")
+                            Text(stringResource(R.string.playlist_add_count, selectedSongs.size))
                         }
                     }
                 )
@@ -446,7 +448,7 @@ private fun AddSongsDialog(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Button(onClick = songs::retry) {
-                                Text("Retry")
+                                Text(stringResource(R.string.action_retry))
                             }
                         }
                     }
@@ -520,20 +522,20 @@ private fun EditPlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit Playlist") },
+        title = { Text(stringResource(R.string.playlist_edit)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(R.string.playlist_name_label)) },
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") },
+                    label = { Text(stringResource(R.string.playlist_description_label)) },
                     maxLines = 3
                 )
             }
@@ -543,12 +545,12 @@ private fun EditPlaylistDialog(
                 onClick = { onConfirm(name, description) },
                 enabled = name.isNotBlank()
             ) {
-                Text("Save")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.settings_cancel))
             }
         }
     )
@@ -619,7 +621,7 @@ private fun PlaylistHeader(
 
         // Song count
         Text(
-            text = "$songCount songs",
+            text = stringResource(R.string.label_songs_count, songCount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -637,7 +639,7 @@ private fun PlaylistHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.PlayArrow,
-                    contentDescription = "Play playlist"
+                    contentDescription = stringResource(R.string.cd_play_playlist)
                 )
             }
             OutlinedIconButton(
@@ -646,7 +648,7 @@ private fun PlaylistHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Shuffle,
-                    contentDescription = "Shuffle playlist"
+                    contentDescription = stringResource(R.string.cd_shuffle_playlist)
                 )
             }
             OutlinedIconButton(
@@ -655,7 +657,7 @@ private fun PlaylistHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Download,
-                    contentDescription = "Download playlist"
+                    contentDescription = stringResource(R.string.cd_download_playlist)
                 )
             }
             OutlinedIconButton(
@@ -664,7 +666,7 @@ private fun PlaylistHeader(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Edit playlist"
+                    contentDescription = stringResource(R.string.cd_edit_playlist)
                 )
             }
         }
@@ -734,12 +736,12 @@ private fun EmptyPlaylistContent(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "No songs in this playlist",
+                text = stringResource(R.string.empty_no_playlist_songs),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Add songs to get started",
+                text = stringResource(R.string.empty_add_songs),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -751,7 +753,7 @@ private fun EmptyPlaylistContent(
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Songs")
+                Text(stringResource(R.string.playlist_add_songs))
             }
         }
     }
