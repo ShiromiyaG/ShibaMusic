@@ -70,10 +70,10 @@ fun GreetingSection(
     val greeting = remember {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         when (hour) {
-            in 5..11 -> "Good Morning" // Você pode usar stringResource
-            in 12..17 -> "Good Afternoon"
-            in 18..21 -> "Good Evening"
-            else -> "Good Night"
+            in 5..11 -> R.string.greeting_morning
+            in 12..17 -> R.string.greeting_afternoon
+            in 18..21 -> R.string.greeting_evening
+            else -> R.string.greeting_night
         }
     }
     
@@ -93,7 +93,7 @@ fun GreetingSection(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "$greeting $emoji",
+            text = "${stringResource(greeting)} $emoji",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold
             ),
@@ -101,7 +101,7 @@ fun GreetingSection(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "What do you want to listen to today?",
+            text = stringResource(R.string.home_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -127,7 +127,7 @@ fun QuickActionChips(
         item {
             QuickActionChip(
                 icon = Icons.Rounded.Shuffle,
-                label = "Shuffle All",
+                label = stringResource(R.string.action_shuffle_all),
                 onClick = onShuffleAll,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -136,7 +136,7 @@ fun QuickActionChips(
         item {
             QuickActionChip(
                 icon = Icons.Rounded.Favorite,
-                label = "Favorites",
+                label = stringResource(R.string.action_favorites),
                 onClick = onFavorites,
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -145,7 +145,7 @@ fun QuickActionChips(
         item {
             QuickActionChip(
                 icon = Icons.Rounded.History,
-                label = "Recently Played",
+                label = stringResource(R.string.home_recently_played),
                 onClick = onRecent,
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer
@@ -383,7 +383,7 @@ fun EnhancedZoomingCard(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
                     ) {
                         Text(
-                            text = "✨ Discover",
+                            text = stringResource(R.string.label_discover),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimary,
@@ -468,7 +468,7 @@ fun FloatingPlayButton(
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = Icons.Rounded.PlayArrow,
-                contentDescription = "Play",
+                contentDescription = stringResource(R.string.cd_play),
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(32.dp)
             )
@@ -641,7 +641,7 @@ fun AlbumCardEnhanced(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Favorite,
-                            contentDescription = "Favorite",
+                            contentDescription = stringResource(R.string.cd_favorite),
                             modifier = Modifier
                                 .padding(4.dp)
                                 .size(14.dp),
@@ -785,7 +785,7 @@ fun SongListItemEnhanced(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = song.artistName ?: "Unknown Artist",
+                    text = song.artistName ?: stringResource(R.string.unknown_artist),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -899,6 +899,8 @@ fun HomeScreenEnhanced(
     onNavigateToLibrary: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToAlbum: (String) -> Unit = {},
+    onNavigateToFavorites: () -> Unit = {},
+    onNavigateToRecent: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
@@ -992,7 +994,7 @@ fun HomeScreenEnhanced(
                         }
                         
                         item {
-                            SectionHeaderEnhanced(title = "Loading...")
+                            SectionHeaderEnhanced(title = stringResource(R.string.home_sync_in_progress))
                         }
                         
                         item {
@@ -1039,8 +1041,8 @@ fun HomeScreenEnhanced(
                                         playbackViewModel.playSong(it)
                                     }
                                 },
-                                onFavorites = onNavigateToLibrary,
-                                onRecent = onNavigateToLibrary
+                                onFavorites = onNavigateToFavorites,
+                                onRecent = onNavigateToRecent
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -1243,7 +1245,7 @@ fun ErrorState(
         }
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Something went wrong",
+            text = stringResource(R.string.error_generic_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -1261,7 +1263,7 @@ fun ErrorState(
         ) {
             Icon(Icons.Rounded.Refresh, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Retry")
+            Text(stringResource(R.string.action_retry))
         }
     }
 }
@@ -1290,13 +1292,13 @@ fun EmptyState() {
         }
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "No music yet",
+            text = stringResource(R.string.empty_home_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Add some music to your library to get started",
+            text = stringResource(R.string.empty_home_message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center

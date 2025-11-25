@@ -41,6 +41,10 @@ import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.ui.viewmodel.PlaylistDetailEvent
 import android.util.Log
 
+import com.shirou.shibamusic.ui.viewmodel.FavoritesViewModel
+import com.shirou.shibamusic.ui.viewmodel.RecentSongsViewModel
+import com.shirou.shibamusic.ui.screens.library.GenericSongListScreen
+
 /**
  * Main navigation graph for the app
  */
@@ -74,10 +78,64 @@ fun ShibaMusicNavGraph(
                 onNavigateToAlbum = { albumId ->
                     navController.navigate(Screen.Album.createRoute(albumId))
                 },
+                onNavigateToFavorites = {
+                    navController.navigate(Screen.Favorites.route)
+                },
+                onNavigateToRecent = {
+                    navController.navigate(Screen.Recent.route)
+                },
                 contentBottomPadding = contentBottomPadding
             )
         }
         
+        // Favorites Screen
+        composable(Screen.Favorites.route) {
+            val favoritesViewModel: FavoritesViewModel = hiltViewModel()
+            val songs by favoritesViewModel.songs.collectAsState()
+            val isLoading by favoritesViewModel.isLoading.collectAsState()
+            val playerState by playerViewModel.playerState.collectAsState()
+
+            GenericSongListScreen(
+                title = stringResource(R.string.home_title_starred_tracks),
+                songs = songs,
+                isLoading = isLoading,
+                onBackClick = { navController.navigateUp() },
+                onSongClick = { song -> playerViewModel.playSong(song) },
+                onShuffleClick = {
+                    if (songs.isNotEmpty()) {
+                        playerViewModel.playSongs(songs.shuffled())
+                    }
+                },
+                currentlyPlayingSongId = playerState.nowPlaying?.id,
+                isPlaying = playerState.isPlaying,
+                contentBottomPadding = contentBottomPadding
+            )
+        }
+
+        // Recent Songs Screen
+        composable(Screen.Recent.route) {
+            val recentViewModel: RecentSongsViewModel = hiltViewModel()
+            val songs by recentViewModel.songs.collectAsState()
+            val isLoading by recentViewModel.isLoading.collectAsState()
+            val playerState by playerViewModel.playerState.collectAsState()
+
+            GenericSongListScreen(
+                title = stringResource(R.string.home_recently_played),
+                songs = songs,
+                isLoading = isLoading,
+                onBackClick = { navController.navigateUp() },
+                onSongClick = { song -> playerViewModel.playSong(song) },
+                onShuffleClick = {
+                    if (songs.isNotEmpty()) {
+                        playerViewModel.playSongs(songs.shuffled())
+                    }
+                },
+                currentlyPlayingSongId = playerState.nowPlaying?.id,
+                isPlaying = playerState.isPlaying,
+                contentBottomPadding = contentBottomPadding
+            )
+        }
+
         // Search Screen
         composable(Screen.Search.route) { backStackEntry: NavBackStackEntry ->
             val searchViewModel: SearchViewModel = hiltViewModel(backStackEntry)

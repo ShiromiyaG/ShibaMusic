@@ -50,6 +50,7 @@ sealed class Screen(val route: String) {
     // Other
     object Downloads : Screen("downloads")
     object Favorites : Screen("favorites")
+    object Recent : Screen("recent")
 }
 
 /**

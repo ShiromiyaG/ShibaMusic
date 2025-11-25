@@ -482,7 +482,7 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override suspend fun recordSongPlay(songId: String): Unit = withContext(ioDispatcher) {
-        songDao.incrementPlayCount(songId)
+        songDao.incrementPlayCountWithTimestamp(songId)
         
         // Update album play count
         val song = songDao.getSongById(songId)

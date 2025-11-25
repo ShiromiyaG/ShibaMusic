@@ -765,4 +765,19 @@ This may take a moment.</string>
     
     <!-- Misc Labels -->
     <string name="label_separator">•</string>
+
+    <!-- Home Screen Enhanced -->
+    <string name="greeting_morning">Good Morning</string>
+    <string name="greeting_afternoon">Good Afternoon</string>
+    <string name="greeting_evening">Good Evening</string>
+    <string name="greeting_night">Good Night</string>
+    <string name="home_subtitle">What do you want to listen to today?</string>
+    <string name="action_shuffle_all">Shuffle All</string>
+    <string name="action_favorites">Favorites</string>
+    <string name="label_discover">✨ Discover</string>
+    <string name="error_generic_title">Something went wrong</string>
+    <string name="empty_home_title">No music yet</string>
+    <string name="empty_home_message">Add some music to your library to get started</string>
+    <string name="unknown_artist">Unknown Artist</string>
+    <string name="cd_pause">Pause</string>
 </resources>

@@ -10,6 +10,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
+import com.shirou.shibamusic.data.repository.MusicRepository
 import com.shirou.shibamusic.repository.OfflineRepository
 import com.shirou.shibamusic.glide.CustomGlideRequest
 import com.shirou.shibamusic.repository.QueueRepository
@@ -53,7 +54,8 @@ import kotlin.coroutines.suspendCoroutine
 @Singleton
 class MediaController @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val offlineRepository: OfflineRepository
+    private val offlineRepository: OfflineRepository,
+    private val musicRepository: MusicRepository
 ) {
     
     private var mediaBrowserFuture: ListenableFuture<MediaBrowser>? = null
@@ -119,6 +121,13 @@ class MediaController @Inject constructor(
         val listener = object : Player.Listener {
             override fun onEvents(player: Player, events: Player.Events) {
                 trySend(getCurrentPlayerState(player))
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                mediaItem?.toSongItem()?.let { song ->
+                    saveToChronology(song)
+                }
+                trySend(getCurrentPlayerState(browser))
             }
         }
 
@@ -200,20 +209,14 @@ class MediaController @Inject constructor(
      * Skip to next song
      */
     fun skipToNext() {
-        mediaBrowser?.let { browser ->
-            browser.seekToNext()
-            browser.currentMediaItem?.toSongItem()?.let { saveToChronology(it) }
-        }
+        mediaBrowser?.seekToNext()
     }
     
     /**
      * Skip to previous song
      */
     fun skipToPrevious() {
-        mediaBrowser?.let { browser ->
-            browser.seekToPrevious()
-            browser.currentMediaItem?.toSongItem()?.let { saveToChronology(it) }
-        }
+        mediaBrowser?.seekToPrevious()
     }
     
     /**
@@ -227,10 +230,7 @@ class MediaController @Inject constructor(
      * Seek to specific song in queue
      */
     fun seekToSong(index: Int) {
-        mediaBrowser?.let { browser ->
-            browser.seekTo(index, 0)
-            browser.getMediaItemAt(index).toSongItem()?.let { saveToChronology(it) }
-        }
+        mediaBrowser?.seekTo(index, 0)
     }
     
     // ==================== Queue Management ====================
@@ -241,7 +241,7 @@ class MediaController @Inject constructor(
     fun playSong(song: SongItem) {
         mediaBrowser?.let { browser ->
             queueRepository.insert(song.toChild(), true, 0)
-            saveToChronology(song)
+            // saveToChronology handled by onMediaItemTransition
             browser.clearMediaItems()
             browser.setMediaItem(song.toMediaItem())
             browser.prepare()
@@ -255,9 +255,7 @@ class MediaController @Inject constructor(
     fun playSongs(songs: List<SongItem>, startIndex: Int = 0) {
         mediaBrowser?.let { browser ->
             queueRepository.insertAll(songs.map { it.toChild() }, true, 0)
-            if (songs.isNotEmpty() && startIndex in songs.indices) {
-                saveToChronology(songs[startIndex])
-            }
+            // saveToChronology handled by onMediaItemTransition
             browser.clearMediaItems()
             browser.setMediaItems(songs.map { it.toMediaItem() })
             browser.seekTo(startIndex, 0)
@@ -499,6 +497,10 @@ class MediaController @Inject constructor(
             timestamp = System.currentTimeMillis()
         }
         scope.launch {
+            // Update local history
+            musicRepository.recordSongPlay(song.id)
+            
+            // Update chronology (legacy/sync history)
             chronologyRepository.insertSync(chronology)
             android.util.Log.d("MediaController", "Saved to chronology: ${song.title}")
         }

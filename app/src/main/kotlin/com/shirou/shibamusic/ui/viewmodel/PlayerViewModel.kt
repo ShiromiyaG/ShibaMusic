@@ -163,13 +163,6 @@ class PlayerViewModel @Inject constructor(
      */
     fun seekTo(positionMs: Long) {
         mediaController.seekTo(positionMs)
-        
-        // Record play progress
-        nowPlaying.value?.let { song ->
-            viewModelScope.launch {
-                repository.recordSongPlay(song.id)
-            }
-        }
     }
     
     /**
