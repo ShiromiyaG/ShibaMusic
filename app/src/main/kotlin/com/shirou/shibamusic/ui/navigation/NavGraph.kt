@@ -14,6 +14,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -60,7 +61,7 @@ fun ShibaMusicNavGraph(
     ) {
         // Home Screen
         composable(Screen.Home.route) {
-            HomeScreen(
+            HomeScreenEnhanced(
                 onNavigateToSearch = {
                     navController.navigate(Screen.Search.route)
                 },
@@ -78,7 +79,7 @@ fun ShibaMusicNavGraph(
         }
         
         // Search Screen
-        composable(Screen.Search.route) { backStackEntry ->
+        composable(Screen.Search.route) { backStackEntry: NavBackStackEntry ->
             val searchViewModel: SearchViewModel = hiltViewModel(backStackEntry)
             val offlineViewModel: OfflineViewModel = hiltViewModel()
             val query by searchViewModel.searchQuery.collectAsState()
