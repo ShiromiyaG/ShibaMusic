@@ -81,7 +81,12 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override suspend fun searchSongs(query: String): List<SongItem> = withContext(ioDispatcher) {
-        songDao.searchSongs(query).toSongItems()
+        val allSongs = songDao.getAllSongs()
+        com.shirou.shibamusic.util.FuzzySearch.search(
+            items = allSongs,
+            query = query,
+            textSelector = { listOf(it.title, it.artistName, it.albumName) }
+        ).toSongItems()
     }
     
     override fun observeSongs(): Flow<List<SongItem>> {
@@ -130,7 +135,12 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override suspend fun searchAlbums(query: String): List<AlbumItem> = withContext(ioDispatcher) {
-        albumDao.searchAlbums(query).toAlbumItems()
+        val allAlbums = albumDao.getAllAlbums()
+        com.shirou.shibamusic.util.FuzzySearch.search(
+            items = allAlbums,
+            query = query,
+            textSelector = { listOf(it.title, it.artistName) }
+        ).toAlbumItems()
     }
     
     override fun observeAlbums(): Flow<List<AlbumItem>> {
@@ -293,7 +303,12 @@ class MusicRepositoryImpl @Inject constructor(
     }
     
     override suspend fun searchArtists(query: String): List<ArtistItem> = withContext(ioDispatcher) {
-        artistDao.searchArtists(query).toArtistItems()
+        val allArtists = artistDao.getAllArtists()
+        com.shirou.shibamusic.util.FuzzySearch.search(
+            items = allArtists,
+            query = query,
+            textSelector = { listOf(it.name) }
+        ).toArtistItems()
     }
     
     override fun observeArtists(): Flow<List<ArtistItem>> {
@@ -495,9 +510,9 @@ class MusicRepositoryImpl @Inject constructor(
     
     override suspend fun searchAll(query: String): SearchResults = withContext(ioDispatcher) {
         SearchResults(
-            songs = songDao.searchSongs(query).toSongItems(),
-            albums = albumDao.searchAlbums(query).toAlbumItems(),
-            artists = artistDao.searchArtists(query).toArtistItems()
+            songs = searchSongs(query),
+            albums = searchAlbums(query),
+            artists = searchArtists(query)
         )
     }
     
