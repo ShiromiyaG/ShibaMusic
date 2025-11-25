@@ -55,6 +55,13 @@ fun SettingsScreen(
     }
     var showUpdateDialog by remember { mutableStateOf(false) }
     
+    // Account Management States
+    var showAccountsDialog by remember { mutableStateOf(false) }
+    var accountToRemove by remember { mutableStateOf<Preferences.ServerProfile?>(null) }
+    // Force recomposition when accounts change
+    var accountsUpdateTrigger by remember { mutableStateOf(0) }
+    val savedAccounts = remember(accountsUpdateTrigger) { Preferences.getSavedProfiles() }
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -77,6 +84,97 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
         ) {
+            // Accounts Section
+            if (savedAccounts.isNotEmpty()) {
+                SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_accounts_title)) {
+                    SettingsItem(
+                        icon = Icons.Rounded.ManageAccounts,
+                        title = stringResource(com.shirou.shibamusic.R.string.settings_saved_accounts_title),
+                        subtitle = stringResource(com.shirou.shibamusic.R.string.settings_saved_accounts_subtitle),
+                        onClick = { showAccountsDialog = true }
+                    )
+                }
+            }
+
+            // Accounts Dialog
+            if (showAccountsDialog) {
+                AlertDialog(
+                    onDismissRequest = { showAccountsDialog = false },
+                    title = { Text(stringResource(com.shirou.shibamusic.R.string.settings_saved_accounts_dialog_title)) },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(rememberScrollState())
+                                .fillMaxWidth()
+                        ) {
+                            savedAccounts.forEach { profile ->
+                                val isCurrent = profile.url == serverUrl && profile.username == username
+                                ListItem(
+                                    headlineContent = { Text(profile.name) },
+                                    supportingContent = { Text(profile.url) },
+                                    trailingContent = {
+                                        Row {
+                                            if (!isCurrent) {
+                                                IconButton(onClick = {
+                                                    Preferences.switchToProfile(profile)
+                                                    onSyncFromServer() // Trigger sync/reload
+                                                    showAccountsDialog = false
+                                                    Toast.makeText(context, "Switched to ${profile.name}", Toast.LENGTH_SHORT).show()
+                                                    // Ideally trigger a full app reload or navigation reset here
+                                                    onNavigateBack() // Close settings to refresh context
+                                                }) {
+                                                    Icon(Icons.Rounded.Login, contentDescription = stringResource(com.shirou.shibamusic.R.string.action_switch))
+                                                }
+                                            }
+                                            IconButton(onClick = { accountToRemove = profile }) {
+                                                Icon(Icons.Rounded.Delete, contentDescription = stringResource(com.shirou.shibamusic.R.string.action_remove))
+                                            }
+                                        }
+                                    },
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else androidx.compose.ui.graphics.Color.Transparent
+                                    )
+                                )
+                                HorizontalDivider()
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showAccountsDialog = false }) {
+                            Text(stringResource(com.shirou.shibamusic.R.string.settings_close))
+                        }
+                    }
+                )
+            }
+
+            // Remove Account Confirmation
+            if (accountToRemove != null) {
+                AlertDialog(
+                    onDismissRequest = { accountToRemove = null },
+                    title = { Text(stringResource(com.shirou.shibamusic.R.string.dialog_remove_account_title)) },
+                    text = { Text(stringResource(com.shirou.shibamusic.R.string.dialog_remove_account_message)) },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                accountToRemove?.let {
+                                    Preferences.removeProfile(it.url, it.username)
+                                    accountsUpdateTrigger++ // Refresh list
+                                }
+                                accountToRemove = null
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text(stringResource(com.shirou.shibamusic.R.string.action_remove))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { accountToRemove = null }) {
+                            Text(stringResource(com.shirou.shibamusic.R.string.settings_cancel))
+                        }
+                    }
+                )
+            }
+
             // Server Section
             SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_server_title)) {
                 SettingsItem(

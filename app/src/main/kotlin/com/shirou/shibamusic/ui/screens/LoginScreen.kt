@@ -1,5 +1,6 @@
 package com.shirou.shibamusic.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -42,17 +43,75 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     
+    var showSavedAccountsDialog by remember { mutableStateOf(false) }
+    val savedProfiles = remember { com.shirou.shibamusic.util.Preferences.getSavedProfiles() }
+
     // Show success and navigate
     LaunchedEffect(uiState.isLoginSuccessful) {
         if (uiState.isLoginSuccessful) {
+            // Save profile on success
+            val currentServer = com.shirou.shibamusic.util.Preferences.getServer()
+            val currentUser = com.shirou.shibamusic.util.Preferences.getUser()
+            val currentPass = com.shirou.shibamusic.util.Preferences.getPassword()
+            val currentToken = com.shirou.shibamusic.util.Preferences.getToken()
+            val currentSalt = com.shirou.shibamusic.util.Preferences.getSalt()
+            
+            if (currentServer != null && currentUser != null) {
+                com.shirou.shibamusic.util.Preferences.saveProfile(
+                    name = "$currentUser @ ${android.net.Uri.parse(currentServer).host}",
+                    url = currentServer,
+                    username = currentUser,
+                    password = currentPass,
+                    token = currentToken,
+                    salt = currentSalt
+                )
+            }
             onLoginSuccess()
         }
+    }
+    
+    if (showSavedAccountsDialog) {
+        AlertDialog(
+            onDismissRequest = { showSavedAccountsDialog = false },
+            title = { Text(stringResource(id = R.string.dialog_saved_accounts_title)) },
+            text = {
+                Column {
+                    savedProfiles.forEach { profile ->
+                        ListItem(
+                            headlineContent = { Text(profile.username) },
+                            supportingContent = { Text(profile.url) },
+                            modifier = Modifier.clickable {
+                                com.shirou.shibamusic.util.Preferences.switchToProfile(profile)
+                                // Auto-fill fields
+                                serverUrl = profile.url
+                                username = profile.username
+                                password = profile.password ?: ""
+                                showSavedAccountsDialog = false
+                                // Optional: Auto-login? Maybe safer to just fill
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSavedAccountsDialog = false }) {
+                    Text(stringResource(R.string.cd_close))
+                }
+            }
+        )
     }
     
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(id = R.string.login_setup_title)) },
+                actions = {
+                    if (savedProfiles.isNotEmpty()) {
+                        IconButton(onClick = { showSavedAccountsDialog = true }) {
+                            Icon(Icons.Rounded.AccountCircle, contentDescription = stringResource(id = R.string.dialog_saved_accounts_title))
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )

@@ -81,6 +81,71 @@ object Preferences {
     private const val LIBRARY_ARTIST_SORT = "library_artist_sort"
     private const val LIBRARY_PLAYLIST_SORT = "library_playlist_sort"
     private const val APP_LANGUAGE = "app_language"
+    private const val SAVED_ACCOUNTS = "saved_accounts"
+
+    data class ServerProfile(
+        val id: String = java.util.UUID.randomUUID().toString(),
+        val name: String,
+        val url: String,
+        val username: String,
+        val password: String?,
+        val token: String?,
+        val salt: String?
+    )
+
+    @JvmStatic
+    fun getSavedProfiles(): List<ServerProfile> {
+        val json = App.getInstance().preferences.getString(SAVED_ACCOUNTS, null) ?: return emptyList()
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<List<ServerProfile>>() {}.type
+            Gson().fromJson(json, type)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    @JvmStatic
+    fun saveProfile(name: String, url: String, username: String, password: String?, token: String?, salt: String?) {
+        val currentProfiles = getSavedProfiles().toMutableList()
+        val existingIndex = currentProfiles.indexOfFirst { it.url == url && it.username == username }
+        
+        val newProfile = ServerProfile(
+            name = name,
+            url = url,
+            username = username,
+            password = password,
+            token = token,
+            salt = salt,
+            id = if (existingIndex != -1) currentProfiles[existingIndex].id else java.util.UUID.randomUUID().toString()
+        )
+
+        if (existingIndex != -1) {
+            currentProfiles[existingIndex] = newProfile
+        } else {
+            currentProfiles.add(newProfile)
+        }
+        
+        App.getInstance().preferences.edit().putString(SAVED_ACCOUNTS, Gson().toJson(currentProfiles)).apply()
+    }
+
+    @JvmStatic
+    fun removeProfile(url: String, username: String) {
+        val currentProfiles = getSavedProfiles().filterNot { it.url == url && it.username == username }
+        App.getInstance().preferences.edit().putString(SAVED_ACCOUNTS, Gson().toJson(currentProfiles)).apply()
+    }
+
+    @JvmStatic
+    fun switchToProfile(profile: ServerProfile) {
+        setServer(profile.url)
+        setUser(profile.username)
+        setPassword(profile.password)
+        setToken(profile.token)
+        setSalt(profile.salt)
+        // Note: Switching profiles doesn't automatically connect/verify, that logic usually sits in the ViewModel or Repo
+    }
+    
+    @JvmStatic
+    fun getProfileCount(): Int = getSavedProfiles().size
 
 
     @JvmStatic

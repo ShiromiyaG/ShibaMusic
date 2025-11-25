@@ -780,4 +780,15 @@ This may take a moment.</string>
     <string name="empty_home_message">Add some music to your library to get started</string>
     <string name="unknown_artist">Unknown Artist</string>
     <string name="cd_pause">Pause</string>
+
+    <!-- Account Management -->
+    <string name="settings_accounts_title">Accounts</string>
+    <string name="settings_saved_accounts_title">Manage Accounts</string>
+    <string name="settings_saved_accounts_subtitle">Switch or remove saved servers</string>
+    <string name="settings_saved_accounts_dialog_title">Saved Accounts</string>
+    <string name="action_switch">Switch</string>
+    <string name="action_remove">Remove</string>
+    <string name="dialog_saved_accounts_title">Saved Servers</string>
+    <string name="dialog_remove_account_title">Remove Account</string>
+    <string name="dialog_remove_account_message">Are you sure you want to remove this account?</string>
 </resources>
