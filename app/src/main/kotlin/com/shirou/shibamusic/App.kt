@@ -3,7 +3,6 @@ package com.shirou.shibamusic
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.preference.PreferenceManager
 import com.shirou.shibamusic.github.Github
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.subsonic.Subsonic
@@ -22,7 +21,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        val sharedPreferences = applicationContext.getSharedPreferences("${applicationContext.packageName}_preferences", Context.MODE_PRIVATE)
         val themePref = sharedPreferences.getString(Preferences.THEME, ThemeHelper.DEFAULT_MODE)
         ThemeHelper.applyTheme(themePref ?: ThemeHelper.DEFAULT_MODE)
         
@@ -40,9 +39,8 @@ class App : Application() {
     val preferences: SharedPreferences
         get() {
             if (Companion.preferences == null) {
-                Companion.preferences = PreferenceManager.getDefaultSharedPreferences(
-                    context ?: applicationContext
-                )
+                val ctx = context ?: applicationContext
+                Companion.preferences = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
             }
             return Companion.preferences!!
         }
@@ -60,7 +58,7 @@ class App : Application() {
         fun initializeFromShibaMusicApplication(application: Application) {
             instance = App()
             context = application.applicationContext
-            preferences = PreferenceManager.getDefaultSharedPreferences(context!!)
+            preferences = application.applicationContext.getSharedPreferences("${application.packageName}_preferences", Context.MODE_PRIVATE)
         }
 
         fun getInstance(): App {
@@ -128,7 +126,8 @@ class App : Application() {
 
         internal fun requirePreferences(): SharedPreferences {
             if (preferences == null) {
-                preferences = PreferenceManager.getDefaultSharedPreferences(getContext())
+                val ctx = getContext()
+                preferences = ctx.getSharedPreferences("${ctx.packageName}_preferences", Context.MODE_PRIVATE)
             }
             return preferences!!
         }

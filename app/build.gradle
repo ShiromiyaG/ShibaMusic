@@ -95,7 +95,6 @@ android {
     }
 
     buildFeatures {
-        viewBinding true
         buildConfig true
         compose true
     }
@@ -126,6 +125,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.core:core-splashscreen:1.0.1'
     implementation 'androidx.activity:activity-compose:1.8.2'
+
+    // Jetpack Glance (Widgets)
+    implementation 'androidx.glance:glance-appwidget:1.1.0'
+    implementation 'androidx.glance:glance-material3:1.1.0'
 
     // Jetpack Compose
     implementation platform('androidx.compose:compose-bom:2024.02.00')
@@ -158,26 +161,14 @@ dependencies {
     implementation 'androidx.paging:paging-runtime-ktx:3.3.2'
     implementation 'androidx.paging:paging-compose:3.3.2'
 
-    // Legacy AndroidX (keep for gradual migration)
-    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
-    implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
-    implementation 'androidx.preference:preference-ktx:1.2.1'
-    implementation 'androidx.navigation:navigation-fragment-ktx:2.8.6'
-    implementation 'androidx.navigation:navigation-ui-ktx:2.8.6'
-    implementation 'androidx.recyclerview:recyclerview:1.4.0'
-
     // Room - Banco de dados para funcionalidade offline
     implementation 'androidx.room:room-runtime:2.6.1'
     implementation 'androidx.room:room-ktx:2.6.1'
     implementation 'androidx.room:room-paging:2.6.1'
     ksp 'androidx.room:room-compiler:2.6.1'
 
-    // Android Material (legacy)
+    // Android Material (legacy - required for AppTheme)
     implementation 'com.google.android.material:material:1.11.0'
-
-    // Glide (usado em fragments legados)
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
-    ksp 'com.github.bumptech.glide:compiler:4.16.0'
 
     // Media3 - Player para funcionalidade offline com gapless playback
     implementation 'androidx.media3:media3-session:1.8.0'
@@ -205,6 +196,9 @@ dependencies {
     implementation 'com.google.dagger:hilt-android:2.48'
     ksp 'com.google.dagger:hilt-android-compiler:2.48'
     implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
+
+    // Preferences
+    implementation 'androidx.preference:preference-ktx:1.2.1'
 
     // WorkManager + Hilt integration - Para downloads em background
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
