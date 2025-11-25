@@ -58,6 +58,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private const val RANDOM_CARD_KEY = "home_random_song_card"
+private const val DISCOVER_CARD_DURATION = 10000L
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GREETING SECTION - Saudação personalizada por horário
@@ -224,7 +225,7 @@ fun RandomSongCardEnhanced(
     LaunchedEffect(songs, isActive) {
         if (songs.isEmpty() || !isActive) return@LaunchedEffect
         while (true) {
-            delay(10000)
+            delay(DISCOVER_CARD_DURATION)
             currentSong = songs.random()
         }
     }
@@ -256,6 +257,7 @@ fun EnhancedZoomingCard(
     onPlayClick: (SongItem) -> Unit
 ) {
     var scale by remember { mutableStateOf(1f) }
+    var progress by remember { mutableStateOf(0f) }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val haptic = LocalHapticFeedback.current
@@ -266,15 +268,20 @@ fun EnhancedZoomingCard(
         label = "card_press_scale"
     )
 
-    // Ken Burns effect (zoom lento)
+    // Ken Burns effect (zoom lento) e barra de progresso
     LaunchedEffect(song.id) {
         scale = 1f
+        progress = 0f
         val startTime = System.currentTimeMillis()
-        while (System.currentTimeMillis() - startTime < 10000) {
+        while (System.currentTimeMillis() - startTime < DISCOVER_CARD_DURATION) {
             val elapsed = System.currentTimeMillis() - startTime
-            scale = 1f + (elapsed / 10000f) * 0.15f
+            val fraction = elapsed.toFloat() / DISCOVER_CARD_DURATION
+            scale = 1f + fraction * 0.15f
+            progress = fraction
             delay(16)
         }
+        progress = 1f
+        scale = 1.15f
     }
 
     Card(
@@ -431,7 +438,7 @@ fun EnhancedZoomingCard(
                     .fillMaxWidth()
                     .height(3.dp)
                     .align(Alignment.BottomCenter),
-                progress = { scale - 1f } ,
+                progress = { progress } ,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                 trackColor = Color.Transparent
             )
