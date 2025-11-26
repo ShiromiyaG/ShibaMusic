@@ -19,7 +19,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class SystemRepository {
+import javax.inject.Inject
+
+class SystemRepository @Inject constructor() {
     fun checkUserCredential(callback: SystemCallback) {
         App.getSubsonicClientInstance(false)
             .systemClient

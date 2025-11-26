@@ -36,9 +36,14 @@ import com.shirou.shibamusic.util.DownloadUtil
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.util.ReplayGainUtil
 import com.shirou.shibamusic.util.MappingUtil
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @UnstableApi
+@AndroidEntryPoint
 class MediaService : MediaLibraryService() {
+    @Inject lateinit var queueRepository: QueueRepository
+
     private val librarySessionCallback = CustomMediaLibrarySessionCallback()
 
     private lateinit var player: ExoPlayer
@@ -126,7 +131,6 @@ class MediaService : MediaLibraryService() {
             session: MediaSession,
             controller: ControllerInfo
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
-            val queueRepository = QueueRepository()
             val media = queueRepository.getMedia()
 
             if (media.isEmpty()) {

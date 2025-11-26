@@ -19,6 +19,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+import com.shirou.shibamusic.database.AppDatabase
+import com.shirou.shibamusic.database.dao.QueueDao
+
 /**
  * Módulo Hilt para prover dependências relacionadas ao banco de dados
  * Inclui suporte para codec Opus em downloads offline
@@ -26,6 +29,17 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+    
+    @Provides
+    @Singleton
+    fun provideAppDatabase(): AppDatabase {
+        return AppDatabase.getInstance()
+    }
+
+    @Provides
+    fun provideQueueDao(appDatabase: AppDatabase): QueueDao {
+        return appDatabase.queueDao()
+    }
     
     @Provides
     @Singleton

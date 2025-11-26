@@ -55,12 +55,12 @@ import kotlin.coroutines.suspendCoroutine
 class MediaController @Inject constructor(
     @ApplicationContext private val context: Context,
     private val offlineRepository: OfflineRepository,
-    private val musicRepository: MusicRepository
+    private val musicRepository: MusicRepository,
+    private val queueRepository: QueueRepository
 ) {
     
     private var mediaBrowserFuture: ListenableFuture<MediaBrowser>? = null
     private var mediaBrowser: MediaBrowser? = null
-    private val queueRepository = QueueRepository()
     private val chronologyRepository = com.shirou.shibamusic.repository.ChronologyRepository()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     

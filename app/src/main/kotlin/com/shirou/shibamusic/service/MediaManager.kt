@@ -21,6 +21,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlin.OptIn
 
+import com.shirou.shibamusic.database.AppDatabase
+
 object MediaManager {
 
     private const val TAG = "MediaManager"
@@ -266,7 +268,7 @@ object MediaManager {
     }
 
     private fun getQueueRepository(): QueueRepository {
-        return QueueRepository()
+        return QueueRepository(AppDatabase.getInstance().queueDao())
     }
 
     private fun getSongRepository(): SongRepository {

@@ -27,15 +27,20 @@ import com.shirou.shibamusic.util.MappingUtil
 import com.shirou.shibamusic.util.NetworkUtil
 import com.shirou.shibamusic.util.OpenSubsonicExtensionsUtil
 import com.shirou.shibamusic.util.Preferences
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
+import javax.inject.Inject
 import kotlin.OptIn
 
+@HiltViewModel
 @OptIn(UnstableApi::class)
-class PlayerBottomSheetViewModel(application: Application) : AndroidViewModel(application) {
+class PlayerBottomSheetViewModel @Inject constructor(
+    private val queueRepository: QueueRepository,
+    application: Application
+) : AndroidViewModel(application) {
     private val songRepository: SongRepository
     private val albumRepository: AlbumRepository
     private val artistRepository: ArtistRepository
-    private val queueRepository: QueueRepository
     private val favoriteRepository: FavoriteRepository
     private val openRepository: OpenRepository
 
@@ -54,7 +59,6 @@ class PlayerBottomSheetViewModel(application: Application) : AndroidViewModel(ap
         songRepository = SongRepository()
         albumRepository = AlbumRepository()
         artistRepository = ArtistRepository()
-        queueRepository = QueueRepository()
         favoriteRepository = FavoriteRepository()
         openRepository = OpenRepository()
     }

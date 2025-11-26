@@ -20,10 +20,10 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val systemRepository: SystemRepository,
+    private val queueRepository: QueueRepository,
     application: Application
 ) : AndroidViewModel(application) {
-
-    private val systemRepository: SystemRepository = SystemRepository()
 
     val theme: StateFlow<String> = userPreferencesRepository.theme
         .stateIn(
@@ -33,7 +33,6 @@ class MainViewModel @Inject constructor(
         )
 
     fun isQueueLoaded(): Boolean {
-        val queueRepository = QueueRepository()
         return queueRepository.count() != 0
     }
 
