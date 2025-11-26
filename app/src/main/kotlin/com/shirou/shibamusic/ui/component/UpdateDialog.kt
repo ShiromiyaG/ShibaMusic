@@ -1,4 +1,4 @@
-package com.shirou.shibamusic.ui.components
+package com.shirou.shibamusic.ui.component
 
 import android.app.DownloadManager
 import android.content.Context

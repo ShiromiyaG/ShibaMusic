@@ -25,7 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.shirou.shibamusic.github.utils.UpdateUtil
 import com.shirou.shibamusic.helper.LanguageHelper
-import com.shirou.shibamusic.ui.components.UpdateAvailableDialog
+import com.shirou.shibamusic.ui.component.UpdateAvailableDialog
 import com.shirou.shibamusic.ui.navigation.*
 import com.shirou.shibamusic.ui.player.MiniPlayer
 import com.shirou.shibamusic.ui.theme.ShibaMusicTheme
@@ -52,8 +52,11 @@ class ComposeMainActivity : ComponentActivity() {
 		enableEdgeToEdge()
 
 		setContent {
-			ShibaMusicTheme {
-				ShibaMusicApp()
+			val mainViewModel: MainViewModel = viewModel()
+			val theme by mainViewModel.theme.collectAsState()
+			
+			ShibaMusicTheme(themeMode = theme) {
+				ShibaMusicApp(mainViewModel = mainViewModel)
 			}
 		}
 	}
@@ -61,8 +64,7 @@ class ComposeMainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun ShibaMusicApp() {
-	val mainViewModel: MainViewModel = viewModel()
+fun ShibaMusicApp(mainViewModel: MainViewModel) {
 	val latestReleaseLiveData = remember(mainViewModel) { mainViewModel.checkShibaMusicUpdate() }
 	val latestRelease by latestReleaseLiveData.observeAsState()
 	val updateAvailable = remember(latestRelease) {
@@ -220,11 +222,4 @@ fun ShibaMusicApp() {
 	}
 }
 
-// Example data class for song state
-data class SongState(
-	val title: String,
-	val artist: String,
-	val thumbnailUrl: String?,
-	val isPlaying: Boolean,
-	val progress: Float
-)
+

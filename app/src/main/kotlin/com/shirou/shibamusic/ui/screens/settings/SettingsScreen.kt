@@ -23,7 +23,7 @@ import com.shirou.shibamusic.github.models.LatestRelease
 import com.shirou.shibamusic.github.utils.UpdateUtil
 import com.shirou.shibamusic.repository.SystemRepository
 import com.shirou.shibamusic.ui.offline.OfflineViewModel
-import com.shirou.shibamusic.ui.components.UpdateAvailableDialog
+import com.shirou.shibamusic.ui.component.UpdateAvailableDialog
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.util.Preferences
 import com.shirou.shibamusic.BuildConfig
@@ -38,7 +38,8 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit,
     onSyncFromServer: () -> Unit = {},
-    offlineViewModel: OfflineViewModel = hiltViewModel()
+    offlineViewModel: OfflineViewModel = hiltViewModel(),
+    settingsViewModel: com.shirou.shibamusic.viewmodel.SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val serverUrl = remember { Preferences.getServer() ?: context.getString(com.shirou.shibamusic.R.string.settings_not_configured) }
@@ -217,7 +218,7 @@ fun SettingsScreen(
             
             // Appearance Section
             SettingsSection(title = stringResource(com.shirou.shibamusic.R.string.settings_appearance_title)) {
-                var currentTheme by remember { mutableStateOf(Preferences.getTheme()) }
+                val currentTheme by settingsViewModel.theme.collectAsState(initial = ThemeHelper.DEFAULT_MODE)
                 var showThemeDialog by remember { mutableStateOf(false) }
                 
                 SettingsItem(
@@ -247,11 +248,11 @@ fun SettingsScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .clickable {
-                                                currentTheme = value
-                                                Preferences.setTheme(value)
+                                                settingsViewModel.setTheme(value)
                                                 ThemeHelper.applyTheme(value)
                                                 showThemeDialog = false
-                                                (themeContext as? android.app.Activity)?.recreate()
+                                                // Recreate might not be needed if flow updates theme
+                                                // (themeContext as? android.app.Activity)?.recreate() 
                                             }
                                             .padding(vertical = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically
@@ -259,11 +260,10 @@ fun SettingsScreen(
                                         RadioButton(
                                             selected = currentTheme == value,
                                             onClick = {
-                                                currentTheme = value
-                                                Preferences.setTheme(value)
+                                                settingsViewModel.setTheme(value)
                                                 ThemeHelper.applyTheme(value)
                                                 showThemeDialog = false
-                                                (themeContext as? android.app.Activity)?.recreate()
+                                                // (themeContext as? android.app.Activity)?.recreate()
                                             }
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))

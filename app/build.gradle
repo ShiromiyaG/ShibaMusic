@@ -19,6 +19,7 @@ android {
         versionName '1.0.6'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        manifestPlaceholders = [appName: "@string/app_name"]
 
         // KSP configuration moved to ksp block below
     }
@@ -60,6 +61,8 @@ android {
             }
         }
         debug {
+            applicationIdSuffix ".debug"
+            manifestPlaceholders = [appName: "Shiba Music DEBUG"]
             minifyEnabled false
             shrinkResources false
         }
@@ -134,7 +137,6 @@ dependencies {
     implementation platform('androidx.compose:compose-bom:2024.02.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3:1.5.0-alpha07'
     implementation 'androidx.compose.material:material-icons-extended'
     implementation 'androidx.compose.animation:animation'
     implementation 'androidx.compose.foundation:foundation'
@@ -199,6 +201,7 @@ dependencies {
 
     // Preferences
     implementation 'androidx.preference:preference-ktx:1.2.1'
+    implementation 'androidx.datastore:datastore-preferences:1.0.0'
 
     // WorkManager + Hilt integration - Para downloads em background
     implementation 'androidx.work:work-runtime-ktx:2.9.1'
