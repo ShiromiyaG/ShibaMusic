@@ -65,6 +65,7 @@ interface MusicRepository {
     // Recent
     suspend fun getRecentlyPlayed(): List<SongItem>
     suspend fun getRecentlyPlayedSongs(limit: Int = 20): List<SongItem>
+    suspend fun getMostPlayedSongs(limit: Int = 20): List<SongItem>
     suspend fun addToRecent(songId: String)
     suspend fun recordSongPlay(songId: String)
     

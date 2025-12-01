@@ -45,8 +45,6 @@ class HomeViewModel @Inject constructor(
     private val syncRepository: SyncRepository
 ) : ViewModel() {
     
-    private val chronologyRepository = com.shirou.shibamusic.repository.ChronologyRepository()
-    
     companion object {
         private const val TAG = "ShibaMusicHome"
     }
@@ -305,7 +303,7 @@ class HomeViewModel @Inject constructor(
     private suspend fun loadHomeCollections(albumsOverride: List<AlbumItem>? = null): HomeCollections = coroutineScope {
         val albumsDeferred = async { albumsOverride ?: musicRepository.getAllAlbums() }
         val favoriteAlbumsDeferred = async { musicRepository.getFavoriteAlbums() }
-        val mostPlayedDeferred = async { getMostPlayedSongs() }
+        val mostPlayedDeferred = async { musicRepository.getMostPlayedSongs(20) }
         val artistCountDeferred = async { musicRepository.getAllArtists().size }
 
         val albums = albumsDeferred.await()
@@ -318,26 +316,5 @@ class HomeViewModel @Inject constructor(
             mostPlayedSongs = mostPlayedDeferred.await(),
             artistCount = artistCountDeferred.await()
         )
-    }
-
-    private suspend fun getMostPlayedSongs(limit: Int = 20): List<SongItem> {
-        return try {
-            val serverId = com.shirou.shibamusic.util.Preferences.getServerId().orEmpty()
-            if (serverId.isBlank()) {
-                Log.w(TAG, "Cannot load most played songs: serverId is blank")
-                return emptyList()
-            }
-
-            val chronology = chronologyRepository.getLastPlayed(serverId, limit)
-            val songIds = chronology.map { it.id }.distinct()
-            if (songIds.isEmpty()) {
-                return emptyList()
-            }
-
-            songIds.mapNotNull { musicRepository.getSongById(it) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading most played songs", e)
-            emptyList()
-        }
     }
 }

@@ -48,6 +48,9 @@ interface SongDao {
     @Query("SELECT * FROM songs WHERE last_played_timestamp IS NOT NULL ORDER BY last_played_timestamp DESC LIMIT :limit")
     suspend fun getRecentlyPlayedSongs(limit: Int): List<SongEntity>
 
+    @Query("SELECT * FROM songs WHERE play_count > 0 ORDER BY play_count DESC LIMIT :limit")
+    suspend fun getMostPlayedSongs(limit: Int): List<SongEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSong(song: SongEntity)
 

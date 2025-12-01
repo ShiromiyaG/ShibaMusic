@@ -498,6 +498,10 @@ class MusicRepositoryImpl @Inject constructor(
         songDao.getRecentlyPlayedSongs(limit).toSongItems()
     }
     
+    override suspend fun getMostPlayedSongs(limit: Int): List<SongItem> = withContext(ioDispatcher) {
+        songDao.getMostPlayedSongs(limit).toSongItems()
+    }
+    
     override suspend fun recordSongPlay(songId: String): Unit = withContext(ioDispatcher) {
         songDao.incrementPlayCountWithTimestamp(songId)
         
