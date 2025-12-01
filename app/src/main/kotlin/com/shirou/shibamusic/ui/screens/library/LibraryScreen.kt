@@ -61,8 +61,15 @@ fun LibraryScreen(
     var showSortMenu by remember { mutableStateOf(false) }
     val offlineTracks by offlineViewModel.offlineTracks.collectAsStateWithLifecycle()
     val activeDownloads by offlineViewModel.activeDownloads.collectAsStateWithLifecycle()
-    val downloadedSongIds = remember(offlineTracks) { offlineTracks.map { it.id }.toSet() }
-    val activeDownloadMap = remember(activeDownloads) { activeDownloads.associateBy { it.trackId } }
+    
+    // Memoização otimizada - evita recriar Set/Map em cada recomposição
+    val downloadedSongIds = remember(offlineTracks) { 
+        offlineTracks.mapTo(HashSet(offlineTracks.size)) { it.id }
+    }
+    val activeDownloadMap = remember(activeDownloads) { 
+        activeDownloads.associateByTo(HashMap(activeDownloads.size)) { it.trackId }
+    }
+    
     var selectedSong by remember { mutableStateOf<SongItem?>(null) }
     var showSongBottomSheet by remember { mutableStateOf(false) }
     var selectedAlbum by remember { mutableStateOf<AlbumItem?>(null) }

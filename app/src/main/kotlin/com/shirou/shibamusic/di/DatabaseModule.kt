@@ -78,7 +78,8 @@ object DatabaseModule {
         .setQueryExecutor(ioExecutor)
         .setTransactionExecutor(ioExecutor)
         .addMigrations(
-            ShibaMusicLocalDatabase.MIGRATION_2_3
+            ShibaMusicLocalDatabase.MIGRATION_2_3,
+            ShibaMusicLocalDatabase.MIGRATION_3_4
         )
         .fallbackToDestructiveMigration()
         .build()

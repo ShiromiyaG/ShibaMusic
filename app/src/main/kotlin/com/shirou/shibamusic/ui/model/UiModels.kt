@@ -1,13 +1,19 @@
 package com.shirou.shibamusic.ui.model
 
+import androidx.compose.runtime.Immutable
+
 /**
  * Central UI models for the ShibaMusic app
  * These models represent the data displayed in the UI
+ * 
+ * @Immutable annotation tells Compose that these classes are immutable,
+ * which allows for better skip optimization during recomposition.
  */
 
 /**
  * Represents a song in the UI
  */
+@Immutable
 data class SongItem(
     val id: String,
     val title: String,
@@ -30,6 +36,7 @@ data class SongItem(
 /**
  * Represents an album in the UI
  */
+@Immutable
 data class AlbumItem(
     val id: String,
     val title: String,
@@ -47,6 +54,7 @@ data class AlbumItem(
 /**
  * Represents an artist in the UI
  */
+@Immutable
 data class ArtistItem(
     val id: String,
     val name: String,
@@ -60,6 +68,7 @@ data class ArtistItem(
 /**
  * Detailed artist information for UI consumption
  */
+@Immutable
 data class ArtistDetailModel(
     val id: String,
     val name: String,
@@ -72,6 +81,7 @@ data class ArtistDetailModel(
 /**
  * Represents a playlist in the UI
  */
+@Immutable
 data class PlaylistItem(
     val id: String,
     val name: String,
@@ -86,6 +96,7 @@ data class PlaylistItem(
 /**
  * Represents album detail with additional information
  */
+@Immutable
 data class AlbumDetailModel(
     val album: AlbumItem,
     val songs: List<SongItem> = emptyList()

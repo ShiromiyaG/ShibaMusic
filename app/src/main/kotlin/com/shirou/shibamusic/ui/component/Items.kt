@@ -15,6 +15,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -165,6 +166,7 @@ fun SongListItem(
 
 /**
  * Album/Artist grid item
+ * Otimizado com remember para shapes e modifiers estáticos
  */
 @Composable
 fun GridItem(
@@ -178,6 +180,11 @@ fun GridItem(
     onPrimaryAction: (() -> Unit)? = null,
     onMoreClick: (() -> Unit)? = null
 ) {
+    // Memoiza o shape baseado no tipo
+    val imageShape = remember(isCircular) {
+        if (isCircular) CircleShape else androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+    }
+    
     Column(
         modifier = modifier
             .width(160.dp)
@@ -193,7 +200,7 @@ fun GridItem(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(if (isCircular) CircleShape else MaterialTheme.shapes.small),
+                    .clip(imageShape),
                 contentScale = ContentScale.Crop
             )
 

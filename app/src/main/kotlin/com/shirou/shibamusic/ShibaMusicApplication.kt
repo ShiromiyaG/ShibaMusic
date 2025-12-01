@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.preference.PreferenceManager
 import androidx.work.Configuration
 import androidx.hilt.work.HiltWorkerFactory
+import coil.ImageLoader
+import coil.ImageLoaderFactory
 import com.shirou.shibamusic.data.repository.SyncRepository
 import com.shirou.shibamusic.helper.ThemeHelper
 import com.shirou.shibamusic.repository.SystemRepository
@@ -18,15 +20,21 @@ import javax.inject.Provider
 /**
  * Application class for Shiba Music
  * Annotated with @HiltAndroidApp to enable Hilt dependency injection
+ * Implements ImageLoaderFactory for optimized Coil image loading
  */
 @HiltAndroidApp
-class ShibaMusicApplication : Application(), Configuration.Provider {
+class ShibaMusicApplication : Application(), Configuration.Provider, ImageLoaderFactory {
     
     @Inject
     lateinit var syncRepositoryProvider: Provider<SyncRepository>
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+    
+    @Inject
+    lateinit var imageLoader: ImageLoader
+    
+    override fun newImageLoader(): ImageLoader = imageLoader
     
     override fun onCreate() {
         super.onCreate()

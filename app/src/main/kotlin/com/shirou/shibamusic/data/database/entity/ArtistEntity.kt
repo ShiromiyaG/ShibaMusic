@@ -11,7 +11,13 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "artists",
     indices = [
-        Index(value = ["name"])
+        Index(value = ["name"]),
+        // Índices compostos para ordenação otimizada na Library
+        Index(value = ["name", "id"]),
+        Index(value = ["album_count"]),
+        Index(value = ["song_count"]),
+        Index(value = ["date_added"]),
+        Index(value = ["is_favorite"])
     ]
 )
 data class ArtistEntity(

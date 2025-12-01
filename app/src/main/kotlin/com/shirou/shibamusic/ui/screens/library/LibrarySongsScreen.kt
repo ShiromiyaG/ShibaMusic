@@ -165,8 +165,12 @@ fun LibrarySongsContent(
                                 contentType = { "song" }
                             ) { index ->
                                 val song = songs[index] ?: return@items
-                                val isDownloaded = downloadedSongIds.contains(song.id)
-                                val downloadInfo = activeDownloads[song.id]
+                                val isDownloaded = remember(song.id, downloadedSongIds) {
+                                    downloadedSongIds.contains(song.id)
+                                }
+                                val downloadInfo = remember(song.id, activeDownloads) {
+                                    activeDownloads[song.id]
+                                }
 
                                 SongListItem(
                                     title = song.title,

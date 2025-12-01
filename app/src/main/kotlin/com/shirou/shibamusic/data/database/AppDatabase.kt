@@ -22,8 +22,8 @@ import com.shirou.shibamusic.data.database.entity.SongEntity
         PlaylistEntity::class,
         PlaylistSongEntity::class
     ],
-    version = 3,
-    exportSchema = false
+    version = 4,
+    exportSchema = true
 )
 abstract class ShibaMusicLocalDatabase : RoomDatabase() {
 
@@ -85,6 +85,37 @@ abstract class ShibaMusicLocalDatabase : RoomDatabase() {
                     ON `songs`(`play_count`)
                     """.trimIndent()
                 )
+            }
+        }
+
+        /**
+         * Migration 3 -> 4: Add composite indexes for optimized sorting in Library tabs
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Songs - composite indexes for sorting
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_songs_title_id` ON `songs`(`title`, `id`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_songs_artist_name_title` ON `songs`(`artist_name`, `title`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_songs_album_name_title` ON `songs`(`album_name`, `title`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_songs_duration_ms_title` ON `songs`(`duration_ms`, `title`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_songs_date_added_title` ON `songs`(`date_added`, `title`)")
+                
+                // Albums - composite indexes for sorting
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_albums_title_id` ON `albums`(`title`, `id`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_albums_year_title` ON `albums`(`year`, `title`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_albums_date_added_title` ON `albums`(`date_added`, `title`)")
+                
+                // Artists - indexes for sorting and filtering
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_name_id` ON `artists`(`name`, `id`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_album_count` ON `artists`(`album_count`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_song_count` ON `artists`(`song_count`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_date_added` ON `artists`(`date_added`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_artists_is_favorite` ON `artists`(`is_favorite`)")
+                
+                // Playlists - indexes for sorting
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlists_name_id` ON `playlists`(`name`, `id`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlists_date_created` ON `playlists`(`date_created`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_playlists_song_count` ON `playlists`(`song_count`)")
             }
         }
     }

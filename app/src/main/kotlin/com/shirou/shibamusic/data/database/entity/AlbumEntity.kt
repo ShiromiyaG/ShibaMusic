@@ -17,7 +17,11 @@ import androidx.room.PrimaryKey
         Index(value = ["date_added"]),
         Index(value = ["artist_name", "title"]),
         Index(value = ["year"]),
-        Index(value = ["play_count"])
+        Index(value = ["play_count"]),
+        // Índices compostos para ordenação otimizada na Library
+        Index(value = ["title", "id"]),
+        Index(value = ["year", "title"]),
+        Index(value = ["date_added", "title"])
     ]
 )
 data class AlbumEntity(

@@ -12,7 +12,11 @@ import androidx.room.PrimaryKey
     tableName = "playlists",
     indices = [
         Index(value = ["name"]),
-        Index(value = ["date_modified"])
+        Index(value = ["date_modified"]),
+        // Índices compostos para ordenação otimizada na Library
+        Index(value = ["name", "id"]),
+        Index(value = ["date_created"]),
+        Index(value = ["song_count"])
     ]
 )
 data class PlaylistEntity(

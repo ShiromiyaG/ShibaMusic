@@ -44,9 +44,10 @@ class MusicRepositoryImpl @Inject constructor(
 
     companion object {
         private const val TAG = "MusicRepository"
-        private const val DEFAULT_PAGE_SIZE = 120
-        private const val DEFAULT_PREFETCH_DISTANCE = 60
-        private const val DEFAULT_JUMP_THRESHOLD = 600
+        private const val DEFAULT_PAGE_SIZE = 80 // Reduzido para carregamento mais rápido
+        private const val DEFAULT_PREFETCH_DISTANCE = 40 // Prefetch mais agressivo
+        private const val DEFAULT_INITIAL_LOAD_SIZE = 120 // Carga inicial otimizada
+        private const val DEFAULT_JUMP_THRESHOLD = 400
         private const val NETWORK_CACHE_TTL_MS = 5 * 60 * 1000L
         private const val ALBUM_CACHE_MAX = 256
     }
@@ -64,10 +65,11 @@ class MusicRepositoryImpl @Inject constructor(
 
     private fun defaultPagingConfig(): PagingConfig = PagingConfig(
         pageSize = DEFAULT_PAGE_SIZE,
-        initialLoadSize = DEFAULT_PAGE_SIZE * 2,
+        initialLoadSize = DEFAULT_INITIAL_LOAD_SIZE,
         prefetchDistance = DEFAULT_PREFETCH_DISTANCE,
         enablePlaceholders = false,
-        jumpThreshold = DEFAULT_JUMP_THRESHOLD
+        jumpThreshold = DEFAULT_JUMP_THRESHOLD,
+        maxSize = DEFAULT_PAGE_SIZE * 5 // Limita memória em uso
     )
     
     // ==================== Songs ====================
