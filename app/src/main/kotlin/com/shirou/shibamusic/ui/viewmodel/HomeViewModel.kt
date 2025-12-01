@@ -26,6 +26,7 @@ data class HomeUiState(
     val mostPlayedSongs: List<SongItem> = emptyList(),
     val allSongs: List<SongItem> = emptyList(),
     val allAlbums: List<AlbumItem> = emptyList(),
+    val artistCount: Int = 0,
     val error: String? = null,
     val syncMessage: String? = null
 )
@@ -34,7 +35,8 @@ private data class HomeCollections(
     val albums: List<AlbumItem>,
     val recentlyAdded: List<AlbumItem>,
     val favoriteAlbums: List<AlbumItem>,
-    val mostPlayedSongs: List<SongItem>
+    val mostPlayedSongs: List<SongItem>,
+    val artistCount: Int = 0
 )
 
 @HiltViewModel
@@ -87,7 +89,8 @@ class HomeViewModel @Inject constructor(
                         favoriteAlbums = collections.favoriteAlbums,
                         mostPlayedSongs = collections.mostPlayedSongs,
                         allSongs = localSongs,
-                        allAlbums = collections.albums
+                        allAlbums = collections.albums,
+                        artistCount = collections.artistCount
                     )
 
                     // Check if server has new content in background
@@ -196,6 +199,7 @@ class HomeViewModel @Inject constructor(
                         mostPlayedSongs = collections.mostPlayedSongs,
                         allSongs = localSongs,
                         allAlbums = collections.albums,
+                        artistCount = collections.artistCount,
                         error = null
                     )
                     Log.d(TAG, "UI state updated successfully!")
@@ -245,6 +249,7 @@ class HomeViewModel @Inject constructor(
                 recentlyAddedAlbums = collections.recentlyAdded,
                 favoriteAlbums = collections.favoriteAlbums,
                 mostPlayedSongs = collections.mostPlayedSongs,
+                artistCount = collections.artistCount,
                 syncMessage = App.getContext().getString(
                     R.string.home_sync_success,
                     stats.albumCount,
@@ -301,6 +306,7 @@ class HomeViewModel @Inject constructor(
         val albumsDeferred = async { albumsOverride ?: musicRepository.getAllAlbums() }
         val favoriteAlbumsDeferred = async { musicRepository.getFavoriteAlbums() }
         val mostPlayedDeferred = async { getMostPlayedSongs() }
+        val artistCountDeferred = async { musicRepository.getAllArtists().size }
 
         val albums = albumsDeferred.await()
         val recentlyAddedDeferred = async { getRecentlyAddedAlbums(albums) }
@@ -309,7 +315,8 @@ class HomeViewModel @Inject constructor(
             albums = albums,
             recentlyAdded = recentlyAddedDeferred.await(),
             favoriteAlbums = favoriteAlbumsDeferred.await(),
-            mostPlayedSongs = mostPlayedDeferred.await()
+            mostPlayedSongs = mostPlayedDeferred.await(),
+            artistCount = artistCountDeferred.await()
         )
     }
 

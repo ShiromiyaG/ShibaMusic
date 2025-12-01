@@ -56,37 +56,63 @@ import com.shirou.shibamusic.ui.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.Stable
 
 private const val RANDOM_CARD_KEY = "home_random_song_card"
 private const val DISCOVER_CARD_DURATION = 10000L
+
+// Constantes de tamanho para evitar recriações
+private val ALBUM_CARD_WIDTH = 160.dp
+private val THUMBNAIL_SIZE = 52.dp
+private val DISCOVER_CARD_HEIGHT = 220.dp
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GREETING SECTION - Saudação personalizada por horário
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * Data class para armazenar informações de saudação
+ * Calculada uma única vez para evitar recomputações
+ */
+@Stable
+private data class GreetingInfo(
+    val greetingResId: Int,
+    val emoji: String,
+    val gradientColors: List<Color>
+)
+
+private fun getGreetingInfo(): GreetingInfo {
+    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+    return when (hour) {
+        in 5..11 -> GreetingInfo(
+            R.string.greeting_morning,
+            "☀️",
+            listOf(Color(0xFFFFF3E0), Color(0xFFFFE0B2))
+        )
+        in 12..17 -> GreetingInfo(
+            R.string.greeting_afternoon,
+            "🌤️",
+            listOf(Color(0xFFE3F2FD), Color(0xFFBBDEFB))
+        )
+        in 18..21 -> GreetingInfo(
+            R.string.greeting_evening,
+            "🌅",
+            listOf(Color(0xFFFCE4EC), Color(0xFFF8BBD9))
+        )
+        else -> GreetingInfo(
+            R.string.greeting_night,
+            "🌙",
+            listOf(Color(0xFFE8EAF6), Color(0xFFC5CAE9))
+        )
+    }
+}
+
 @Composable
 fun GreetingSection(
     modifier: Modifier = Modifier
 ) {
-    val greeting = remember {
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-        when (hour) {
-            in 5..11 -> R.string.greeting_morning
-            in 12..17 -> R.string.greeting_afternoon
-            in 18..21 -> R.string.greeting_evening
-            else -> R.string.greeting_night
-        }
-    }
-    
-    val emoji = remember {
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-        when (hour) {
-            in 5..11 -> "☀️"
-            in 12..17 -> "🌤️"
-            in 18..21 -> "🌅"
-            else -> "🌙"
-        }
-    }
+    val greetingInfo = remember { getGreetingInfo() }
 
     Column(
         modifier = modifier
@@ -94,7 +120,7 @@ fun GreetingSection(
             .padding(horizontal = 20.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "${stringResource(greeting)} $emoji",
+            text = "${stringResource(greetingInfo.greetingResId)} ${greetingInfo.emoji}",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold
             ),
@@ -123,9 +149,9 @@ fun QuickActionChips(
     LazyRow(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        item {
+        item(key = "shuffle") {
             QuickActionChip(
                 icon = Icons.Rounded.Shuffle,
                 label = stringResource(R.string.action_shuffle_all),
@@ -134,7 +160,7 @@ fun QuickActionChips(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
-        item {
+        item(key = "favorites") {
             QuickActionChip(
                 icon = Icons.Rounded.Favorite,
                 label = stringResource(R.string.action_favorites),
@@ -143,7 +169,7 @@ fun QuickActionChips(
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
-        item {
+        item(key = "recent") {
             QuickActionChip(
                 icon = Icons.Rounded.History,
                 label = stringResource(R.string.home_recently_played),
@@ -201,6 +227,118 @@ fun QuickActionChip(
                 fontWeight = FontWeight.SemiBold
             )
         }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2.5 LIBRARY STATS CARDS - Cards de estatísticas da biblioteca
+// ═══════════════════════════════════════════════════════════════════════════════
+
+@Composable
+fun LibraryStatsRow(
+    songCount: Int,
+    albumCount: Int,
+    artistCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        StatCard(
+            icon = Icons.Rounded.MusicNote,
+            value = songCount.formatNumber(),
+            label = stringResource(R.string.tab_songs),
+            gradientColors = listOf(
+                MaterialTheme.colorScheme.primary,
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.weight(1f)
+        )
+        StatCard(
+            icon = Icons.Rounded.Album,
+            value = albumCount.formatNumber(),
+            label = stringResource(R.string.tab_albums),
+            gradientColors = listOf(
+                MaterialTheme.colorScheme.secondary,
+                MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.weight(1f)
+        )
+        StatCard(
+            icon = Icons.Rounded.Person,
+            value = artistCount.formatNumber(),
+            label = stringResource(R.string.tab_artists),
+            gradientColors = listOf(
+                MaterialTheme.colorScheme.tertiary,
+                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.7f)
+            ),
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun StatCard(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    gradientColors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = gradientColors,
+                        start = Offset(0f, 0f),
+                        end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                    )
+                )
+                .padding(12.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = Color.White
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+        }
+    }
+}
+
+private fun Int.formatNumber(): String {
+    return when {
+        this >= 1000 -> String.format("%.1fK", this / 1000.0)
+        else -> this.toString()
     }
 }
 
@@ -858,6 +996,7 @@ fun SectionHeaderEnhanced(
     title: String,
     actionText: String? = null,
     onActionClick: (() -> Unit)? = null,
+    icon: ImageVector? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -867,14 +1006,37 @@ fun SectionHeaderEnhanced(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (icon != null) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
         
         if (actionText != null && onActionClick != null) {
             TextButton(onClick = onActionClick) {
@@ -913,8 +1075,8 @@ fun HomeScreenEnhanced(
     playbackViewModel: PlaybackViewModel = hiltViewModel(),
     contentBottomPadding: Dp = 0.dp
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val playbackState by playbackViewModel.playbackState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val playbackState by playbackViewModel.playbackState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val isRandomSongCardVisible by remember(listState) {
         derivedStateOf {
@@ -1036,12 +1198,12 @@ fun HomeScreenEnhanced(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Saudação
-                        item {
+                        item(key = "greeting") {
                             GreetingSection()
                         }
                         
                         // Quick Actions
-                        item {
+                        item(key = "quick_actions") {
                             QuickActionChips(
                                 onShuffleAll = { 
                                     uiState.allSongs.randomOrNull()?.let {
@@ -1052,6 +1214,18 @@ fun HomeScreenEnhanced(
                                 onRecent = onNavigateToRecent
                             )
                             Spacer(modifier = Modifier.height(16.dp))
+                        }
+                        
+                        // Library Stats Cards
+                        if (uiState.allSongs.isNotEmpty()) {
+                            item(key = "library_stats") {
+                                LibraryStatsRow(
+                                    songCount = uiState.allSongs.size,
+                                    albumCount = uiState.allAlbums.size,
+                                    artistCount = uiState.artistCount
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
                         }
                         
                         // Random Song Card
@@ -1066,11 +1240,12 @@ fun HomeScreenEnhanced(
                         
                         // Favorite Albums
                         if (uiState.favoriteAlbums.isNotEmpty()) {
-                            item {
+                            item(key = "header_favorites") {
                                 SectionHeaderEnhanced(
                                     title = stringResource(R.string.home_favorite_albums),
                                     actionText = stringResource(R.string.home_see_all),
-                                    onActionClick = onNavigateToLibrary
+                                    onActionClick = onNavigateToLibrary,
+                                    icon = Icons.Rounded.Favorite
                                 )
                             }
                             
@@ -1095,13 +1270,14 @@ fun HomeScreenEnhanced(
                         
                         // Recently Added
                         if (uiState.recentlyAddedAlbums.isNotEmpty()) {
-                            item {
+                            item(key = "header_recent") {
                                 SectionHeaderEnhanced(
-                                    title = stringResource(R.string.home_recently_added)
+                                    title = stringResource(R.string.home_recently_added),
+                                    icon = Icons.Rounded.NewReleases
                                 )
                             }
                             
-                            item {
+                            item(key = "row_recent") {
                                 LazyRow(
                                     contentPadding = PaddingValues(horizontal = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1122,13 +1298,14 @@ fun HomeScreenEnhanced(
                         
                         // Most Played Songs com paginação melhorada
                         if (uiState.mostPlayedSongs.isNotEmpty()) {
-                            item {
+                            item(key = "header_most_played") {
                                 SectionHeaderEnhanced(
-                                    title = stringResource(R.string.home_title_top_songs)
+                                    title = stringResource(R.string.home_title_top_songs),
+                                    icon = Icons.Rounded.TrendingUp
                                 )
                             }
                             
-                            item {
+                            item(key = "pager_most_played") {
                                 MostPlayedSongsPager(
                                     songs = uiState.mostPlayedSongs,
                                     nowPlayingId = playbackState.nowPlaying?.id,
