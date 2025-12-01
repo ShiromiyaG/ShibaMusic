@@ -22,6 +22,7 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val isSyncing: Boolean = false,
     val recentlyAddedAlbums: List<AlbumItem> = emptyList(),
+    val recentlyPlayedSongs: List<SongItem> = emptyList(),
     val favoriteAlbums: List<AlbumItem> = emptyList(),
     val mostPlayedSongs: List<SongItem> = emptyList(),
     val allSongs: List<SongItem> = emptyList(),
@@ -34,6 +35,7 @@ data class HomeUiState(
 private data class HomeCollections(
     val albums: List<AlbumItem>,
     val recentlyAdded: List<AlbumItem>,
+    val recentlyPlayedSongs: List<SongItem>,
     val favoriteAlbums: List<AlbumItem>,
     val mostPlayedSongs: List<SongItem>,
     val artistCount: Int = 0
@@ -84,6 +86,7 @@ class HomeViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         recentlyAddedAlbums = collections.recentlyAdded,
+                        recentlyPlayedSongs = collections.recentlyPlayedSongs,
                         favoriteAlbums = collections.favoriteAlbums,
                         mostPlayedSongs = collections.mostPlayedSongs,
                         allSongs = localSongs,
@@ -193,6 +196,7 @@ class HomeViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         recentlyAddedAlbums = collections.recentlyAdded,
+                        recentlyPlayedSongs = collections.recentlyPlayedSongs,
                         favoriteAlbums = collections.favoriteAlbums,
                         mostPlayedSongs = collections.mostPlayedSongs,
                         allSongs = localSongs,
@@ -245,6 +249,7 @@ class HomeViewModel @Inject constructor(
                 allSongs = songs,
                 allAlbums = collections.albums,
                 recentlyAddedAlbums = collections.recentlyAdded,
+                recentlyPlayedSongs = collections.recentlyPlayedSongs,
                 favoriteAlbums = collections.favoriteAlbums,
                 mostPlayedSongs = collections.mostPlayedSongs,
                 artistCount = collections.artistCount,
@@ -304,6 +309,7 @@ class HomeViewModel @Inject constructor(
         val albumsDeferred = async { albumsOverride ?: musicRepository.getAllAlbums() }
         val favoriteAlbumsDeferred = async { musicRepository.getFavoriteAlbums() }
         val mostPlayedDeferred = async { musicRepository.getMostPlayedSongs(20) }
+        val recentlyPlayedDeferred = async { musicRepository.getRecentlyPlayedSongs(20) }
         val artistCountDeferred = async { musicRepository.getAllArtists().size }
 
         val albums = albumsDeferred.await()
@@ -312,6 +318,7 @@ class HomeViewModel @Inject constructor(
         HomeCollections(
             albums = albums,
             recentlyAdded = recentlyAddedDeferred.await(),
+            recentlyPlayedSongs = recentlyPlayedDeferred.await(),
             favoriteAlbums = favoriteAlbumsDeferred.await(),
             mostPlayedSongs = mostPlayedDeferred.await(),
             artistCount = artistCountDeferred.await()

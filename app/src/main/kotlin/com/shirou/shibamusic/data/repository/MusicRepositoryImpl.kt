@@ -616,7 +616,7 @@ private fun Child.toSongEntityOrNull(): SongEntity? {
         path = path,
         isFavorite = starred != null,
         playCount = playCount?.toInt() ?: 0,
-        lastPlayedTimestamp = created?.time,
+        lastPlayedTimestamp = played?.time,
         dateAdded = created?.time ?: System.currentTimeMillis(),
         dateModified = System.currentTimeMillis()
     )

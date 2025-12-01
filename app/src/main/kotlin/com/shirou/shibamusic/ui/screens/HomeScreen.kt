@@ -1314,6 +1314,25 @@ fun HomeScreenEnhanced(
                                 )
                             }
                         }
+                        
+                        // Recently Played Songs (from server)
+                        if (uiState.recentlyPlayedSongs.isNotEmpty()) {
+                            item(key = "header_recently_played") {
+                                SectionHeaderEnhanced(
+                                    title = stringResource(R.string.home_recently_played),
+                                    icon = Icons.Rounded.History
+                                )
+                            }
+                            
+                            item(key = "pager_recently_played") {
+                                MostPlayedSongsPager(
+                                    songs = uiState.recentlyPlayedSongs,
+                                    nowPlayingId = playbackState.nowPlaying?.id,
+                                    isPlaying = playbackState.isPlaying,
+                                    onSongClick = { playbackViewModel.playSong(it) }
+                                )
+                            }
+                        }
                     }
                 }
             }

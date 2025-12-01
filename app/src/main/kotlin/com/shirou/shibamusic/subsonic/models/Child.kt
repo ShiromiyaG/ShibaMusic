@@ -45,6 +45,7 @@ open class Child(
     var discNumber: Int? = null,
     var created: Date? = null,
     var starred: Date? = null,
+    var played: Date? = null,
     var albumId: String? = null,
     var artistId: String? = null,
     var type: String? = null,

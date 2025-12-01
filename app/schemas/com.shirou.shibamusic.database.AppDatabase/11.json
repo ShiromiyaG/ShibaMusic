@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 11,
-    "identityHash": "d43eabbd4225b546dcd97360bd105ed0",
+    "identityHash": "9c4f37891903847cecbf573776034d7c",
     "entities": [
       {
         "tableName": "server",
@@ -171,7 +171,7 @@
       },
       {
         "tableName": "queue",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `track_order` INTEGER NOT NULL, `last_play` INTEGER NOT NULL, `playing_changed` INTEGER NOT NULL, `stream_id` TEXT, `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`track_order`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `track_order` INTEGER NOT NULL, `last_play` INTEGER NOT NULL, `playing_changed` INTEGER NOT NULL, `stream_id` TEXT, `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `played` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`track_order`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -360,6 +360,12 @@
             "notNull": false
           },
           {
+            "fieldPath": "played",
+            "columnName": "played",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
             "fieldPath": "albumId",
             "columnName": "albumId",
             "affinity": "TEXT",
@@ -407,7 +413,7 @@
       },
       {
         "tableName": "download",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `playlist_id` TEXT, `playlist_name` TEXT, `download_state` INTEGER NOT NULL DEFAULT 1, `download_uri` TEXT DEFAULT '', `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `playlist_id` TEXT, `playlist_name` TEXT, `download_state` INTEGER NOT NULL DEFAULT 1, `download_uri` TEXT DEFAULT '', `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `played` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -598,6 +604,12 @@
             "notNull": false
           },
           {
+            "fieldPath": "played",
+            "columnName": "played",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
             "fieldPath": "albumId",
             "columnName": "albumId",
             "affinity": "TEXT",
@@ -645,7 +657,7 @@
       },
       {
         "tableName": "chronology",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `server` TEXT, `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `server` TEXT, `parentId` TEXT, `isDir` INTEGER NOT NULL, `title` TEXT, `album` TEXT, `artist` TEXT, `track` INTEGER, `year` INTEGER, `genre` TEXT, `coverArtId` TEXT, `size` INTEGER, `contentType` TEXT, `suffix` TEXT, `transcodedContentType` TEXT, `transcodedSuffix` TEXT, `duration` INTEGER, `bitrate` INTEGER, `samplingRate` INTEGER, `bitDepth` INTEGER, `path` TEXT, `isVideo` INTEGER NOT NULL, `userRating` INTEGER, `averageRating` REAL, `playCount` INTEGER, `discNumber` INTEGER, `created` INTEGER, `starred` INTEGER, `played` INTEGER, `albumId` TEXT, `artistId` TEXT, `type` TEXT, `bookmarkPosition` INTEGER, `originalWidth` INTEGER, `originalHeight` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -818,6 +830,12 @@
           {
             "fieldPath": "starred",
             "columnName": "starred",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "played",
+            "columnName": "played",
             "affinity": "INTEGER",
             "notNull": false
           },
@@ -1095,7 +1113,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd43eabbd4225b546dcd97360bd105ed0')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9c4f37891903847cecbf573776034d7c')"
     ]
   }
 }
